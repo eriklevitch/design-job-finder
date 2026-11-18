@@ -45,7 +45,7 @@ Product, UX, UI and brand designers who do not want to check job sites every wee
 2. Copy this line, paste it into Terminal, and press **Return**:
 
    ```
-   curl -fsSL https://raw.githubusercontent.com/eriklevitch/product-design-job-finder/main/install.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/eriklevitch/design-job-finder/main/install.sh | bash
    ```
 
 3. The **Design Job Finder** app opens in its own window and asks five short questions:
@@ -209,7 +209,7 @@ If **Check every Monday** is on, turn it off first. Then drag the job-search fol
 Needs Python 3.10+.
 
 ```
-git clone https://github.com/eriklevitch/product-design-job-finder.git job-search
+git clone https://github.com/eriklevitch/design-job-finder.git job-search
 cd job-search
 python3 -m venv venv
 venv/bin/pip install -r requirements.txt        # Windows: venv\Scripts\pip install -r requirements.txt

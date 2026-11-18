@@ -1,7 +1,7 @@
 #!/bin/bash
 # Installs (or updates) Design Job Finder.
 #
-#   curl -fsSL https://raw.githubusercontent.com/eriklevitch/product-design-job-finder/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/eriklevitch/design-job-finder/main/install.sh | bash
 #
 # What it does, in order:
 #   1. Finds Python 3.10 or newer. If your Mac doesn't have it, it fetches
@@ -13,7 +13,7 @@
 #   4. Makes the "Design Job Finder" app, adds it to the Dock and opens it.
 set -e
 
-REPO="${JOBSEARCH_REPO:-eriklevitch/product-design-job-finder}"
+REPO="${JOBSEARCH_REPO:-eriklevitch/design-job-finder}"
 DEST="${JOBSEARCH_DIR:-$HOME/job-search}"
 # For testing: copy from a local folder instead of downloading.
 LOCAL_SOURCE="${JOBSEARCH_SOURCE_DIR:-}"
