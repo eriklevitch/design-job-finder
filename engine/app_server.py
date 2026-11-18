@@ -145,6 +145,7 @@ class App:
             "connected": store.connected(),
             "last_run": read_json(LAST_RUN),
             "schedule_on": schedule.is_on(),
+            "can_schedule": sys.platform == "darwin",
             "run": self.runner.status(),
             "notes": store.read_notes(),
         }
@@ -182,6 +183,8 @@ class App:
             opened, message = open_tracker()
             return 200, {"ok": opened, "message": message}
         if path == "/api/schedule":
+            if sys.platform != "darwin":
+                return 400, {"error": "The Monday search only works on a Mac."}
             schedule.turn_on() if body.get("on") else schedule.turn_off()
             return 200, {"schedule_on": schedule.is_on()}
         if path == "/api/ping":

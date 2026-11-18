@@ -285,6 +285,7 @@ function renderHome() {
     ? `Last checked ${whenText(last.finished_at)} · ${last.added} new job${last.added === 1 ? "" : "s"}`
     : "Find matching jobs and add them to your tracker.";
   $("schedule").checked = state.schedule_on;
+  $("schedule").closest("label").hidden = !state.can_schedule;
   if (state.run) renderRun(state.run);
 }
 

@@ -12,11 +12,15 @@ settings -> skip ones already in your tracker -> (optional) write a
 tailored draft -> add them to your tracker. Every step prints a short
 summary so you can see what happened.
 """
-import fcntl
 import json
 import sys
 from datetime import datetime
 from pathlib import Path
+
+try:
+    import fcntl  # Mac and Linux
+except ImportError:  # Windows: no lock, runs simply aren't guarded
+    fcntl = None
 
 from settings import ROOT, load_config, load_env, resolve_path
 from sources import fetch_adzuna, fetch_greenhouse, fetch_lever, fetch_ashby, fetch_jobspy, filter_jobs
@@ -92,6 +96,8 @@ def take_lock():
     """Only one search at a time (the app and the weekly schedule share
     this). Returns the open lock file, or None if a search is running."""
     handle = open(LOCK_PATH, "w")
+    if fcntl is None:
+        return handle
     try:
         fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError:

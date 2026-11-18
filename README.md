@@ -91,7 +91,7 @@ Then go through the new rows in your tracker. When you apply, or decide not to, 
 
 In Job Finder, click **Settings**. Change what you like and click **Save settings**.
 
-For finer changes, right-click `config.yaml` in your job-search folder, choose **Open With → TextEdit**, and change the **YOUR SEARCH** section at the top:
+For finer changes, right-click `config.yaml` in your job-search folder, choose **Open With → TextEdit**, and change the **YOUR SEARCH** section at the top. Note that clicking **Save settings** in Job Finder rewrites the level, location, pay and company lines, so make hand edits to those last, or redo them after using Settings.
 
 | Setting | What it means |
 |---|---|
@@ -128,8 +128,9 @@ Turn on any of these in Job Finder → **Settings**.
 For every new job, it writes three resume bullets and a cover letter opening. It uses only what you've written in `portfolio_notes.md`, so it won't invent experience you don't have.
 
 1. Create an account at [console.anthropic.com](https://console.anthropic.com), add a few dollars of credit, then go to **API Keys → Create Key**.
-2. In **Settings → Drafts**, paste the key.
-3. In the **Your experience** box below it, replace the examples with your real experience: companies, what you led, and results with numbers. Drafts can only be as specific as these notes. Click **Save drafts settings**.
+2. In **Settings → Drafts**, paste the key in **Anthropic key**.
+3. In the **Your experience** box below it, replace the examples with your real experience: companies, what you led, and results with numbers. Drafts can only be as specific as these notes.
+4. Click **Save drafts settings**. The key then shows **✓ Connected**.
 
 You can also change the drafts' writing rules under `writing_style` in `config.yaml`.
 </details>
@@ -137,7 +138,7 @@ You can also change the drafts' writing rules under `writing_style` in `config.y
 <details>
 <summary><b>More listings from Adzuna (free)</b></summary>
 
-Adzuna adds listings from many other job sites. Sign up at [developer.adzuna.com](https://developer.adzuna.com), copy your **App ID** and **App Key**, and paste them in **Settings → More listings from Adzuna**.
+Adzuna adds listings from many other job sites. Sign up at [developer.adzuna.com](https://developer.adzuna.com), copy your **App ID** and **App Key**, paste them in **Settings → More listings from Adzuna**, and click **Save**.
 </details>
 
 <details>
@@ -159,7 +160,7 @@ Paste the secret and the link, then click **Connect Notion**. Drafts appear insi
 <details>
 <summary><b>It found 0 matches</b></summary>
 
-Your settings may be too narrow. Job Finder tells you which setting skipped the most jobs and takes you straight to it. Try "Any level", more cities, remote included, or a lower minimum pay.
+Your settings may be too narrow. When most jobs were skipped because of location, level or pay, Job Finder says so and has a button that takes you to that setting. Otherwise, try "Any level", more cities, remote included, a lower minimum pay, or more companies.
 </details>
 
 <details>
@@ -169,15 +170,18 @@ The **Why it matched** column shows which settings it matched. To block a word i
 </details>
 
 <details>
-<summary><b>"[jobspy] error" in the output</b></summary>
+<summary><b>A search found far fewer jobs than usual</b></summary>
 
-The Indeed search failed. (Job Finder keeps a full log in `logs/app_run.log` in your job-search folder.) This happens when Indeed changes its site or limits how often it can be searched. The other sources still run. To fix it, update by pasting the install line into Terminal again. Your settings, notes and tracker are kept.
+One of the job sources may have failed. Open the `logs` folder in your job-search folder and open `app_run.log` (or `scheduled.log` for the Monday search) in TextEdit.
+
+- **`[jobspy] error`** means the Indeed search failed. This happens when Indeed changes its site or limits how often it can be searched. The other sources still run. To fix it, update by pasting the install line into Terminal again. Your settings, notes and tracker are kept.
+- **`404 Not Found` next to a company** means that company's name is wrong or it moved to a different careers system. Remove it in **Settings → Companies** and type the company name again, or see "Adding a company that Job Finder couldn't find" above.
 </details>
 
 <details>
-<summary><b>"404 Not Found" next to a company</b></summary>
+<summary><b>A company shows "not found" in Settings</b></summary>
 
-That company's name is wrong or it moved to a different careers system. Remove it in **Settings → Companies** and type the company name again, or see "Adding a company that Job Finder couldn't find" above.
+It uses a careers system Job Finder can't check (for example Workday, or the company's own site), or its job page has a name that's different from the company name. See "Adding a company that Job Finder couldn't find" above. Indeed often lists their jobs anyway.
 </details>
 
 <details>
@@ -209,7 +213,7 @@ venv/bin/pip install -r requirements.txt        # Windows: venv\Scripts\pip inst
 venv/bin/python engine/setup_wizard.py           # Windows: venv\Scripts\python engine\setup_wizard.py
 ```
 
-Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), and `engine/open_tracker.py` to open the tracker. The Job Finder page also works anywhere: `venv/bin/python engine/app_server.py` starts it and opens your browser.
+Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), and `engine/open_tracker.py` to open the tracker. You can also use the Job Finder page without the Dock app: `venv/bin/python engine/app_server.py` starts it and opens your browser. The Monday search and the Dock app only work on a Mac.
 </details>
 
 <details>
@@ -222,8 +226,8 @@ Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), an
 | `.env` | Your keys (hidden file). |
 | `applications.csv`, `drafts/` | Your tracker and drafts. |
 | `logs/`, `last_run.json` | What the latest searches did. |
-| `engine/` | The code. `app_server.py` and `app/` are the Job Finder page, `mac_app.py` makes the Dock app, `schedule.py` sets up the Monday search, `main.py` runs the search, `sources.py` fetches and filters jobs, `draft.py` writes drafts, `tracker_csv.py` and `notion_client.py` save jobs, `check_boards.py` checks company names. |
-| `tests/` | Automated checks for the filtering rules. |
+| `engine/` | The code. `app_server.py` and `app/` are the Job Finder page, `mac_app.py` makes the Dock app, `schedule.py` and `scheduled_run.py` run the Monday search, `config_store.py` saves settings, `main.py` runs the search, `sources.py` fetches and filters jobs, `draft.py` writes drafts, `tracker_csv.py` and `notion_client.py` save jobs, `check_boards.py` checks company names. |
+| `tests/` | Automated checks for the filtering rules and the app. |
 
 Everything in the first five rows is personal and is never uploaded (see `.gitignore`).
 </details>
