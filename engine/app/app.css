@@ -193,7 +193,6 @@ input::placeholder, textarea::placeholder { color: var(--ink-faint); opacity: .8
 .nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
 .nav .primary { margin-left: auto; }
 .error { color: var(--warn); margin: 14px 0 0; }
-.saved { font: 500 0.78rem/1.55 var(--font-mono); letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-soft); margin-left: 12px; }
 
 /* Companies: names stay in Inter; the status is a mono note. */
 .company-add { display: flex; gap: 10px; align-items: center; }
@@ -264,6 +263,19 @@ button.week:hover { border-color: var(--ink-faint); }
 .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--rule); border-top-color: var(--ink); animation: spin .8s linear infinite; flex: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+/* While searching: each site and its result, filling in as it goes. */
+.sites {
+  list-style: none; padding: 0; margin: -8px 0 28px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 4px 24px;
+  font-size: 0.92rem;
+}
+.sites li { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px dotted var(--rule); }
+.sites .mark { display: inline-flex; color: var(--ink-faint); }
+.sites .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sites .result { color: var(--ink-soft); font-size: 0.85rem; white-space: nowrap; }
+.sites li.waiting .name, .sites li.waiting .result, .sites li.skipped .name { color: var(--ink-faint); }
+.sites li.done .mark { color: var(--ink); }
+.sites li.failed .mark, .sites li.failed .result { color: var(--warn); }
 .suggest { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-md); padding: 18px 20px; margin-bottom: 24px; }
 .suggest p { margin: 0 0 14px; color: var(--ink-soft); }
 
@@ -313,7 +325,20 @@ legend {
 }
 .optional { color: var(--ink-faint); text-transform: none; letter-spacing: 0; margin-left: 2px; }
 .status { display: inline-flex; align-items: center; gap: 4px; font: 500 0.6875rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin-left: 8px; }
-#view-settings > .nav { margin: -16px 0 56px; }
+h2.group { font-size: 1.35rem; font-weight: 400; letter-spacing: -0.01em; margin: 0 0 24px; }
+h2.group + .hint { margin: -14px 0 28px; }
+fieldset + h2.group { margin-top: 72px; }
+
+/* One Save for all of Settings, stuck to the bottom of the window. */
+.savebar {
+  position: sticky; bottom: 0; z-index: 1;
+  display: flex; align-items: center; gap: 16px;
+  margin: 0 calc(-1 * clamp(1.25rem, 5vw, 2rem)); padding: 14px clamp(1.25rem, 5vw, 2rem);
+  background: var(--bg); border-top: 1px solid var(--rule);
+}
+.savebar p { margin: 0 auto 0 0; color: var(--ink-soft); font-size: 0.95rem; }
+.savebar p.bad { color: var(--warn); }
+.savebar p.ok { color: var(--ink); }
 
 .banner {
   background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-md);

@@ -444,3 +444,41 @@ def test_silent_crash_shows_details_without_keys(tmp_path):
 
 def test_monday_check_stays_quiet_when_it_waited():
     assert scheduled_run.message_for({"state": "busy"}, 1) == ""
+
+
+def test_search_shows_each_site_and_how_it_went(tmp_path, monkeypatch):
+    monkeypatch.setattr(history, "PATH", tmp_path / "history.json")
+    monkeypatch.setattr(main_module, "LOCK_PATH", tmp_path / ".run.lock")
+    monkeypatch.setattr(main_module, "load_env", lambda: None)
+    monkeypatch.setattr(main_module, "load_config",
+                        lambda: {"greenhouse_companies": ["acme", "globex", "initech"]})
+    for key in ("ADZUNA_APP_ID", "ADZUNA_APP_KEY"):
+        monkeypatch.delenv(key, raising=False)
+
+    def greenhouse(config):  # Acme answers, Globex doesn't, Initech never gets checked
+        import sources
+        sources.reach["ok"] += 1
+        sources._progress("Acme", "checking")
+        sources._progress("Acme", "done", 3)
+        sources._progress("Globex", "checking")
+        return []
+    monkeypatch.setattr(main_module, "fetch_greenhouse", greenhouse)
+    for name in ("fetch_adzuna", "fetch_lever", "fetch_ashby", "fetch_jobspy"):
+        monkeypatch.setattr(main_module, name, lambda config: [])
+    summary = tmp_path / "s.json"
+    main_module.main(["--summary", str(summary)])
+    sites = json.loads(summary.read_text())["sites"]
+    assert sites == [{"name": "Acme", "state": "done", "jobs": 3},
+                     {"name": "Globex", "state": "failed", "jobs": 0},
+                     {"name": "Initech", "state": "skipped", "jobs": 0}]
+
+
+def test_following_the_monday_check_includes_its_sites(tmp_path, monkeypatch):
+    monkeypatch.setattr(main_module, "LOCK_PATH", tmp_path / ".run.lock")
+    sites = [{"name": "Indeed", "state": "checking", "jobs": 0}]
+    (tmp_path / "other.json").write_text(json.dumps({"state": "running", "step": "x", "sites": sites}))
+    runner = app_server.Runner(["x"], tmp_path / "s.json", tmp_path / "r.log",
+                               lock=tmp_path / ".run.lock", other_summary=tmp_path / "other.json")
+    held = main_module.take_lock()
+    assert runner.status()["sites"] == sites
+    held.close()

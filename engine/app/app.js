@@ -131,7 +131,11 @@ function renderCompanies(where) {
     const x = document.createElement("button");
     x.append(icon("x", 14));
     x.setAttribute("aria-label", `Remove ${c.name || c.slug}`);
-    x.onclick = () => { companies[where].splice(i, 1); renderCompanies(where); };
+    x.onclick = () => {
+      companies[where].splice(i, 1);
+      renderCompanies(where);
+      if (where === "settings") markDirty();
+    };
     li.append(x);
     ul.append(li);
   });
@@ -154,6 +158,7 @@ async function addCompanies(where, text) {
   const entries = splitCities(text).map((name) => ({ name, status: "checking" }));
   companies[where].push(...entries);
   renderCompanies(where);
+  if (where === "settings") markDirty();
   await Promise.all(entries.map(async (entry) => {
     try {
       const r = await api("/api/company", { name: entry.name });
@@ -486,6 +491,7 @@ function renderHome() {
 
   $("run-progress").hidden = !running;
   if (running) $("run-step").textContent = run.step || "Starting…";
+  renderSites(running ? run.sites || [] : []);
   $("find").disabled = $("find-big").disabled = running;
   $("find-label").textContent = running ? "Looking…" : "Find new jobs";
   // The big button, when it shows, is the one way to search: no twin in the top bar.
@@ -496,6 +502,23 @@ function renderHome() {
   $("schedule-note").textContent = state.schedule_on && state.next_check
     ? nextCheckText(state.next_check)
     : "Your Mac looks for new jobs on its own and lets you know what it found. If it’s asleep then, it checks when it wakes.";
+}
+
+// While searching: every site, and what happened when it was checked.
+const SITE_TEXT = { waiting: "Waiting", checking: "Checking…", failed: "Didn’t respond", skipped: "Skipped" };
+function renderSites(sites) {
+  const ul = $("run-sites");
+  ul.hidden = !sites.length;
+  ul.replaceChildren(...sites.map((site) => {
+    const mark = site.state === "done" ? icon("check", 14)
+      : site.state === "checking" ? icon("rotateCw", 14)
+      : site.state === "failed" ? icon("circleAlert", 14) : null;
+    if (site.state === "checking") mark.classList.add("spin");
+    return el("li", site.state,
+      el("span", "mark", mark),
+      el("span", "name", site.name),
+      el("span", "result", site.state === "done" ? plural(site.jobs, "job") : SITE_TEXT[site.state] || ""));
+  }));
 }
 
 // The fix for a problem (a button to the right setting) and its details,
@@ -567,6 +590,29 @@ $("schedule").onchange = (e) => setSchedule(e.target.checked);
 
 // ── Settings ───────────────────────────────────────────────────────
 
+// One Save for the whole page. It says when something has changed, and
+// Back won't quietly drop unsaved changes.
+let settingsDirty = false;
+
+function saveStatus(text, kind = "") {
+  $("save-status").textContent = text;
+  $("save-status").className = kind;
+}
+
+function markDirty() {
+  if (!settingsDirty) saveStatus("Unsaved changes");
+  settingsDirty = true;
+  $("save-all").disabled = false;
+  $("discard").hidden = false;
+}
+
+function markClean(text = "No changes") {
+  settingsDirty = false;
+  saveStatus(text, text === "Saved" ? "ok" : "");
+  $("save-all").disabled = true;
+  $("discard").hidden = true;
+}
+
 function openSettings(section) {
   const s = state.settings;
   choiceList($("set-level"), "set-level", levelOptions(), s.level);
@@ -579,31 +625,40 @@ function openSettings(section) {
   choiceList($("set-tracker"), "set-tracker", TRACKERS, s.tracker);
   wireTrackerChoice($("set-tracker"), document.querySelector('.notion-connect[data-for="settings"]'));
   $("notes").value = state.notes;
+  $("anthropic-key").value = $("adzuna-id").value = $("adzuna-key").value = "";
   setConnected($("anthropic-status"), state.connected.anthropic);
   setConnected($("adzuna-status"), state.connected.adzuna);
-  for (const id of ["settings-saved", "settings-error", "drafts-saved", "adzuna-saved"]) $(id).hidden = true;
+  markClean();
   show("settings");
   if (section) $(section).scrollIntoView({ behavior: "smooth" });
 }
 
-function flash(id) {
-  $(id).hidden = false;
-  setTimeout(() => { $(id).hidden = true; }, 2500);
+// Anything typed or picked counts, except the company search box (a
+// company only counts once it's added) and the Notion panel (it has its
+// own Connect button).
+["input", "change"].forEach((type) => $("view-settings").addEventListener(type, (e) => {
+  if (!e.target.closest(".company-add, .notion-connect")) markDirty();
+}));
+
+// Checks that need no server, so nothing is half-saved.
+function settingsProblem() {
+  if (stillChecking("settings")) return "Still looking up companies. One moment…";
+  if (chosen("set-tracker") === "notion" && !state.connected.notion)
+    return "Connect Notion first, or pick the spreadsheet. You can switch any time.";
+  const key = $("anthropic-key").value.trim();
+  if (key && !key.startsWith("sk-ant-")) return "That doesn’t look like an Anthropic key. They start with sk-ant-.";
+  if (!$("adzuna-id").value.trim() !== !$("adzuna-key").value.trim())
+    return "Adzuna needs both the App ID and the App Key.";
+  return "";
 }
 
-$("settings-save").onclick = async () => {
-  $("settings-error").hidden = true;
-  const problem = stillChecking("settings")
-    ? "Still looking up companies. One moment…"
-    : chosen("set-tracker") === "notion" && !state.connected.notion
-      ? "Connect Notion first, or pick the spreadsheet. You can switch any time." : "";
-  if (problem) {
-    $("settings-error").textContent = problem;
-    $("settings-error").hidden = false;
-    return;
-  }
+$("save-all").onclick = async () => {
+  const problem = settingsProblem();
+  if (problem) return saveStatus(problem, "bad");
+  $("save-all").disabled = true;
+  saveStatus("Saving…");
   try {
-    state = await api("/api/settings", {
+    const saved = await api("/api/settings", {
       level: chosen("set-level"),
       role: $("set-role").value,
       cities: splitCities($("set-cities").value),
@@ -612,45 +667,38 @@ $("settings-save").onclick = async () => {
       companies: companiesForSave("settings"),
       tracker: chosen("set-tracker"),
     });
+    Object.assign(state, saved);
     $("set-role").value = state.settings.role;
-    flash("settings-saved");
+    if ($("notes").value !== state.notes) {
+      await api("/api/notes", { text: $("notes").value });
+      state.notes = $("notes").value;
+    }
+    const keys = { anthropic: $("anthropic-key").value, adzuna_id: $("adzuna-id").value,
+                   adzuna_key: $("adzuna-key").value };
+    if (Object.values(keys).some((v) => v.trim())) {
+      const r = await api("/api/keys", keys);
+      if (r.problems.length) throw new Error(r.problems[0]);
+      state.connected = r.connected;
+      $("anthropic-key").value = $("adzuna-id").value = $("adzuna-key").value = "";
+      setConnected($("anthropic-status"), state.connected.anthropic);
+      setConnected($("adzuna-status"), state.connected.adzuna);
+    }
+    markClean("Saved");
   } catch (e) {
-    $("settings-error").textContent = e.message;
-    $("settings-error").hidden = false;
+    saveStatus(e.message, "bad");
+    $("save-all").disabled = false;
   }
 };
 
-$("drafts-save").onclick = async () => {
-  try {
-    await api("/api/notes", { text: $("notes").value });
-    state.notes = $("notes").value;
-    const key = $("anthropic-key").value;
-    if (key) {
-      const r = await api("/api/keys", { anthropic: key });
-      if (r.problems.length) return banner(r.problems[0]);
-      state.connected = r.connected;
-      $("anthropic-key").value = "";
-      setConnected($("anthropic-status"), true);
-    }
-    banner("");
-    flash("drafts-saved");
-  } catch (e) { banner(e.message); }
-};
-
-$("adzuna-save").onclick = async () => {
-  try {
-    const r = await api("/api/keys", { adzuna_id: $("adzuna-id").value, adzuna_key: $("adzuna-key").value });
-    if (r.problems.length) return banner(r.problems[0]);
-    state.connected = r.connected;
-    $("adzuna-id").value = $("adzuna-key").value = "";
-    setConnected($("adzuna-status"), state.connected.adzuna);
-    banner("");
-    flash("adzuna-saved");
-  } catch (e) { banner(e.message); }
-};
+$("discard").onclick = () => openSettings();
 
 $("to-settings").onclick = () => openSettings();
-$("to-home").onclick = () => { banner(""); renderHome(); show("home"); };
+$("to-home").onclick = () => {
+  if (settingsDirty) return saveStatus("Save or discard your changes first.", "bad");
+  banner("");
+  renderHome();
+  show("home");
+};
 
 // ── Start ──────────────────────────────────────────────────────────
 

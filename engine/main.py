@@ -105,8 +105,26 @@ def fetch_all(config: dict) -> tuple[list[dict], list[str], bool]:
             jobs += fetch(config)
         except Exception as e:  # one broken source never stops the run
             print(f"  [{name}] error, skipped: {e}")
-            sources.reach["failed"].append("Indeed" if name == "jobspy" else name.title())
+            display = "Indeed" if name == "jobspy" else name.title()
+            sources.reach["failed"].append(display)
+            sources._progress(display, "failed")
     return jobs, list(sources.reach["failed"]), sources.reach["ok"] > 0
+
+
+def track_sites(report: "Report", config: dict) -> list[dict]:
+    """The list of sites the app shows while searching, updated as each
+    one is checked: waiting, checking, done (with jobs found) or failed."""
+    sites = [{"name": n, "state": "waiting", "jobs": 0} for n in sources.planned_sites(config)]
+
+    def on_progress(name: str, state: str, jobs: int) -> None:
+        for site in sites:
+            if site["name"] == name and site["state"] in ("waiting", "checking"):
+                site.update(state=state, jobs=jobs)
+                break
+        report.update(sites=sites)
+    sources.progress = on_progress
+    report.update(sites=sites)
+    return sites
 
 
 def source_problem(failed: list[str]) -> str:
@@ -197,7 +215,15 @@ def search(report: "Report", dry_run: bool) -> int:
     report.update(step=f"Checking Indeed and {n} company career page{'s' if n != 1 else ''}…"
                   if n else "Checking Indeed…")
     print("=== Looking for jobs ===")
-    jobs, failed, reached = fetch_all(config)
+    sites = track_sites(report, config)
+    try:
+        jobs, failed, reached = fetch_all(config)
+    finally:
+        sources.progress = None
+    for site in sites:  # anything that never finished
+        if site["state"] in ("waiting", "checking"):
+            site["state"] = "failed" if site["state"] == "checking" else "skipped"
+    report.update(sites=sites)
     print(f"Postings found: {len(jobs)}")
     if failed and not reached:
         print("\nCouldn't reach any job sites. Check your internet connection and try again.")

@@ -34,6 +34,37 @@ def reset_reach() -> None:
     reach["failed"] = []
 
 
+# Called as each site is checked, so the app can show progress:
+# progress(name, "checking" | "done" | "failed", jobs_found). main sets it.
+progress = None
+
+
+def _progress(name: str, state: str, jobs: int = 0) -> None:
+    if progress:
+        try:
+            progress(name, state, jobs)
+        except Exception:
+            pass  # showing progress must never stop a search
+
+
+def planned_sites(config: dict) -> list[str]:
+    """The sites a search will check, in order, for the progress list."""
+    names = []
+    cfg = config.get("adzuna") or {}
+    if os.environ.get(cfg.get("app_id_env", "ADZUNA_APP_ID")) and \
+            os.environ.get(cfg.get("app_key_env", "ADZUNA_APP_KEY")):
+        names.append("Adzuna")
+    for key in ("greenhouse_companies", "lever_companies", "ashby_companies"):
+        names += [_display_name(c) for c in config.get(key) or []]
+    if config.get("jobspy"):
+        names.append(_jobspy_name(config["jobspy"]))
+    return names
+
+
+def _jobspy_name(cfg: dict) -> str:
+    return " and ".join(str(site).replace("_", " ").title() for site in cfg.get("sites", ["indeed"]))
+
+
 def _display_name(slug: str) -> str:
     """"acme-labs" -> "Acme Labs", for messages about a company's page."""
     return re.sub(r"[-_]+", " ", slug).strip().title() or slug
@@ -131,6 +162,7 @@ def fetch_adzuna(config) -> list[dict]:
         print("  [adzuna] skipped (optional add-on, not set up)")
         return []
 
+    _progress("Adzuna", "checking")
     url = f"https://api.adzuna.com/v1/api/jobs/{cfg.get('country', 'us')}/search/1"
     params = {
         "app_id": app_id,
@@ -163,6 +195,7 @@ def fetch_adzuna(config) -> list[dict]:
             # run. Adzuna's own numeric "id" is stable across calls.
             "job_key": f"adzuna:{r.get('id', '')}",
         })
+    _progress("Adzuna", "done", len(jobs))
     print(f"  [adzuna] fetched {len(jobs)}")
     return jobs
 
@@ -177,6 +210,8 @@ def _adzuna_salary(r) -> str:
 def fetch_greenhouse(config) -> list[dict]:
     jobs = []
     for company in config.get("greenhouse_companies", []):
+        _progress(_display_name(company), "checking")
+        before = len(jobs)
         try:
             # content=true includes the full job description in the list
             # response, so we don't need a second request per posting.
@@ -200,6 +235,9 @@ def fetch_greenhouse(config) -> list[dict]:
         except requests.RequestException as e:
             print(f"  [greenhouse:{company}] error — {e}")
             reach["failed"].append(_display_name(company))
+            _progress(_display_name(company), "failed")
+            continue
+        _progress(_display_name(company), "done", len(jobs) - before)
     print(f"  [greenhouse] fetched {len(jobs)}")
     return jobs
 
@@ -207,6 +245,8 @@ def fetch_greenhouse(config) -> list[dict]:
 def fetch_lever(config) -> list[dict]:
     jobs = []
     for company in config.get("lever_companies", []):
+        _progress(_display_name(company), "checking")
+        before = len(jobs)
         try:
             url = f"https://api.lever.co/v0/postings/{company}?mode=json"
             resp = requests.get(url, headers=UA, timeout=20)
@@ -227,6 +267,9 @@ def fetch_lever(config) -> list[dict]:
         except requests.RequestException as e:
             print(f"  [lever:{company}] error — {e}")
             reach["failed"].append(_display_name(company))
+            _progress(_display_name(company), "failed")
+            continue
+        _progress(_display_name(company), "done", len(jobs) - before)
     print(f"  [lever] fetched {len(jobs)}")
     return jobs
 
@@ -269,6 +312,8 @@ def _lever_date(ms) -> str:
 def fetch_ashby(config) -> list[dict]:
     jobs = []
     for company in config.get("ashby_companies", []):
+        _progress(_display_name(company), "checking")
+        before = len(jobs)
         try:
             # includeCompensation=true adds a structured pay summary
             # ("$204K – $264K • Offers Equity") when the company sets one.
@@ -292,6 +337,9 @@ def fetch_ashby(config) -> list[dict]:
         except requests.RequestException as e:
             print(f"  [ashby:{company}] error — {e}")
             reach["failed"].append(_display_name(company))
+            _progress(_display_name(company), "failed")
+            continue
+        _progress(_display_name(company), "done", len(jobs) - before)
     print(f"  [ashby] fetched {len(jobs)}")
     return jobs
 
@@ -319,6 +367,7 @@ def fetch_jobspy(config) -> list[dict]:
         print("  [jobspy] skipped (not installed; paste the install line from the README again)")
         return []
 
+    _progress(_jobspy_name(cfg), "checking")
     try:
         df = scrape_jobs(
             site_name=cfg.get("sites", ["indeed"]),
@@ -331,8 +380,8 @@ def fetch_jobspy(config) -> list[dict]:
         )
     except Exception as e:
         print(f"  [jobspy] error — {e}")
-        reach["failed"].append(" and ".join(
-            str(site).replace("_", " ").title() for site in cfg.get("sites", ["indeed"])))
+        reach["failed"].append(_jobspy_name(cfg))
+        _progress(_jobspy_name(cfg), "failed")
         return []
     reach["ok"] += 1
 
@@ -357,6 +406,7 @@ def fetch_jobspy(config) -> list[dict]:
             "job_key": f"jobspy:{raw_id}" if raw_id and str(raw_id) != "nan"
                        else f"jobspy:{job_url.split('?')[0]}",
         })
+    _progress(_jobspy_name(cfg), "done", len(jobs))
     print(f"  [jobspy] fetched {len(jobs)}")
     return jobs
 

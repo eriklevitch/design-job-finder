@@ -519,3 +519,41 @@ def test_why_spells_out_level_abbreviations():
     matches, _ = filter_jobs([_job(title="Sr. Product Designer"),
                               _job(title="Head of Design, Product Design")], config)
     assert [m["why"][0] for m in matches] == ["Senior", "Head of design"]
+
+
+# ── Progress shown while searching ──────────────────────────────────
+
+def test_planned_sites_list_every_site_in_order(monkeypatch):
+    monkeypatch.setenv("ADZUNA_APP_ID", "id")
+    monkeypatch.setenv("ADZUNA_APP_KEY", "key")
+    config = {"greenhouse_companies": ["acme-labs"], "lever_companies": ["globex"],
+              "ashby_companies": [], "jobspy": {"sites": ["indeed"]}}
+    assert sources.planned_sites(config) == ["Adzuna", "Acme Labs", "Globex", "Indeed"]
+    monkeypatch.delenv("ADZUNA_APP_ID")
+    assert sources.planned_sites({}) == []
+
+
+def test_each_company_reports_progress():
+    import requests
+    events = []
+    sources.progress = lambda name, state, jobs: events.append((name, state, jobs))
+    payload = {"jobs": [{"id": 1, "title": "Designer", "location": {"name": "Remote"},
+                         "absolute_url": "https://x", "updated_at": "2026-11-01", "content": ""}]}
+    try:
+        with patch("sources.requests.get", side_effect=[_fake_get(payload), requests.ConnectionError("x")]):
+            fetch_greenhouse({"greenhouse_companies": ["acme", "globex"]})
+    finally:
+        sources.progress = None
+    assert events == [("Acme", "checking", 0), ("Acme", "done", 1),
+                      ("Globex", "checking", 0), ("Globex", "failed", 0)]
+
+
+def test_broken_progress_display_never_stops_a_search():
+    def broken(*args):
+        raise RuntimeError("display problem")
+    sources.progress = broken
+    try:
+        with patch("sources.requests.get", return_value=_fake_get({"jobs": []})):
+            assert fetch_greenhouse({"greenhouse_companies": ["acme"]}) == []
+    finally:
+        sources.progress = None

@@ -72,6 +72,7 @@
     <div class="problem" id="home-problem" hidden></div>
     <button class="primary big" id="find-big" hidden></button>
     <div class="progress" id="run-progress" hidden><span class="spinner"></span><span id="run-step"></span></div>
+    <ul class="sites" id="run-sites" aria-label="Job sites being checked" hidden></ul>
     <div class="notes" id="home-notes"></div>
     <div class="suggest" id="run-suggest" hidden>
       <p id="suggest-text"></p>
@@ -94,6 +95,7 @@
   <section id="view-settings" hidden>
     <h1>Settings</h1>
 
+    <h2 class="group">Your search</h2>
     <fieldset id="sec-level"><legend>Level</legend>
       <div class="choices" id="set-level"></div>
       <label class="field"><span class="key">Your title in drafts</span>
@@ -131,11 +133,8 @@
       <div class="notion-connect" data-for="settings" hidden></div>
     </fieldset>
 
-    <div class="nav">
-      <span class="saved" id="settings-saved" hidden>Saved</span>
-      <p class="error" id="settings-error" hidden></p>
-      <button class="primary" id="settings-save">Save search settings</button>
-    </div>
+    <h2 class="group">Extras</h2>
+    <p class="hint">Both are optional. Job Finder works without them.</p>
 
     <fieldset id="sec-drafts"><legend>Drafts <span class="optional">optional</span></legend>
       <p class="hint">Job Finder can write 3 resume bullets and the start of a cover letter for each new job, using only your notes below. This uses Anthropic’s AI and costs about 1–2 cents per job, charged to your Anthropic account.</p>
@@ -147,8 +146,6 @@
         <textarea id="notes" rows="10"></textarea>
         <small>Companies, what you led, and results with numbers. Drafts only use what’s written here, so the more specific these notes are, the better the drafts.</small>
       </label>
-      <button class="secondary" id="drafts-save">Save drafts</button>
-      <span class="saved" id="drafts-saved" hidden>Saved</span>
     </fieldset>
 
     <fieldset id="sec-adzuna"><legend>More listings from Adzuna <span class="optional">optional, free</span></legend>
@@ -157,9 +154,13 @@
         <label class="field"><span class="key">App ID</span> <input id="adzuna-id" autocomplete="off"></label>
         <label class="field"><span class="key">App Key</span> <input id="adzuna-key" type="password" autocomplete="off"></label>
       </div>
-      <button class="secondary" id="adzuna-save">Save Adzuna keys</button>
-      <span class="saved" id="adzuna-saved" hidden>Saved</span>
     </fieldset>
+
+    <div class="savebar" id="savebar">
+      <p id="save-status" aria-live="polite">No changes</p>
+      <button class="link" id="discard" hidden>Discard</button>
+      <button class="primary" id="save-all" disabled>Save</button>
+    </div>
   </section>
 
   <template id="notion-template">

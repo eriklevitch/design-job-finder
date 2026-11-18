@@ -173,7 +173,8 @@ class Runner:
             return None
         other = read_json(self.other_summary) or {}
         step = other.get("step") if other.get("state") == "running" else None
-        return {"state": "running", "step": f"The Monday check is running. {step or 'Looking for jobs…'}"}
+        return {"state": "running", "sites": other.get("sites") or [],
+                "step": f"The Monday check is running. {step or 'Looking for jobs…'}"}
 
     def status(self) -> dict | None:
         if self.process is None:
