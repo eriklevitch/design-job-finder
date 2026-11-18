@@ -77,6 +77,22 @@ function button(className, onclick, ...children) {
   b.onclick = onclick;
   return b;
 }
+// A notice above a list, with an X to hide it. It stays hidden until its
+// message or the search behind it changes (`key` covers both).
+const DISMISSED_KEY = "dismissedNotices";
+let dismissed = new Set();
+try { dismissed = new Set(JSON.parse(localStorage.getItem(DISMISSED_KEY) || "[]")); } catch (e) {}
+function notice(className, key, ...children) {
+  if (dismissed.has(key)) return null;
+  const node = el("div", className, icon("circleAlert", "sm"), el("div", "notice-body", ...children));
+  node.append(button("btn btn-icon notice-close", () => {
+    dismissed.add(key);
+    try { localStorage.setItem(DISMISSED_KEY, JSON.stringify([...dismissed].slice(-50))); } catch (e) {}
+    node.remove();
+  }, icon("x", "sm")));
+  node.lastChild.setAttribute("aria-label", "Dismiss");
+  return node;
+}
 function setConnected(node, on) {
   node.replaceChildren(...(on ? [el("span", "dot ok"), "Connected"] : []));
 }
@@ -268,7 +284,9 @@ function renderCompanies(where) {
   }));
   $("co-notices").replaceChildren(...["missing", "error"]
     .filter((s) => list.some((c) => c.status === s))
-    .map((s) => el("div", "notice", icon("circleAlert", "sm"), el("p", "", HELP[s]))));
+    .map((s) => notice("notice", "co:" + s + ":" + list.filter((c) => c.status === s).map((c) => c.key).join(","),
+      el("p", "", HELP[s])))
+    .filter(Boolean));
   renderSide();
 }
 
@@ -711,17 +729,18 @@ function renderJobs() {
 
   // Problems that didn't stop the search, and a stopped search above its jobs.
   const notices = [];
+  const ran = (last && last.finished_at) || "";
   if (problem && jobs.length) {
     const acts = problemActions(problem);
-    notices.push(el("div", "notice bad", icon("circleAlert", "sm"),
-      el("div", "", el("p", "", problem.message || "Something went wrong."), acts.length && el("div", "actions", ...acts))));
+    notices.push(notice("notice bad", "problem:" + ran + ":" + (problem.message || ""),
+      el("p", "", problem.message || "Something went wrong."), acts.length && el("div", "actions", ...acts)));
   }
-  if (last && last.source_problem) notices.push(el("div", "notice", icon("circleAlert", "sm"), el("p", "", last.source_problem)));
+  if (last && last.source_problem) notices.push(notice("notice", "source:" + ran + ":" + last.source_problem, el("p", "", last.source_problem)));
   if (last && last.draft_problem && isLatest) {
-    notices.push(el("div", "notice", icon("circleAlert", "sm"), el("div", "", el("p", "", last.draft_problem),
-      el("div", "actions", button("btn btn-secondary", () => openSettings("sec-drafts"), "Open drafts settings")))));
+    notices.push(notice("notice", "drafts:" + ran + ":" + last.draft_problem, el("p", "", last.draft_problem),
+      el("div", "actions", button("btn btn-secondary", () => openSettings("sec-drafts"), "Open drafts settings"))));
   }
-  $("notices").replaceChildren(...notices);
+  $("notices").replaceChildren(...notices.filter(Boolean));
 
   // The table
   document.querySelectorAll("table.jobs th[data-sort]").forEach((th) => {
