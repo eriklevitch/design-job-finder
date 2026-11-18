@@ -8,12 +8,14 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from datetime import datetime, timedelta
 
 import pytest
 import yaml
 
 import app_server
 import config_store
+import history
 import main as main_module
 import mac_app
 import schedule
@@ -27,6 +29,7 @@ def tmp_config(tmp_path, monkeypatch):
     monkeypatch.setattr(config_store, "NOTES", tmp_path / "portfolio_notes.md")
     monkeypatch.setattr(app_server, "CONFIG_PATH", tmp_path / "config.yaml")
     monkeypatch.setattr(app_server, "LAST_RUN", tmp_path / "last_run.json")
+    monkeypatch.setattr(history, "PATH", tmp_path / "history.json")
     return tmp_path
 
 
@@ -231,3 +234,85 @@ def test_mac_app_bundle(tmp_path):
     script = exe.read_text()
     assert "'" + str(tmp_path / "my folder" / "venv" / "bin" / "python") + "'" in script
     assert (app / "Contents" / "Resources" / "JobFinder.icns").exists()
+
+
+# ── This week's jobs (history.json) ─────────────────────────────────
+
+def _run(when: datetime, *titles, **fields) -> dict:
+    return {"state": "done", "finished_at": when.isoformat(timespec="seconds"),
+            "added": [{"title": t, "url": f"https://x/{t}"} for t in titles], **fields}
+
+
+def test_history_keeps_about_eight_weeks(tmp_path):
+    path = tmp_path / "history.json"
+    now = datetime(2026, 11, 16, 9, 0)
+    history.add(_run(now - timedelta(weeks=9), "Old"), path, now=now)
+    history.add(_run(now - timedelta(weeks=1), "Recent"), path, now=now)
+    history.add(_run(now, "New"), path, now=now)
+    assert [r["added"][0]["title"] for r in history.load(path)] == ["Recent", "New"]
+
+
+def test_damaged_history_reads_as_empty(tmp_path):
+    path = tmp_path / "history.json"
+    path.write_text("{not json")
+    assert history.load(path) == []
+    path.write_text('[{"no": "date"}, 3]')
+    assert history.load(path) == []
+
+
+def test_latest_week_gathers_every_search_that_week():
+    monday = datetime(2026, 11, 16, 9, 0)
+    runs = [_run(monday - timedelta(days=7), "Last week"),
+            _run(monday, "A", "B"),
+            _run(monday + timedelta(days=2), "C", "A")]  # A again: shown once
+    week = history.latest_week(runs, now=monday + timedelta(days=3))
+    assert week["start"] == "2026-11-16" and week["this_week"]
+    assert [j["title"] for j in week["jobs"]] == ["C", "A", "B"]
+    assert "added" not in week["last"]
+    assert not history.latest_week(runs, now=monday + timedelta(days=8))["this_week"]
+    assert history.latest_week([]) is None
+
+
+def test_next_check_is_the_coming_monday_morning():
+    wednesday = datetime(2026, 11, 18, 14, 0)
+    assert schedule.next_run(wednesday) == datetime(2026, 11, 23, 9, 0)
+    early_monday = datetime(2026, 11, 16, 8, 0)
+    assert schedule.next_run(early_monday) == datetime(2026, 11, 16, 9, 0)
+    assert schedule.next_run(datetime(2026, 11, 16, 9, 0)) == datetime(2026, 11, 23, 9, 0)
+
+
+def test_state_includes_this_weeks_jobs(server, tmp_config):
+    history.add(_run(datetime.now(), "Senior Product Designer"))
+    week = json.loads(call(server, "/api/state")[1])["week"]
+    assert week["this_week"] and week["jobs"][0]["title"] == "Senior Product Designer"
+
+
+def test_job_card_carries_what_the_page_shows():
+    card = main_module.job_card({"title": "Designer", "posted_date": "2026-11-14",
+                                 "why": ["Senior"], "has_draft": True, "description": "long"})
+    assert card["posted_date"] == "2026-11-14" and card["why"] == ["Senior"] and card["draft"]
+    assert "description" not in card
+
+
+def test_unreachable_sites_named_plainly():
+    assert main_module.source_problem([]) == ""
+    assert main_module.source_problem(["Indeed"]).startswith("Indeed didn't respond")
+    assert main_module.source_problem(["Indeed", "Acme"]).startswith("Indeed and Acme didn't")
+    assert main_module.source_problem(["A", "B", "C", "D"]).startswith("A, B and 2 more didn't")
+
+
+def test_no_internet_is_not_reported_as_no_matches(tmp_path, monkeypatch):
+    monkeypatch.setattr(history, "PATH", tmp_path / "history.json")
+    monkeypatch.setattr(main_module, "LOCK_PATH", tmp_path / ".run.lock")
+    monkeypatch.setattr(main_module, "load_env", lambda: None)
+    monkeypatch.setattr(main_module, "load_config", lambda: {})
+
+    def offline(config):
+        raise OSError("no network")
+    for name in ("fetch_adzuna", "fetch_greenhouse", "fetch_lever", "fetch_ashby", "fetch_jobspy"):
+        monkeypatch.setattr(main_module, name, offline)
+    summary = tmp_path / "s.json"
+    assert main_module.main(["--summary", str(summary)]) == 1
+    data = json.loads(summary.read_text())
+    assert data["state"] == "error" and "internet" in data["message"]
+    assert history.load()[-1]["state"] == "error"

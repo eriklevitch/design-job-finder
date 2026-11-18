@@ -14,7 +14,7 @@ explanations plain and avoid jargon.
 - **Run:** `venv/bin/python engine/main.py --dry-run` previews and changes
   nothing; without `--dry-run` it adds new jobs to the tracker.
 - **Personal files** (`config.yaml`, `portfolio_notes.md`, `.env`,
-  `applications.csv`, `drafts/`, `logs/`, `last_run.json`) are gitignored. Never commit them or paste
+  `applications.csv`, `drafts/`, `logs/`, `last_run.json`, `history.json`) are gitignored. Never commit them or paste
   their contents anywhere outside this computer.
 - **Tests:** `venv/bin/pip install pytest` (once), then `venv/bin/python -m pytest -q`. If you change filter rules,
   add a test in `tests/test_sources.py`. App and settings tests are in

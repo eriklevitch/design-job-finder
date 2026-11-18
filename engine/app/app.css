@@ -84,6 +84,8 @@ a:hover { color: var(--ink-soft); }
 .top { display: flex; align-items: center; justify-content: space-between; min-height: 4.5rem; margin-bottom: 40px; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 1.02rem; letter-spacing: -0.01em; }
 .brand img { border-radius: 8px; }
+.top-actions { display: flex; align-items: center; gap: 20px; }
+.icon { flex: none; }
 
 /* Type */
 h1 {
@@ -117,7 +119,12 @@ button:disabled { cursor: default; opacity: .6; }
   transition: background var(--base) var(--ease);
 }
 .primary:hover:not(:disabled) { background: var(--ink-soft); }
-.primary.big { display: block; width: 100%; padding: 20px; font-size: 1.15rem; letter-spacing: -0.005em; }
+.primary.big { display: block; width: 100%; padding: 20px; font-size: 1.15rem; letter-spacing: -0.005em; margin: 0 0 24px; }
+.primary.compact {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px;
+  font: 500 0.82rem/1.55 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;
+}
 .secondary, .link {
   font: 500 0.82rem/1.55 var(--font-mono);
   letter-spacing: 0.08em;
@@ -132,7 +139,7 @@ button:disabled { cursor: default; opacity: .6; }
   transition: background var(--base) var(--ease), color var(--base) var(--ease);
 }
 .secondary:hover:not(:disabled), .secondary:focus-visible { background: var(--ink-soft); color: var(--surface); }
-.link { padding: 6px 2px; transition: color var(--base) var(--ease); }
+.link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 2px; transition: color var(--base) var(--ease); }
 .link:hover { color: var(--ink); }
 .link.center { display: block; margin: 16px auto 0; }
 
@@ -201,8 +208,8 @@ input::placeholder, textarea::placeholder { color: var(--ink-faint); opacity: .8
   font-size: 0.95rem;
 }
 .chips li.missing, .chips li.error { border-style: dashed; color: var(--ink-soft); }
-.chips .note { font: 400 0.6875rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
-.chips button { color: var(--ink-faint); width: 24px; height: 24px; border-radius: 50%; line-height: 1; font-size: 16px; transition: background var(--fast) var(--ease); }
+.chips .note { display: inline-flex; align-items: center; gap: 4px; font: 400 0.6875rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+.chips button { display: grid; place-items: center; color: var(--ink-faint); width: 24px; height: 24px; border-radius: 50%; transition: background var(--fast) var(--ease); }
 .chips button:hover { background: var(--neutral-fill); color: var(--ink); }
 .chip-help { color: var(--ink-soft); font-size: 0.95rem; margin: 12px 0 0; }
 
@@ -211,22 +218,26 @@ input::placeholder, textarea::placeholder { color: var(--ink-faint); opacity: .8
 .notion-steps { margin: 0 0 20px; padding-left: 20px; color: var(--ink-soft); }
 .notion-steps li { margin-bottom: 8px; }
 .notion-steps b { color: var(--ink); font-weight: 500; }
-.n-msg { margin: 14px 0 0; }
+.n-msg { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; }
 .n-msg.bad { color: var(--warn); }
 
-/* Home */
-.last-run { color: var(--ink-soft); text-align: center; margin: 0 0 20px; }
-.tip { text-align: center; color: var(--ink-faint); font-size: 0.9rem; margin: 12px 0 0; }
-.run { margin-top: 40px; padding-top: 32px; border-top: 1px dotted var(--rule); }
-.progress { display: flex; align-items: center; justify-content: center; gap: 12px; color: var(--ink-soft); padding: 8px 0 18px; }
+/* Home: this week's jobs lead the page. */
+#view-home h1 { margin-bottom: 14px; }
+#view-home .hint { margin: 0 0 28px; }
+.problem { display: flex; align-items: flex-start; gap: 10px; color: var(--warn); margin: -12px 0 24px; }
+.problem .icon { margin-top: 4px; }
+.notes:empty { display: none; }
+.note { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--ink-soft); font-size: 0.95rem; margin: -12px 0 24px; }
+.note + .note { margin-top: -16px; }
+.note .link { padding: 0 2px; }
+.progress { display: flex; align-items: center; gap: 12px; color: var(--ink-soft); margin: -12px 0 24px; }
 .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--rule); border-top-color: var(--ink); animation: spin .8s linear infinite; flex: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
-.result { font-size: 1.6rem; line-height: 1.22; letter-spacing: -0.012em; text-align: center; margin: 0 0 24px; text-wrap: balance; }
-.result.bad { color: var(--warn); font-size: 1.15rem; }
 .suggest { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-md); padding: 18px 20px; margin-bottom: 24px; }
 .suggest p { margin: 0 0 14px; color: var(--ink-soft); }
-.jobs { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+
+.jobs { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
 .jobs li {
   background: var(--surface);
   border: 1px solid var(--rule);
@@ -234,13 +245,31 @@ input::placeholder, textarea::placeholder { color: var(--ink-faint); opacity: .8
   transition: border-color .35s var(--ease);
 }
 .jobs li:hover { border-color: var(--ink-faint); }
-.jobs a { display: block; padding: 16px 18px; text-decoration: none; color: inherit; border-radius: var(--radius-md); }
+.jobs a { display: flex; flex-direction: column; gap: 4px; padding: 18px 20px 14px; text-decoration: none; color: inherit; border-radius: var(--radius-md); }
 .jobs a:hover { color: inherit; }
-.jobs .company { display: block; margin-bottom: 2px; font-size: 0.9rem; color: var(--ink-faint); }
-.jobs .title { display: block; font-weight: 500; color: var(--ink); }
-.jobs .title::after { content: " ↗"; color: var(--ink-faint); font-weight: 400; transition: color var(--base) var(--ease); }
-.jobs a:hover .title::after { color: var(--ink); }
-.jobs .meta { display: block; font-size: 0.92rem; color: var(--ink-soft); margin-top: 4px; }
+.jobs .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.jobs .company { font-size: 0.9rem; color: var(--ink-faint); }
+.jobs .age { font: 400 0.75rem/1.55 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
+.jobs .age.old { color: var(--ink-faint); }
+.jobs .title { font-weight: 500; font-size: 1.06rem; color: var(--ink); }
+.jobs .title .icon { color: var(--ink-faint); vertical-align: -2px; transition: color var(--base) var(--ease); }
+.jobs a:hover .title .icon { color: var(--ink); }
+.jobs .meta { display: flex; align-items: center; flex-wrap: wrap; gap: 0 6px; font-size: 0.92rem; color: var(--ink-soft); }
+.jobs .why {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 0 20px; padding: 12px 0 14px; border-top: 1px dotted var(--rule);
+  font-size: 0.85rem; color: var(--ink-soft);
+}
+.jobs .why .key { font: 500 0.6875rem/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-right: 8px; }
+.tag {
+  display: inline-flex; align-items: center; gap: 6px; flex: none;
+  font: 500 0.6875rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink); background: var(--neutral-fill); border-radius: var(--radius-pill); padding: 6px 10px;
+}
+.tag.warn { color: var(--warn); background: none; border: 1px dashed var(--warn); padding: 5px 9px; }
+
+.tracker { text-align: center; margin-top: 28px; }
+.tip { color: var(--ink-faint); font-size: 0.9rem; margin: 10px 0 0; }
 .schedule { margin-top: 48px; }
 .schedule b { display: block; font-weight: 500; }
 
@@ -252,9 +281,8 @@ legend {
   padding: 0 0 10px; margin-bottom: 22px;
   border-bottom: 1px dotted var(--rule);
 }
-legend::before { content: "●"; font-size: 0.6rem; }
 .optional { color: var(--ink-faint); text-transform: none; letter-spacing: 0; margin-left: 2px; }
-.status { font: 500 0.6875rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin-left: 8px; }
+.status { display: inline-flex; align-items: center; gap: 4px; font: 500 0.6875rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin-left: 8px; }
 #view-settings > .nav { margin: -16px 0 56px; }
 
 .banner {

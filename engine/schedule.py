@@ -9,12 +9,23 @@ import os
 import plistlib
 import subprocess
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from settings import ROOT
 
 LABEL = "com.productdesignjobfinder.weekly"
 WEEKDAY, HOUR, MINUTE = 1, 9, 0  # Monday, 9:00
+
+
+def next_run(now: datetime) -> datetime:
+    """When the Monday search runs next. launchd counts Sunday as 0 and
+    Monday as 1; Python counts Monday as 0."""
+    target = now.replace(hour=HOUR, minute=MINUTE, second=0, microsecond=0)
+    target += timedelta(days=(WEEKDAY - 1 - now.weekday()) % 7)
+    if target <= now:
+        target += timedelta(days=7)
+    return target
 
 
 def plist_path() -> Path:

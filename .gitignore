@@ -6,6 +6,8 @@ applications.csv
 drafts/
 logs/
 last_run.json
+history.json
+history.tmp
 
 # The app's running state
 .app_state.json

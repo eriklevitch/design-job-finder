@@ -22,12 +22,13 @@ try:
 except ImportError:  # Windows: no lock, runs simply aren't guarded
     fcntl = None
 
+import history
+import sources
 from settings import ROOT, load_config, load_env, resolve_path
 from sources import fetch_adzuna, fetch_greenhouse, fetch_lever, fetch_ashby, fetch_jobspy, filter_jobs
 from tracker_csv import CsvTracker
 from draft import drafting_key, load_portfolio_notes, generate_draft
 
-LAST_RUN = ROOT / "last_run.json"
 LOCK_PATH = ROOT / ".run.lock"
 
 DROP_LABELS = [
@@ -59,10 +60,18 @@ class Report:
         self.update(state="done", message=message,
                     finished_at=datetime.now().isoformat(timespec="seconds"), **fields)
 
+    def fail(self, message: str, **fields) -> None:
+        self.update(state="error", message=message,
+                    finished_at=datetime.now().isoformat(timespec="seconds"), **fields)
+
 
 def job_card(job: dict) -> dict:
-    return {k: job.get(k, "") for k in ("company", "title", "location", "salary", "url",
-                                        "match_reason")}
+    """What the app shows for one job."""
+    card = {k: job.get(k, "") for k in ("company", "title", "location", "salary", "url",
+                                        "posted_date", "match_reason")}
+    card["why"] = job.get("why") or []
+    card["draft"] = bool(job.get("has_draft"))
+    return card
 
 
 def get_tracker(config: dict):
@@ -82,14 +91,32 @@ def count_companies(config: dict) -> int:
                ("greenhouse_companies", "lever_companies", "ashby_companies"))
 
 
-def fetch_all(config: dict) -> list[dict]:
+def fetch_all(config: dict) -> tuple[list[dict], list[str], bool]:
+    """Every source's postings, the names of the sites that didn't answer,
+    and whether any site answered at all."""
+    sources.reset_reach()
     jobs = []
     for fetch in (fetch_adzuna, fetch_greenhouse, fetch_lever, fetch_ashby, fetch_jobspy):
+        name = fetch.__name__.removeprefix("fetch_")
         try:
             jobs += fetch(config)
         except Exception as e:  # one broken source never stops the run
-            print(f"  [{fetch.__name__.removeprefix('fetch_')}] error, skipped: {e}")
-    return jobs
+            print(f"  [{name}] error, skipped: {e}")
+            sources.reach["failed"].append("Indeed" if name == "jobspy" else name.title())
+    return jobs, list(sources.reach["failed"]), sources.reach["ok"] > 0
+
+
+def source_problem(failed: list[str]) -> str:
+    """One plain sentence about sites that didn't answer."""
+    if not failed:
+        return ""
+    if len(failed) == 1:
+        who = failed[0]
+    elif len(failed) == 2:
+        who = f"{failed[0]} and {failed[1]}"
+    else:
+        who = f"{failed[0]}, {failed[1]} and {len(failed) - 2} more"
+    return f"{who} didn't respond, so this list may be incomplete."
 
 
 def take_lock():
@@ -124,8 +151,15 @@ def main(argv=None):
     report.update(step=f"Checking Indeed and {n} company career page{'s' if n != 1 else ''}…"
                   if n else "Checking Indeed…")
     print("=== Looking for jobs ===")
-    jobs = fetch_all(config)
+    jobs, failed, reached = fetch_all(config)
     print(f"Postings found: {len(jobs)}")
+    if failed and not reached:
+        print("\nCouldn't reach any job sites. Check your internet connection and try again.")
+        report.fail("Couldn't reach any job sites. Check your internet connection, "
+                    "then try again.", added=[])
+        save_run(report, dry_run)
+        return 1
+    report.update(source_problem=source_problem(failed))
 
     report.update(step=f"Comparing {len(jobs)} jobs with your settings…")
     print("\n=== Checking them against your settings ===")
@@ -143,7 +177,7 @@ def main(argv=None):
         print("\nNo matching jobs this time. If that keeps happening, try a wider")
         print("search: open Job Finder → Settings, or see 'Change your search' in the README.")
         report.finish("No jobs matched your settings this time.", added=[])
-        save_last_run(report, dry_run)
+        save_run(report, dry_run)
         return 0
 
     if dry_run:
@@ -176,7 +210,7 @@ def main(argv=None):
     if not new_matches:
         print("\nNothing new since last time.")
         report.finish("Nothing new since last time.", added=[])
-        save_last_run(report, dry_run)
+        save_run(report, dry_run)
         return 0
 
     drafting = drafting_key(config) is not None
@@ -201,10 +235,12 @@ def main(argv=None):
         except PermissionError:
             print(f"\nCouldn't write to {tracker.describe()}. If it's open in another app,")
             print("close it and run Find Jobs again.")
-            report.update(state="error", added=[job_card(j) for j in added],
-                          message=f"Saved {len(added)} jobs, then couldn't save more. If your "
-                                  "spreadsheet is open in another app, close it and try again.")
+            report.fail(f"Saved {len(added)} jobs, then couldn't save more. If your "
+                        "spreadsheet is open in another app, close it and try again.",
+                        added=[job_card(j) for j in added])
+            save_run(report, dry_run)
             return 1
+        job["has_draft"] = bool(draft_text)
         added.append(job)
         print(f"  + {job['company']}: {job['title']}{note}")
 
@@ -215,7 +251,7 @@ def main(argv=None):
     report.finish(f"Added {len(added)} new job{'s' if len(added) != 1 else ''} to "
                   f"{friendly_name(tracker)}.", added=[job_card(j) for j in added],
                   draft_problem=draft_problem(draft_errors, len(added)))
-    save_last_run(report, dry_run)
+    save_run(report, dry_run)
     return 0
 
 
@@ -235,18 +271,11 @@ def draft_problem(errors: list[str], total: int) -> str:
     return f"{len(errors)} of {total} drafts couldn't be written. The jobs were still added."
 
 
-def save_last_run(report: Report, dry_run: bool) -> None:
-    """Remembers the latest real run for the app's "Last checked" line."""
-    if dry_run:
-        return
-    try:
-        LAST_RUN.write_text(json.dumps({
-            "finished_at": report.data.get("finished_at"),
-            "added": len(report.data.get("added") or []),
-            "message": report.data.get("message", ""),
-        }))
-    except OSError:
-        pass
+def save_run(report: Report, dry_run: bool) -> None:
+    """Remembers a real search (history.json), so the app can show this
+    week's jobs whenever it opens."""
+    if not dry_run:
+        history.add(report.data)
 
 
 if __name__ == "__main__":

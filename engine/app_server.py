@@ -18,11 +18,13 @@ import threading
 import time
 import urllib.request
 import webbrowser
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
 import config_store as store
+import history
 import schedule
 from settings import CONFIG_PATH, ROOT, load_env
 
@@ -31,7 +33,7 @@ STATE_PATH = ROOT / ".app_state.json"
 LOGS = ROOT / "logs"
 RUN_SUMMARY = LOGS / "app_run.json"
 RUN_LOG = LOGS / "app_run.log"
-LAST_RUN = ROOT / "last_run.json"
+LAST_RUN = ROOT / "last_run.json"  # older versions; only read when there's no history yet
 FIRST_PORT = 8765
 IDLE_SECONDS = 15 * 60
 CONTENT_TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
@@ -80,6 +82,19 @@ def settings_from_page(form: dict) -> dict:
         "min_salary": pay,
         "tracker": tracker,
         **lists,
+    }
+
+
+def next_check() -> str | None:
+    return schedule.next_run(datetime.now()).isoformat() if schedule.is_on() else None
+
+
+def home_data() -> dict:
+    """What the home page shows: the latest week's jobs and the latest search."""
+    return {
+        "week": history.latest_week(history.load()),
+        "last_run": read_json(LAST_RUN),
+        "next_check": next_check(),
     }
 
 
@@ -143,7 +158,7 @@ class App:
             "settings": settings_for_page(),
             "levels": [label for label, _ in store.LEVEL_CHOICES],
             "connected": store.connected(),
-            "last_run": read_json(LAST_RUN),
+            **home_data(),
             "schedule_on": schedule.is_on(),
             "can_schedule": sys.platform == "darwin",
             "run": self.runner.status(),
@@ -177,7 +192,7 @@ class App:
                 return 400, {"error": "Answer the setup questions first."}
             return 200, self.runner.start()
         if path == "/api/run/status":
-            return 200, {"run": self.runner.status(), "last_run": read_json(LAST_RUN)}
+            return 200, {"run": self.runner.status(), **home_data()}
         if path == "/api/open-tracker":
             from open_tracker import open_tracker
             opened, message = open_tracker()
@@ -186,7 +201,7 @@ class App:
             if sys.platform != "darwin":
                 return 400, {"error": "The Monday search only works on a Mac."}
             schedule.turn_on() if body.get("on") else schedule.turn_off()
-            return 200, {"schedule_on": schedule.is_on()}
+            return 200, {"schedule_on": schedule.is_on(), "next_check": next_check()}
         if path == "/api/ping":
             return 200, {"ok": True}
         return 404, {"error": "Not found"}

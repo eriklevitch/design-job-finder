@@ -52,7 +52,7 @@ mkdir -p "$DEST"
 ( cd "$SRC" && tar --exclude='./venv' --exclude='./.git' --exclude='./config.yaml' \
     --exclude='./portfolio_notes.md' --exclude='./.env' --exclude='./applications.csv' \
     --exclude='./drafts' --exclude='./logs' --exclude='./.app_state.json' \
-    --exclude='./last_run.json' --exclude='./.run.lock' --exclude='./.claude' \
+    --exclude='./last_run.json' --exclude='./history.json' --exclude='./.run.lock' --exclude='./.claude' \
     --exclude='__pycache__' --exclude='.pytest_cache' -cf - . ) |
   ( cd "$DEST" && tar -xf - )
 # Older versions used double-click .command files; the app replaces them.

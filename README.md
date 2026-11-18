@@ -61,7 +61,7 @@ Job Finder is now in your Dock. To find it later, you can also press **⌘ Comma
 
 ## Run every week (or as often as you'd like)
 
-Click **Job Finder** in your Dock, then click **Find new jobs**. It takes 1–3 minutes and shows what it added. **Open my spreadsheet** (or **Open Notion**) opens your tracker.
+Click **Job Finder** in your Dock. It opens on this week's new jobs, each with how old the posting is and why it matched. To look again now, click **Find new jobs** (top right). It takes 1–3 minutes. **Open my spreadsheet** (or **Open Notion**) opens your tracker.
 
 **Let it run on its own:** tick **Check for me every Monday morning**. Your Mac then searches every Monday at 9am and sends a notification with the number of new jobs. If your Mac is asleep at that time, it searches when it wakes. Untick the box to stop.
 
@@ -225,7 +225,7 @@ Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), an
 | `portfolio_notes.md` | Your experience, used for drafts. |
 | `.env` | Your keys (hidden file). |
 | `applications.csv`, `drafts/` | Your tracker and drafts. |
-| `logs/`, `last_run.json` | What the latest searches did. |
+| `logs/`, `history.json` | What the latest searches did, and the jobs they found (about 8 weeks). |
 | `engine/` | The code. `app_server.py` and `app/` are the Job Finder page, `mac_app.py` makes the Dock app, `schedule.py` and `scheduled_run.py` run the Monday search, `config_store.py` saves settings, `main.py` runs the search, `sources.py` fetches and filters jobs, `draft.py` writes drafts, `tracker_csv.py` and `notion_client.py` save jobs, `check_boards.py` checks company names. |
 | `tests/` | Automated checks for the filtering rules and the app. |
 

@@ -43,8 +43,32 @@ function banner(text) {
 function show(view) {
   for (const v of ["setup", "home", "settings"]) $("view-" + v).hidden = v !== view;
   $("to-settings").hidden = view !== "home";
+  $("find").hidden = view !== "home" || !$("find-big").hidden;
   $("to-home").hidden = view !== "settings";
   window.scrollTo(0, 0);
+}
+
+// Icons are Lucide (lucide.dev), drawn inline so the app works offline.
+const ICONS = {
+  arrowUpRight: '<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  circleAlert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+  fileText: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+};
+function icon(name, size = 14) {
+  const t = document.createElement("template");
+  t.innerHTML = `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
+  return t.content.firstChild;
+}
+function el(tag, className, ...children) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  node.append(...children.filter((c) => c != null && c !== false && c !== ""));
+  return node;
+}
+function setConnected(node, on) {
+  node.replaceChildren(...(on ? [icon("check", 12), "Connected"] : []));
 }
 
 // ── Small builders ─────────────────────────────────────────────────
@@ -98,16 +122,11 @@ function renderCompanies(where) {
     const name = document.createElement("span");
     name.textContent = c.name || c.slug;
     li.append(name);
-    const note = { checking: "checking…", missing: "not found", error: "couldn’t check" }[c.status]
-      || (c.jobs != null ? `✓ ${c.jobs} open job${c.jobs === 1 ? "" : "s"}` : "");
-    if (note) {
-      const n = document.createElement("span");
-      n.className = "note";
-      n.textContent = note;
-      li.append(n);
-    }
+    const note = { checking: "checking…", missing: "not found", error: "couldn’t check" }[c.status];
+    if (note) li.append(el("span", "note", note));
+    else if (c.jobs != null) li.append(el("span", "note", icon("check", 11), `${c.jobs} open job${c.jobs === 1 ? "" : "s"}`));
     const x = document.createElement("button");
-    x.textContent = "×";
+    x.append(icon("x", 14));
     x.setAttribute("aria-label", `Remove ${c.name || c.slug}`);
     x.onclick = () => { companies[where].splice(i, 1); renderCompanies(where); };
     li.append(x);
@@ -173,7 +192,8 @@ document.querySelectorAll(".notion-connect").forEach((box) => {
         link: box.querySelector(".n-link").value,
       });
       msg.className = "n-msg " + (r.ok ? "ok" : "bad");
-      msg.textContent = r.ok ? "✓ Connected. A “Job applications” database was added to that page." : r.message;
+      if (r.ok) msg.replaceChildren(icon("check", 14), "Connected. A “Job applications” database was added to that page.");
+      else msg.textContent = r.message;
       if (r.ok) state.connected = r.connected;
     } catch (err) {
       msg.className = "n-msg bad";
@@ -278,17 +298,49 @@ function whenText(iso) {
   return d.toLocaleDateString(undefined, { month: "long", day: "numeric" });
 }
 
-function renderHome() {
-  const notion = state.settings.tracker === "notion" && state.connected.notion;
-  $("open-tracker").textContent = notion ? "Open Notion" : "Open my spreadsheet";
-  $("close-sheet").hidden = notion;
-  const last = state.last_run;
-  $("last-run").textContent = last && last.finished_at
-    ? `Last checked ${whenText(last.finished_at)} · ${last.added} new job${last.added === 1 ? "" : "s"}`
-    : `Find matching jobs and add them to ${notion ? "Notion" : "your spreadsheet"}.`;
-  $("schedule").checked = state.schedule_on;
-  $("schedule").closest("label").hidden = !state.can_schedule;
-  if (state.run) renderRun(state.run);
+const localDate = (ymd) => {
+  const [y, m, d] = String(ymd).split("-").map(Number);
+  return y && m && d ? new Date(y, m - 1, d) : null;
+};
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+// "Posted 3 days ago"; old means past two weeks, shown fainter.
+function postedAgo(ymd) {
+  const d = localDate(ymd);
+  if (!d) return null;
+  const days = Math.max(0, Math.round((new Date().setHours(0, 0, 0, 0) - d) / 864e5));
+  const text = days === 0 ? "Posted today" : days === 1 ? "Posted yesterday"
+    : days < 14 ? `Posted ${days} days ago` : `Posted ${Math.floor(days / 7)} weeks ago`;
+  return { text, old: days > 14 };
+}
+
+function nextCheckText(iso) {
+  const d = new Date(iso);
+  const day = d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return `Next check: ${day} at ${time}. If your Mac is asleep then, it checks when it wakes.`;
+}
+
+function jobCard(job) {
+  const unlisted = !job.salary || job.salary.startsWith("unlisted");
+  const age = postedAgo(job.posted_date);
+  const a = el("a", "",
+    el("span", "head", el("span", "company", job.company),
+      age && el("span", "age" + (age.old ? " old" : ""), age.text)),
+    el("span", "title", job.title, " ", icon("arrowUpRight", 16)),
+    el("span", "meta", job.location, job.location ? " · " : "",
+      unlisted ? el("span", "tag warn", icon("circleAlert", 12), "Pay not listed") : job.salary));
+  a.href = /^https?:/.test(job.url) ? job.url : "#";
+  a.target = "_blank";
+  a.rel = "noopener";
+  const li = el("li", "", a);
+  const why = job.why || [];
+  if (why.length || job.draft) {
+    li.append(el("div", "why",
+      why.length ? el("span", "", el("span", "key", "Matched"), why.join(" · ")) : el("span"),
+      job.draft && el("span", "tag", icon("fileText", 12), "Draft ready")));
+  }
+  return li;
 }
 
 const SUGGEST = {
@@ -297,65 +349,99 @@ const SUGGEST = {
   salary_too_low: ["Most jobs were skipped because their pay is below your minimum.", "Change the minimum pay", "sec-pay"],
 };
 
-function renderRun(run) {
-  $("run").hidden = false;
-  const running = run.state === "running";
+// When nothing matched, point at the setting that skipped the most jobs.
+function suggestion(last) {
+  if (!last || last.state !== "done" || last.matches) return null;
+  const top = Object.entries(last.skipped || {}).filter(([k]) => SUGGEST[k]).sort((a, b) => b[1] - a[1])[0];
+  if (!top) return null;
+  const [text, button, section] = SUGGEST[top[0]];
+  return [`${text} (${top[1]} of ${last.scanned})`, button, section];
+}
+
+function renderHome() {
+  const notion = state.settings.tracker === "notion" && state.connected.notion;
+  const where = notion ? "Notion" : "your spreadsheet";
+  const week = state.week;
+  const last = week ? week.last : null;
+  const run = state.run;
+  const running = !!run && run.state === "running";
+  // A search that stopped (this one, or the last one saved) leads the page.
+  const problem = run && run.state === "error" ? run : last && last.state === "error" ? last : null;
+
+  $("open-tracker").textContent = notion ? "Open Notion" : "Open my spreadsheet";
+  $("close-sheet").hidden = notion;
+  const title = $("home-title"), sub = $("home-sub");
+  $("home-problem").hidden = !problem;
+  $("find-big").hidden = true;
+
+  if (problem && !running) {
+    title.textContent = "The last check didn’t finish";
+    sub.textContent = week && week.jobs.length
+      ? `Jobs it found before that are below. Last checked ${whenText(last.finished_at)}.` : "";
+    $("home-problem").replaceChildren(icon("circleAlert", 16), problem.message || "Something went wrong.");
+    $("find-big").textContent = "Try again";
+    $("find-big").hidden = false;
+  } else if (!week) {
+    title.textContent = "Let’s find your first jobs";
+    sub.textContent = state.last_run && state.last_run.finished_at
+      ? `Job Finder now keeps each week’s jobs on this page. Your earlier ones are in ${where}.`
+      : `Job Finder checks Indeed and the careers pages of your companies, then adds the jobs that match to ${where}.`;
+    $("find-big").textContent = "Find my first jobs";
+    $("find-big").hidden = running;
+  } else {
+    const n = week.jobs.length;
+    const start = localDate(week.start).toLocaleDateString(undefined, { month: "long", day: "numeric" });
+    const when = `Last checked ${whenText(last.finished_at)}.`;
+    if (n) {
+      title.textContent = `${plural(n, "new job")} ${week.this_week ? "this week" : `from the week of ${start}`}`;
+      sub.textContent = `${when} ${n === 1 ? "It matches" : "Each one matches"} your level, location and pay. Open the ones that look good, then mark what you decide in ${where}.`;
+    } else {
+      title.textContent = week.this_week ? "Nothing new this week" : `Nothing new the week of ${start}`;
+      sub.textContent = last.matches && last.already >= last.matches
+        ? `${when} You’re up to date: the ${plural(last.matches, "job")} that matched ${last.matches === 1 ? "is" : "are"} already in ${where}.`
+        : `${when} Job Finder looked at ${plural(last.scanned || 0, "listing")} and none matched your settings.`;
+    }
+  }
+
+  // Problems that didn't stop the search: one quiet line each.
+  const notes = [];
+  if (last && last.source_problem) notes.push(el("p", "note", icon("circleAlert", 14), last.source_problem));
+  if (last && last.draft_problem) {
+    const go = el("button", "link", "Open drafts settings");
+    go.onclick = () => openSettings("sec-drafts");
+    notes.push(el("p", "note", icon("circleAlert", 14), last.draft_problem, " ", go));
+  }
+  $("home-notes").replaceChildren(...notes);
+
+  const tip = problem ? null : suggestion(last);
+  $("run-suggest").hidden = !tip;
+  if (tip) {
+    $("suggest-text").textContent = tip[0];
+    $("suggest-go").textContent = tip[1];
+    $("suggest-go").onclick = () => openSettings(tip[2]);
+  }
+
+  $("jobs").replaceChildren(...(week ? week.jobs.map(jobCard) : []));
+
   $("run-progress").hidden = !running;
-  $("run-result").hidden = running;
-  $("find").disabled = running;
-  $("find").textContent = running ? "Looking for jobs…" : "Find new jobs";
-  if (running) { $("run-step").textContent = run.step || "Starting…"; return; }
+  if (running) $("run-step").textContent = run.step || "Starting…";
+  $("find").disabled = $("find-big").disabled = running;
+  // The big button, when it shows, is the one way to search: no twin in the top bar.
+  if (!$("view-home").hidden) $("find").hidden = !$("find-big").hidden;
+  $("find-label").textContent = running ? "Looking…" : "Find new jobs";
 
-  $("run-message").textContent = run.message || "";
-  $("run-message").className = "result" + (run.state === "error" ? " bad" : "");
-
-  // When little matched, point at the setting that skipped the most jobs.
-  const skipped = Object.entries(run.skipped || {}).filter(([k]) => SUGGEST[k]);
-  skipped.sort((a, b) => b[1] - a[1]);
-  const top = run.state === "done" && !run.matches && skipped[0];
-  let suggestion = null;
-  if (top) {
-    const [text, button, section] = SUGGEST[top[0]];
-    suggestion = [`${text} (${top[1]} of ${run.scanned})`, button, section];
-  } else if (run.draft_problem) {
-    suggestion = [run.draft_problem, "Open drafts settings", "sec-drafts"];
-  }
-  $("run-suggest").hidden = !suggestion;
-  if (suggestion) {
-    $("suggest-text").textContent = suggestion[0];
-    $("suggest-go").textContent = suggestion[1];
-    $("suggest-go").onclick = () => openSettings(suggestion[2]);
-  }
-
-  const ul = $("run-jobs");
-  ul.innerHTML = "";
-  (run.added || []).forEach((job) => {
-    const li = document.createElement("li");
-    const a = document.createElement("a");
-    a.href = /^https?:/.test(job.url) ? job.url : "#";
-    a.target = "_blank";
-    a.rel = "noopener";
-    const part = (cls, text) => {
-      const el = document.createElement("span");
-      el.className = cls;
-      el.textContent = text;
-      return el;
-    };
-    a.append(
-      part("company", job.company),
-      part("title", job.title),
-      part("meta", [job.location, job.salary && !job.salary.startsWith("unlisted") ? job.salary : ""]
-        .filter(Boolean).join(" · ")),
-    );
-    li.append(a);
-    ul.append(li);
-  });
+  $("schedule").checked = state.schedule_on;
+  $("schedule").closest("label").hidden = !state.can_schedule;
+  $("schedule-note").textContent = state.schedule_on && state.next_check
+    ? nextCheckText(state.next_check)
+    : "Your Mac looks for new jobs on its own and lets you know what it found. If it’s asleep then, it checks when it wakes.";
 }
 
 async function findJobs() {
   banner("");
   try {
-    renderRun(await api("/api/run"));
+    state.run = await api("/api/run");
+    renderHome();
     poll();
   } catch (e) {
     banner(e.message);
@@ -367,10 +453,9 @@ function poll() {
   polling = setTimeout(async () => {
     try {
       const r = await api("/api/run/status");
-      if (r.run) renderRun(r.run);
-      if (r.run && r.run.state === "running") return poll();
-      state.last_run = r.last_run;
+      Object.assign(state, r);
       renderHome();
+      if (r.run && r.run.state === "running") poll();
     } catch (e) {
       banner(e.message);
     }
@@ -378,6 +463,7 @@ function poll() {
 }
 
 $("find").onclick = findJobs;
+$("find-big").onclick = findJobs;
 $("open-tracker").onclick = async () => {
   try {
     const r = await api("/api/open-tracker");
@@ -386,9 +472,9 @@ $("open-tracker").onclick = async () => {
 };
 $("schedule").onchange = async (e) => {
   try {
-    state.schedule_on = (await api("/api/schedule", { on: e.target.checked })).schedule_on;
+    Object.assign(state, await api("/api/schedule", { on: e.target.checked }));
   } catch (err) { banner(err.message); }
-  e.target.checked = state.schedule_on;
+  renderHome();
 };
 
 // ── Settings ───────────────────────────────────────────────────────
@@ -405,8 +491,8 @@ function openSettings(section) {
   choiceList($("set-tracker"), "set-tracker", TRACKERS, s.tracker);
   wireTrackerChoice($("set-tracker"), document.querySelector('.notion-connect[data-for="settings"]'));
   $("notes").value = state.notes;
-  $("anthropic-status").textContent = state.connected.anthropic ? "✓ Connected" : "";
-  $("adzuna-status").textContent = state.connected.adzuna ? "✓ Connected" : "";
+  setConnected($("anthropic-status"), state.connected.anthropic);
+  setConnected($("adzuna-status"), state.connected.adzuna);
   for (const id of ["settings-saved", "settings-error", "drafts-saved", "adzuna-saved"]) $(id).hidden = true;
   show("settings");
   if (section) $(section).scrollIntoView({ behavior: "smooth" });
@@ -456,7 +542,7 @@ $("drafts-save").onclick = async () => {
       if (r.problems.length) return banner(r.problems[0]);
       state.connected = r.connected;
       $("anthropic-key").value = "";
-      $("anthropic-status").textContent = "✓ Connected";
+      setConnected($("anthropic-status"), true);
     }
     banner("");
     flash("drafts-saved");
@@ -469,7 +555,7 @@ $("adzuna-save").onclick = async () => {
     if (r.problems.length) return banner(r.problems[0]);
     state.connected = r.connected;
     $("adzuna-id").value = $("adzuna-key").value = "";
-    $("adzuna-status").textContent = state.connected.adzuna ? "✓ Connected" : "";
+    setConnected($("adzuna-status"), state.connected.adzuna);
     banner("");
     flash("adzuna-saved");
   } catch (e) { banner(e.message); }

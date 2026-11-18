@@ -11,8 +11,11 @@
 <main class="shell">
   <header class="top">
     <span class="brand"><img src="/static/icon.svg" alt="" width="30" height="30"> Job Finder</span>
-    <button class="link" id="to-settings" hidden>Settings</button>
-    <button class="link" id="to-home" hidden>← Back</button>
+    <div class="top-actions">
+      <button class="link" id="to-home" hidden><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Back</button>
+      <button class="link" id="to-settings" hidden>Settings</button>
+      <button class="primary compact" id="find" hidden><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg><span id="find-label">Find new jobs</span></button>
+    </div>
   </header>
 
   <p id="banner" class="banner" hidden></p>
@@ -63,26 +66,26 @@
 
   <!-- ── Home ────────────────────────────────────────────── -->
   <section id="view-home" hidden>
-    <p class="last-run" id="last-run"></p>
-    <button class="primary big" id="find">Find new jobs</button>
-    <p class="tip" id="close-sheet" hidden>Close your spreadsheet first, so your edits aren’t overwritten.</p>
-    <button class="link center" id="open-tracker">Open my spreadsheet</button>
+    <h1 id="home-title"></h1>
+    <p class="hint" id="home-sub"></p>
+    <p class="problem" id="home-problem" hidden></p>
+    <button class="primary big" id="find-big" hidden></button>
+    <div class="progress" id="run-progress" hidden><span class="spinner"></span><span id="run-step"></span></div>
+    <div class="notes" id="home-notes"></div>
+    <div class="suggest" id="run-suggest" hidden>
+      <p id="suggest-text"></p>
+      <button class="secondary" id="suggest-go"></button>
+    </div>
+    <ul class="jobs" id="jobs"></ul>
 
-    <div class="run" id="run" hidden>
-      <div class="progress" id="run-progress"><span class="spinner"></span><span id="run-step"></span></div>
-      <div id="run-result" hidden>
-        <p class="result" id="run-message"></p>
-        <div class="suggest" id="run-suggest" hidden>
-          <p id="suggest-text"></p>
-          <button class="secondary" id="suggest-go"></button>
-        </div>
-        <ul class="jobs" id="run-jobs"></ul>
-      </div>
+    <div class="tracker">
+      <button class="secondary" id="open-tracker">Open my spreadsheet</button>
+      <p class="tip" id="close-sheet" hidden>Close it again before the next check, so your edits aren’t overwritten.</p>
     </div>
 
     <label class="check schedule"><input type="checkbox" id="schedule">
       <span><b>Check for me every Monday morning</b>
-      <small>Your Mac looks for new jobs on its own and lets you know what it found. If it’s asleep then, it checks when it wakes.</small></span>
+      <small id="schedule-note"></small></span>
     </label>
   </section>
 

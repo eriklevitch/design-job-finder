@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "engine"))
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, MagicMock
 
+import sources
 from sources import (filter_jobs, _parse_salary_floor, _parse_salary_ceiling, fetch_adzuna, fetch_greenhouse,
                      fetch_ashby, extract_salary, _html_to_text, _lever_salary,
                      _jobspy_salary, _safe_salary)
@@ -477,3 +478,44 @@ if __name__ == "__main__":
             traceback.print_exc()
     print(f"\n{passed} passed, {failed} failed")
     sys.exit(1 if failed else 0)
+
+
+# ── Plain reasons on the app's job cards ────────────────────────────
+
+def test_why_explains_the_match_in_plain_words():
+    matches, _ = filter_jobs([_job()], CONFIG)
+    assert matches[0]["why"] == ["Senior", "Chicago is on your list", "Pay reaches your $190k"]
+
+
+def test_why_for_remote_and_unlisted_pay():
+    matches, _ = filter_jobs([_job(location="Remote - US", salary="")], CONFIG)
+    assert matches[0]["why"] == ["Senior", "Remote counts", "Check pay before applying"]
+
+
+def test_why_for_contract_roles():
+    matches, _ = filter_jobs([_job(title="Fractional Senior Product Designer", salary="")], CONFIG)
+    assert matches[0]["why"][-1] == "Contract, so your pay minimum doesn't apply"
+
+
+# ── Which sites answered ────────────────────────────────────────────
+
+def test_unreachable_company_page_is_recorded():
+    import requests
+    sources.reset_reach()
+    with patch("sources.requests.get", side_effect=requests.ConnectionError("offline")):
+        assert fetch_greenhouse({"greenhouse_companies": ["acme-labs"]}) == []
+    assert sources.reach == {"ok": 0, "failed": ["Acme Labs"]}
+
+
+def test_answering_company_page_counts_as_reached():
+    sources.reset_reach()
+    with patch("sources.requests.get", return_value=_fake_get({"jobs": []})):
+        fetch_greenhouse({"greenhouse_companies": ["testco"]})
+    assert sources.reach == {"ok": 1, "failed": []}
+
+
+def test_why_spells_out_level_abbreviations():
+    config = {**CONFIG, "seniority_keywords": ["sr.", "head of design"]}
+    matches, _ = filter_jobs([_job(title="Sr. Product Designer"),
+                              _job(title="Head of Design, Product Design")], config)
+    assert [m["why"][0] for m in matches] == ["Senior", "Head of design"]

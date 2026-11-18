@@ -24,6 +24,20 @@ UA = {"User-Agent": "job-search-script/1.0"}
 
 DESCRIPTION_MAX_CHARS = 1200  # keeps the draft prompt a reasonable size
 
+# Which job sites answered during this search, so the app can tell "no
+# internet" apart from "nothing matched". main.fetch_all resets it.
+reach = {"ok": 0, "failed": []}
+
+
+def reset_reach() -> None:
+    reach["ok"] = 0
+    reach["failed"] = []
+
+
+def _display_name(slug: str) -> str:
+    """"acme-labs" -> "Acme Labs", for messages about a company's page."""
+    return re.sub(r"[-_]+", " ", slug).strip().title() or slug
+
 
 def _html_to_text(raw: str) -> str:
     """Full-length plain text from HTML. Unescapes first because
@@ -129,6 +143,7 @@ def fetch_adzuna(config) -> list[dict]:
     }
     resp = requests.get(url, params=params, headers=UA, timeout=30)
     resp.raise_for_status()
+    reach["ok"] += 1
     raw = resp.json().get("results", [])
 
     jobs = []
@@ -168,6 +183,7 @@ def fetch_greenhouse(config) -> list[dict]:
             url = f"https://boards-api.greenhouse.io/v1/boards/{company}/jobs?content=true"
             resp = requests.get(url, headers=UA, timeout=20)
             resp.raise_for_status()
+            reach["ok"] += 1
             for r in resp.json().get("jobs", []):
                 full_text = _html_to_text(r.get("content", ""))
                 jobs.append({
@@ -183,6 +199,7 @@ def fetch_greenhouse(config) -> list[dict]:
                 })
         except requests.RequestException as e:
             print(f"  [greenhouse:{company}] error — {e}")
+            reach["failed"].append(_display_name(company))
     print(f"  [greenhouse] fetched {len(jobs)}")
     return jobs
 
@@ -194,6 +211,7 @@ def fetch_lever(config) -> list[dict]:
             url = f"https://api.lever.co/v0/postings/{company}?mode=json"
             resp = requests.get(url, headers=UA, timeout=20)
             resp.raise_for_status()
+            reach["ok"] += 1
             for r in resp.json():
                 jobs.append({
                     "title": r.get("text", ""),
@@ -208,6 +226,7 @@ def fetch_lever(config) -> list[dict]:
                 })
         except requests.RequestException as e:
             print(f"  [lever:{company}] error — {e}")
+            reach["failed"].append(_display_name(company))
     print(f"  [lever] fetched {len(jobs)}")
     return jobs
 
@@ -256,6 +275,7 @@ def fetch_ashby(config) -> list[dict]:
             url = f"https://api.ashbyhq.com/posting-api/job-board/{company}?includeCompensation=true"
             resp = requests.get(url, headers=UA, timeout=20)
             resp.raise_for_status()
+            reach["ok"] += 1
             for r in resp.json().get("jobs", []):
                 full_text = _html_to_text(r.get("descriptionHtml") or r.get("descriptionPlain", ""))
                 jobs.append({
@@ -271,6 +291,7 @@ def fetch_ashby(config) -> list[dict]:
                 })
         except requests.RequestException as e:
             print(f"  [ashby:{company}] error — {e}")
+            reach["failed"].append(_display_name(company))
     print(f"  [ashby] fetched {len(jobs)}")
     return jobs
 
@@ -310,7 +331,10 @@ def fetch_jobspy(config) -> list[dict]:
         )
     except Exception as e:
         print(f"  [jobspy] error — {e}")
+        reach["failed"].append(" and ".join(
+            str(site).replace("_", " ").title() for site in cfg.get("sites", ["indeed"])))
         return []
+    reach["ok"] += 1
 
     jobs = []
     for _, r in df.iterrows():
@@ -431,6 +455,7 @@ def filter_jobs(jobs: list[dict], config: dict) -> tuple[list[dict], dict]:
             continue
 
         job["match_reason"] = _match_reason(job, config, salary_num, is_contract)
+        job["why"] = _why(job, config, salary_num, is_contract, unleveled_pay is not None)
         if unleveled_pay is not None:
             job["match_reason"] += (
                 f"; no level in title, but pay reaches ${unleveled_min:,}+ "
@@ -489,6 +514,41 @@ def _parse_salary_ceiling(salary_str: str):
     if not nums:
         return None
     return int(nums[-1].replace(",", ""))
+
+
+def _why(job, config, salary_num, is_contract=False, unleveled=False) -> list[str]:
+    """Short, plain reasons for the app's job cards, e.g.
+    ["Senior", "Chicago is on your list", "Pay reaches your $150k"].
+    The longer match_reason still goes in the tracker."""
+    title_l, loc_l = job["title"].lower(), job["location"].lower()
+    why = []
+    level = next((k for k in config.get("seniority_keywords") or [] if _has_any(title_l, [k])), None)
+    if level:
+        why.append(_LEVEL_NAMES.get(level.lower(), level[:1].upper() + level[1:]))
+    elif unleveled:
+        why.append("No level in the title, but the pay suggests one")
+    locations = [l.lower() for l in config.get("locations") or []]
+    place = next((p for p in locations if p != "remote" and _has_any(loc_l, [p])), None)
+    if place:
+        why.append(f"{place.title()} is on your list")
+    elif locations:
+        why.append("Remote counts")
+    minimum = config.get("min_salary") or 0
+    if is_contract:
+        why.append("Contract, so your pay minimum doesn't apply")
+    elif salary_num is None:
+        why.append("Check pay before applying")
+    elif minimum:
+        why.append(f"Pay reaches your {_short_money(minimum)}")
+    return why
+
+
+_LEVEL_NAMES = {"sr": "Senior", "sr.": "Senior", "vp": "VP", "svp": "SVP"}
+
+
+def _short_money(amount: int) -> str:
+    """150000 -> "$150k"."""
+    return f"${amount / 1000:g}k" if amount >= 1000 else f"${amount:,}"
 
 
 def _match_reason(job, config, salary_num, is_contract=False) -> str:
