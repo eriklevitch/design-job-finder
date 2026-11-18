@@ -154,6 +154,17 @@ def take_lock():
     return handle
 
 
+class Finish(Exception):
+    """How a search ended: the message the app shows, whether it went
+    well, and anything else to report (the jobs added, a fix to offer…).
+    A step raises it to stop the search early; search() returns one when
+    it gets to the end."""
+
+    def __init__(self, message: str, ok: bool = True, **fields):
+        super().__init__(message)
+        self.message, self.ok, self.fields = message, ok, fields
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     dry_run = "--dry-run" in argv
@@ -166,13 +177,28 @@ def main(argv=None):
         report.update(state="busy", message="Job Finder is already looking for jobs.")
         return 1
     try:
-        return search(report, dry_run)
+        outcome = search(report, dry_run)
+    except Finish as stopped:
+        outcome = stopped
     except Exception:
         details = scrub(traceback.format_exc())
         print(details)
-        report.fail(CRASH_MESSAGE, details=details[-4000:], added=report.data.get("added") or [])
-        save_run(report, dry_run)
-        return 1
+        outcome = Finish(CRASH_MESSAGE, ok=False, details=details[-4000:],
+                         added=report.data.get("added") or [])
+    return wrap_up(report, outcome, dry_run)
+
+
+def wrap_up(report: Report, outcome: Finish, dry_run: bool) -> int:
+    """The one place every search ends. Tells the app how it went, and
+    remembers real searches (history.json) so the app can show this
+    week's jobs whenever it opens."""
+    if outcome.ok:
+        report.finish(outcome.message, **outcome.fields)
+    else:
+        report.fail(outcome.message, **outcome.fields)
+    if not dry_run:
+        history.add(report.data)
+    return 0 if outcome.ok else 1
 
 
 class TrackerProblem(Exception):
@@ -207,10 +233,22 @@ def tracker_call(tracker, fn, *args):
         raise
 
 
-def search(report: "Report", dry_run: bool) -> int:
+def search(report: Report, dry_run: bool) -> Finish:
+    """Finds jobs and adds the new ones to the tracker. Each step either
+    hands its results to the next or stops the search with a Finish."""
     load_env()
     config = load_config()
+    jobs = find_postings(report, config)
+    matches = keep_matches(report, jobs, config)
+    if dry_run:
+        return preview(matches)
+    tracker = get_tracker(config)
+    new_jobs = skip_tracked(report, tracker, matches)
+    return add_jobs(report, tracker, new_jobs, config)
 
+
+def find_postings(report: Report, config: dict) -> list[dict]:
+    """Step 1: every posting from every site, with live progress for the app."""
     n = count_companies(config)
     report.update(step=f"Checking Indeed and {n} careers page{'s' if n != 1 else ''}…"
                   if n else "Checking Indeed…")
@@ -227,12 +265,14 @@ def search(report: "Report", dry_run: bool) -> int:
     print(f"Postings found: {len(jobs)}")
     if failed and not reached:
         print("\nCouldn't reach any job sites. Check your internet connection and try again.")
-        report.fail("Couldn't reach any job sites. Check your internet connection, "
-                    "then try again.", added=[])
-        save_run(report, dry_run)
-        return 1
+        raise Finish("Couldn't reach any job sites. Check your internet connection, "
+                     "then try again.", ok=False, added=[])
     report.update(source_problem=source_problem(failed))
+    return jobs
 
+
+def keep_matches(report: Report, jobs: list[dict], config: dict) -> list[dict]:
+    """Step 2: only the postings that match your settings."""
     report.update(step=f"Comparing {len(jobs)} listings with your search…")
     print("\n=== Checking them against your settings ===")
     matches, stats = filter_jobs(jobs, config)
@@ -244,61 +284,60 @@ def search(report: "Report", dry_run: bool) -> int:
             print(f"  skipped, {label}: {stats[key]}")
     print(f"Matches:  {len(matches)}")
     report.update(scanned=stats["scanned"], skipped=skipped, matches=len(matches))
-
     if not matches:
         print("\nNo matching jobs this time. If that keeps happening, try a wider")
         print("search: open Job Finder → Settings, or see 'Change your search' in the README.")
-        report.finish("No jobs matched your search this time.", added=[])
-        save_run(report, dry_run)
-        return 0
+        raise Finish("No jobs matched your search this time.", added=[])
+    return matches
 
-    if dry_run:
-        print("\n=== PREVIEW (nothing saved) ===")
-        for job in matches:
-            print(f"\n{job['company']}: {job['title']}")
-            print(f"  {job['url']}")
-            print(f"  why: {job['match_reason']}")
-        print(f"\n{len(matches)} matches. Nothing was saved. Run without --dry-run to save them.")
-        report.finish(f"{len(matches)} jobs match. Nothing was saved.",
-                      added=[job_card(j) for j in matches])
-        return 0
 
-    tracker = get_tracker(config)
+def preview(matches: list[dict]) -> Finish:
+    """With --dry-run: show the matches and save nothing."""
+    print("\n=== PREVIEW (nothing saved) ===")
+    for job in matches:
+        print(f"\n{job['company']}: {job['title']}")
+        print(f"  {job['url']}")
+        print(f"  why: {job['match_reason']}")
+    print(f"\n{len(matches)} matches. Nothing was saved. Run without --dry-run to save them.")
+    return Finish(f"{len(matches)} jobs match. Nothing was saved.",
+                  added=[job_card(j) for j in matches])
+
+
+def skip_tracked(report: Report, tracker, matches: list[dict]) -> list[dict]:
+    """Step 3: drop jobs already in the tracker, and repeats within this
+    search (the same job can appear twice, e.g. on two pages of results)."""
     try:
         existing = tracker_call(tracker, tracker.existing_job_keys)
     except TrackerProblem as p:
         print(f"\n{p.message}")
-        report.fail(p.message, fix=p.fix, details=p.details, added=[])
-        save_run(report, dry_run)
-        return 1
-
-    # Also skip repeats within this run (the same job can appear twice,
-    # e.g. on two pages of results).
+        raise Finish(p.message, ok=False, fix=p.fix, details=p.details, added=[]) from p
     seen = set()
-    new_matches = []
+    new_jobs = []
     for j in matches:
         key = j.get("job_key", "")
         if key in existing or key in seen:
             continue
         seen.add(key)
-        new_matches.append(j)
-
-    print(f"Already in your tracker: {len(matches) - len(new_matches)}  |  New: {len(new_matches)}")
-    report.update(already=len(matches) - len(new_matches))
-    if not new_matches:
+        new_jobs.append(j)
+    print(f"Already in your tracker: {len(matches) - len(new_jobs)}  |  New: {len(new_jobs)}")
+    report.update(already=len(matches) - len(new_jobs))
+    if not new_jobs:
         print("\nNothing new since last time.")
-        report.finish("Nothing new since last time.", added=[])
-        save_run(report, dry_run)
-        return 0
+        raise Finish("Nothing new since last time.", added=[])
+    return new_jobs
 
+
+def add_jobs(report: Report, tracker, new_jobs: list[dict], config: dict) -> Finish:
+    """Step 4: write a draft for each job (if there's an Anthropic key)
+    and add it to the tracker."""
     drafting = drafting_key(config) is not None
     notes = load_portfolio_notes(config) if drafting else ""
     print(f"\n=== Adding to {tracker.describe()} ===")
     added = []
     draft_errors = []
-    for i, job in enumerate(new_matches, 1):
+    for i, job in enumerate(new_jobs, 1):
         report.update(step=f"{'Writing drafts and adding' if drafting else 'Adding'} jobs to "
-                           f"{friendly_name(tracker)} ({i} of {len(new_matches)})…")
+                           f"{friendly_name(tracker)} ({i} of {len(new_jobs)})…")
         draft_text = None
         note = ""
         if drafting:
@@ -312,19 +351,16 @@ def search(report: "Report", dry_run: bool) -> int:
             tracker_call(tracker, tracker.add_job, job, draft_text)
         except TrackerProblem as p:
             print(f"\n{p.message}")
-            message = (f"Saved {len(added)} job{'s' if len(added) != 1 else ''}, then stopped. "
-                       f"{p.message}" if added else p.message)
-            report.fail(message, fix=p.fix, details=p.details, added=[job_card(j) for j in added])
-            save_run(report, dry_run)
-            return 1
-        except PermissionError:
+            message = f"Saved {jobs_text(len(added))}, then stopped. {p.message}" \
+                if added else p.message
+            raise Finish(message, ok=False, fix=p.fix, details=p.details,
+                         added=[job_card(j) for j in added]) from p
+        except PermissionError as e:
             print(f"\nCouldn't write to {tracker.describe()}. If it's open in another app,")
             print("close it and run Find Jobs again.")
-            report.fail(f"Saved {len(added)} job{'s' if len(added) != 1 else ''}, then couldn't save more. If your "
-                        "spreadsheet is open in another app, close it and try again.",
-                        added=[job_card(j) for j in added])
-            save_run(report, dry_run)
-            return 1
+            raise Finish(f"Saved {jobs_text(len(added))}, then couldn't save more. If your "
+                         "spreadsheet is open in another app, close it and try again.",
+                         ok=False, added=[job_card(j) for j in added]) from e
         job["has_draft"] = bool(draft_text)
         added.append(job)
         report.data["added"] = [job_card(j) for j in added]  # kept if something breaks later
@@ -334,11 +370,14 @@ def search(report: "Report", dry_run: bool) -> int:
     if not drafting:
         print("Tip: add an Anthropic key (Job Finder → Settings) to get tailored resume")
         print("bullets and a cover letter opening with every job.")
-    report.finish(f"Added {len(added)} new job{'s' if len(added) != 1 else ''} to "
+    return Finish(f"Added {len(added)} new job{'s' if len(added) != 1 else ''} to "
                   f"{friendly_name(tracker)}.", added=[job_card(j) for j in added],
                   draft_problem=draft_problem(draft_errors, len(added)))
-    save_run(report, dry_run)
-    return 0
+
+
+def jobs_text(n: int) -> str:
+    """Like "1 job" or "3 jobs"."""
+    return f"{n} job{'s' if n != 1 else ''}"
 
 
 def friendly_name(tracker) -> str:
@@ -356,13 +395,6 @@ def draft_problem(errors: list[str], total: int) -> str:
         return ("No drafts were written because your Anthropic account is out of credit. "
                 "Add credit at console.anthropic.com. The jobs were still added.")
     return f"{len(errors)} of {total} drafts couldn't be written. The jobs were still added."
-
-
-def save_run(report: Report, dry_run: bool) -> None:
-    """Remembers a real search (history.json), so the app can show this
-    week's jobs whenever it opens."""
-    if not dry_run:
-        history.add(report.data)
 
 
 if __name__ == "__main__":

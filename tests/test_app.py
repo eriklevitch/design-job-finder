@@ -342,6 +342,121 @@ def test_no_internet_is_not_reported_as_no_matches(tmp_path, monkeypatch):
     assert history.load()[-1]["state"] == "error"
 
 
+# ── Every way a search can end ──────────────────────────────────────
+# Each ending must tell the app what happened and (unless it's a
+# preview) be saved to history, so it shows on the home screen.
+
+def _job(n):
+    return {"company": f"Co{n}", "title": "Product Designer", "url": f"https://x/{n}",
+            "match_reason": "fits", "job_key": f"k{n}"}
+
+
+class FakeTracker:
+    def __init__(self, existing=(), fail_on=None, error=None):
+        self.existing, self.fail_on, self.error = set(existing), fail_on, error
+        self.added = []
+
+    def describe(self):
+        return "the test tracker"
+
+    def existing_job_keys(self):
+        if self.fail_on == "existing":
+            raise self.error
+        return self.existing
+
+    def add_job(self, job, draft):
+        if self.fail_on == len(self.added):
+            raise self.error
+        self.added.append(job)
+
+
+class NotionTracker(FakeTracker):  # named like the real one, so errors read as Notion's
+    pass
+
+
+@pytest.fixture
+def run_search(tmp_path, monkeypatch):
+    """Runs main() with fake sites and tracker; returns (exit code, summary)."""
+    monkeypatch.setattr(history, "PATH", tmp_path / "history.json")
+    monkeypatch.setattr(main_module, "LOCK_PATH", tmp_path / ".run.lock")
+    monkeypatch.setattr(main_module, "load_env", lambda: None)
+    monkeypatch.setattr(main_module, "load_config", lambda: {})
+    monkeypatch.setattr(main_module, "drafting_key", lambda config: None)
+
+    def run(jobs, tracker=None, args=()):
+        found = [jobs]
+        monkeypatch.setattr(main_module, "fetch_adzuna", lambda c: found.pop() if found else [])
+        for name in ("fetch_greenhouse", "fetch_lever", "fetch_ashby", "fetch_jobspy"):
+            monkeypatch.setattr(main_module, name, lambda c: [])
+        monkeypatch.setattr(main_module, "filter_jobs",
+                            lambda js, c: (js, {"scanned": len(js)}))
+        monkeypatch.setattr(main_module, "get_tracker", lambda c: tracker or FakeTracker())
+        summary = tmp_path / "s.json"
+        code = main_module.main(["--summary", str(summary), *args])
+        return code, json.loads(summary.read_text())
+    return run
+
+
+def test_search_with_no_matches(run_search):
+    code, data = run_search([])
+    assert code == 0 and data["state"] == "done"
+    assert data["message"] == "No jobs matched your search this time."
+    assert history.load()[-1]["message"] == data["message"]
+
+
+def test_preview_saves_nothing(run_search):
+    tracker = FakeTracker()
+    code, data = run_search([_job(1), _job(2)], tracker, args=["--dry-run"])
+    assert code == 0 and data["message"] == "2 jobs match. Nothing was saved."
+    assert len(data["added"]) == 2 and tracker.added == []
+    assert history.load() == []
+
+
+def test_search_with_nothing_new(run_search):
+    code, data = run_search([_job(1), _job(1)], FakeTracker(existing={"k1"}))
+    assert code == 0 and data["message"] == "Nothing new since last time."
+    assert data["already"] == 2
+    assert history.load()[-1]["message"] == data["message"]
+
+
+def test_search_adds_new_jobs(run_search):
+    tracker = FakeTracker(existing={"k1"})
+    code, data = run_search([_job(1), _job(2), _job(3), _job(3)], tracker)
+    assert code == 0 and data["state"] == "done"
+    assert data["message"] == "Added 2 new jobs to your spreadsheet."
+    assert [j["job_key"] for j in tracker.added] == ["k2", "k3"]
+    assert len(history.load()[-1]["added"]) == 2
+
+
+def test_notion_lost_before_adding(run_search):
+    tracker = NotionTracker(fail_on="existing", error=_http_error(401))
+    code, data = run_search([_job(1)], tracker)
+    assert code == 1 and data["state"] == "error"
+    assert "Reconnect" in data["message"] and data["fix"]["section"] == "sec-tracker"
+    assert history.load()[-1]["state"] == "error"
+
+
+def test_notion_lost_partway_keeps_what_was_saved(run_search):
+    tracker = NotionTracker(fail_on=1, error=_http_error(401))
+    code, data = run_search([_job(1), _job(2)], tracker)
+    assert code == 1 and data["message"].startswith("Saved 1 job, then stopped. Notion")
+    assert data["fix"] and len(data["added"]) == 1
+    assert len(history.load()[-1]["added"]) == 1
+
+
+def test_spreadsheet_locked(run_search):
+    code, data = run_search([_job(1)], FakeTracker(fail_on=0, error=PermissionError()))
+    assert code == 1 and data["message"].startswith("Saved 0 jobs, then couldn't save more.")
+    assert history.load()[-1]["state"] == "error"
+
+
+def test_crash_partway_keeps_what_was_saved(run_search):
+    code, data = run_search([_job(1), _job(2)], FakeTracker(fail_on=1, error=KeyError("x")))
+    assert code == 1 and data["state"] == "error" and data["details"]
+    assert len(data["added"]) == 1
+    assert len(history.load()[-1]["added"]) == 1
+
+
 # ── Problems explained plainly ──────────────────────────────────────
 
 def test_scrub_hides_keys():
