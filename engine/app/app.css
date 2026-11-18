@@ -357,7 +357,21 @@ tr:hover .role .icon, .role:focus-visible .icon { opacity: 1; }
 td.old { color: var(--text-3); }
 
 /* Empty states: a title, one sentence, then actions. */
-.empty { display: grid; justify-items: center; gap: 6px; padding: var(--space-24) var(--space-6); text-align: center; }
+.empty {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: grid; justify-items: center; align-content: center; gap: 6px;
+  min-height: 100%; padding: var(--space-24) var(--space-6); text-align: center;
+  /* Dots that rise from the bottom and fade out before the text. */
+  --dot: #2a2b31;          /* the dots, kept close to the page color */
+  --dot-gap: 8px;          /* grid spacing */
+}
+.empty::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(circle, var(--dot) 0.85px, transparent 1.15px) center bottom / var(--dot-gap) var(--dot-gap);
+  /* Strongest along the bottom edge, gone by the middle of the area. */
+  -webkit-mask-image: linear-gradient(to top, #000, rgb(0 0 0 / 0.45) 18%, rgb(0 0 0 / 0.12) 34%, transparent 46%);
+          mask-image: linear-gradient(to top, #000, rgb(0 0 0 / 0.45) 18%, rgb(0 0 0 / 0.12) 34%, transparent 46%);
+}
 .empty h2 { margin: 0; font-size: var(--text-lg); font-weight: 600; text-wrap: balance; }
 .empty p { max-width: 48ch; margin: 0; color: var(--text-2); text-wrap: pretty; }
 .empty .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); margin-top: 14px; }
