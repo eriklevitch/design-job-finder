@@ -1,7 +1,7 @@
 """Builds the "Job Finder" Mac app (the installer runs this).
 
-The app is a tiny launcher: clicking it opens the Job Finder page in your
-browser, starting it first if needed. It's built on your own Mac, so
+Clicking it opens Job Finder in its own window, starting it first if
+needed. It's built on your own Mac, so
 macOS doesn't show a "can't be opened" warning for it.
 
   python engine/mac_app.py            build ~/Applications/Job Finder.app
@@ -52,8 +52,7 @@ def info_plist() -> dict:
         "CFBundleShortVersionString": "1.0",
         "CFBundleVersion": "1",
         "LSMinimumSystemVersion": "11.0",
-        # A launcher, not a window: no bouncing Dock icon while it opens the page.
-        "LSUIElement": True,
+        "NSHighResolutionCapable": True,
     }
 
 

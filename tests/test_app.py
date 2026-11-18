@@ -597,3 +597,26 @@ def test_following_the_monday_check_includes_its_sites(tmp_path, monkeypatch):
     held = main_module.take_lock()
     assert runner.status()["sites"] == sites
     held.close()
+
+
+def test_mac_app_gets_a_dock_icon():
+    # The app now shows its own window, so it needs a normal Dock icon.
+    assert "LSUIElement" not in mac_app.info_plist()
+
+
+def test_open_app_uses_browser_when_window_is_unavailable(monkeypatch):
+    opened = []
+    monkeypatch.setattr(app_server, "running_url", lambda: "http://127.0.0.1:1/#t=x")
+    monkeypatch.setattr(app_server, "open_window", lambda url: False)
+    monkeypatch.setattr(app_server.webbrowser, "open", opened.append)
+    assert app_server.open_app() == 0
+    assert opened == ["http://127.0.0.1:1/#t=x"]
+
+
+def test_open_app_browser_flag_skips_window(monkeypatch):
+    opened, windows = [], []
+    monkeypatch.setattr(app_server, "running_url", lambda: "http://127.0.0.1:1/#t=x")
+    monkeypatch.setattr(app_server, "open_window", lambda url: windows.append(url) or True)
+    monkeypatch.setattr(app_server.webbrowser, "open", opened.append)
+    app_server.open_app(use_browser=True)
+    assert windows == [] and opened == ["http://127.0.0.1:1/#t=x"]

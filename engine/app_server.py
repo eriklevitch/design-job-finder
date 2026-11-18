@@ -1,13 +1,15 @@
-"""The Job Finder app: a small page in your browser with a "Find new jobs"
-button, your settings and the weekly schedule.
+"""The Job Finder app: a small page with a "Find new jobs" button, your
+settings and the weekly schedule. It opens in its own window (or in your
+browser if the window part isn't installed).
 
 It runs only on your Mac. The page is served from 127.0.0.1, which other
 computers can't reach, and every action needs a secret code made fresh
 each time the app starts, so websites you visit can't use it either.
 It quits on its own about 15 minutes after you close the page.
 
-  python engine/app_server.py          open the app (start it if needed)
-  python engine/app_server.py --serve  run the server in this window
+  python engine/app_server.py            open the app (start it if needed)
+  python engine/app_server.py --browser  open it in your browser instead
+  python engine/app_server.py --serve    run the server in this window
 """
 import json
 import os
@@ -364,7 +366,7 @@ def running_url() -> str | None:
     return f"{url}/#t={state['token']}"
 
 
-def open_app() -> int:
+def open_app(use_browser: bool = False) -> int:
     url = running_url()
     if not url:
         STATE_PATH.unlink(missing_ok=True)
@@ -381,12 +383,49 @@ def open_app() -> int:
     if not url:
         print("Job Finder couldn't start. See logs/app.log in your job-search folder.")
         return 1
-    webbrowser.open(url)
+    if use_browser or not open_window(url):
+        webbrowser.open(url)
     return 0
+
+
+def open_window(url: str) -> bool:
+    """Shows the page in its own Mac window and waits until it's closed.
+    Returns False if the window part (pywebview) isn't installed.
+
+    The server keeps running after the window closes, so a search that's
+    underway finishes; it quits on its own once it's been idle a while."""
+    try:
+        import webview
+    except ImportError:
+        return False
+    look_like_job_finder()
+    # Links to other sites (like console.anthropic.com) open in your browser.
+    webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
+    webview.create_window("Job Finder", url, width=1280, height=820,
+                          min_size=(900, 600), background_color="#111214")
+    webview.start(private_mode=False)  # keeps saved sort order etc. between launches
+    return True
+
+
+def look_like_job_finder() -> None:
+    """The window runs inside Python, so without this the menu bar and
+    Dock would say "Python" and show Python's rocket icon."""
+    try:
+        from AppKit import NSApplication, NSImage
+        from Foundation import NSBundle
+    except ImportError:
+        return
+    info = NSBundle.mainBundle().infoDictionary()
+    info["CFBundleName"] = "Job Finder"
+    info["CFBundleDisplayName"] = "Job Finder"
+    icon = ROOT / "assets" / "JobFinder.icns"
+    if icon.exists():
+        image = NSImage.alloc().initWithContentsOfFile_(str(icon))
+        NSApplication.sharedApplication().setApplicationIconImage_(image)
 
 
 if __name__ == "__main__":
     if "--serve" in sys.argv:
         serve()
     else:
-        sys.exit(open_app())
+        sys.exit(open_app(use_browser="--browser" in sys.argv))
