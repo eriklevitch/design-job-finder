@@ -1,6 +1,6 @@
 # Design Job Finder
 
-Finds product design or brand design jobs (or both) that match your level, location and pay, and adds them to a spreadsheet or Notion. Run it once a week. If you want, it also drafts resume bullets and a cover letter opening for each job, based only on notes you write about your own experience.
+Finds product design and/or brand design jobs that match your level, location and pay, and adds them to a spreadsheet or Notion. Run it once a week. If you want, it also drafts resume bullets and a cover letter opening for each job, based only on notes you write about your own experience.
 
 ```
 Status            Company   Title                            Location     Salary              Link
