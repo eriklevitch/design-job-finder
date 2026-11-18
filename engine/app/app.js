@@ -74,6 +74,57 @@ function setConnected(node, on) {
   node.replaceChildren(...(on ? [icon("check", 12), "Connected"] : []));
 }
 
+// ── Fluid hover ────────────────────────────────────────────────────
+// One outline glides between the cards in a list as the mouse moves
+// (styles under "Fluid hover" in app.css). It listens on the list, so it
+// keeps working when the cards inside are redrawn.
+
+function fluidHover(list, cardSelector) {
+  list.classList.add("fluid");
+  let pointer = null;   // where the mouse last was, while it's over the list
+
+  const hide = () => list.classList.remove("glide-on");
+  const cardAt = (x, y) => {
+    const hit = document.elementFromPoint(x, y);
+    const card = hit && hit.closest(cardSelector);
+    return card && list.contains(card) ? card : null;
+  };
+  const moveTo = (card) => {
+    if (!card) return hide();
+    const fresh = !list.classList.contains("glide-on");
+    // Coming in from outside: appear on the card, don't slide in from the last one.
+    if (fresh) list.classList.add("glide-snap");
+    list.style.setProperty("--glide-x", card.offsetLeft + "px");
+    list.style.setProperty("--glide-y", card.offsetTop + "px");
+    list.style.setProperty("--glide-w", card.offsetWidth + "px");
+    list.style.setProperty("--glide-h", card.offsetHeight + "px");
+    list.classList.toggle("glide-selected",
+      card.matches(".selected, :has(input:checked)"));
+    list.classList.toggle("glide-dashed", card.matches(".unchecked"));
+    if (fresh) {
+      list.getBoundingClientRect();   // apply the jump before turning glide back on
+      list.classList.remove("glide-snap");
+      list.classList.add("glide-on");
+    }
+  };
+
+  list.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "touch") return;
+    pointer = [e.clientX, e.clientY];
+    moveTo(cardAt(...pointer));
+  });
+  list.addEventListener("pointerleave", () => { pointer = null; hide(); });
+  // Picking a card changes its look; redrawing the list replaces the cards.
+  list.addEventListener("change", () => pointer && moveTo(cardAt(...pointer)));
+  new MutationObserver(() => (pointer ? moveTo(cardAt(...pointer)) : hide()))
+    .observe(list, { childList: true });
+  window.addEventListener("resize", hide);
+}
+
+fluidHover($("jobs"), "li");
+fluidHover($("weeks"), "button.week");
+document.querySelectorAll(".choices").forEach((list) => fluidHover(list, ".choice"));
+
 // ── Small builders ─────────────────────────────────────────────────
 
 function choiceList(container, name, options, selected) {

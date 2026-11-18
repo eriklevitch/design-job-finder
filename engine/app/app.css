@@ -30,9 +30,15 @@
   --radius-xs: 6px;
   --radius-md: 14px;
   --radius-pill: 999px;
-  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
-  --fast: 0.16s;
-  --base: 0.25s;
+  /* Motion: springs, after Fluid Functionalism's three presets (made with
+     Motion's spring formula). --ease is a spring with no bounce, so it
+     fits both --fast and --base; --ease-bounce settles with a tiny
+     overshoot and goes with --slow. */
+  --ease: linear(0, 0.054, 0.167, 0.305, 0.432, 0.546, 0.643, 0.726, 0.789, 0.839, 0.878, 0.909, 0.932, 0.949, 0.962, 0.972, 0.979, 0.985, 0.989, 0.992, 0.994, 0.996, 0.997, 0.998, 1);
+  --ease-bounce: linear(0, 0.043, 0.141, 0.263, 0.389, 0.507, 0.609, 0.7, 0.774, 0.834, 0.881, 0.916, 0.943, 0.963, 0.977, 0.987, 0.993, 0.998, 1, 1.002, 1.002, 1.003, 1.003, 1.002, 1);
+  --fast: 0.15s;
+  --base: 0.27s;
+  --slow: 0.35s;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -136,11 +142,15 @@ button:disabled { cursor: default; opacity: .6; }
   border: 1px solid var(--ink-soft);
   border-radius: var(--radius-pill);
   padding: 9px 18px;
-  transition: background var(--base) var(--ease), color var(--base) var(--ease);
+  transition: background var(--base) var(--ease), color var(--base) var(--ease), font-weight var(--base) var(--ease);
 }
 .secondary:hover:not(:disabled), .secondary:focus-visible { background: var(--ink-soft); color: var(--surface); }
-.link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 2px; transition: color var(--base) var(--ease); }
+.link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 2px; transition: color var(--base) var(--ease), font-weight var(--base) var(--ease); }
 .link:hover { color: var(--ink); }
+/* Mono labels thicken on hover. Every weight of JetBrains Mono is the
+   same width, so nothing around them shifts. */
+.primary.compact { transition: background var(--base) var(--ease), font-weight var(--base) var(--ease); }
+.secondary:hover:not(:disabled), .link:hover:not(:disabled), .primary.compact:hover:not(:disabled) { font-weight: 650; }
 .link.center { display: block; margin: 16px auto 0; }
 
 /* Fields: a mono key above, the value in Inter. */
@@ -176,9 +186,9 @@ input::placeholder, textarea::placeholder { color: var(--ink-faint); opacity: .8
   border: 1px solid var(--rule);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: border-color var(--slow, .35s) var(--ease);
+  transition: border-color var(--slow) var(--ease);
 }
-.check:hover, .choice:hover { border-color: var(--ink-faint); }
+.check:hover { border-color: var(--ink-faint); }
 .check input, .choice input { width: 18px; height: 18px; margin: 2px 0 0; flex: none; accent-color: var(--ink); }
 .check small { margin-top: 2px; }
 .choice b { display: block; font-weight: 500; }
@@ -234,7 +244,6 @@ input::placeholder, textarea::placeholder { color: var(--ink-faint); opacity: .8
   background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-md);
   transition: border-color var(--base) var(--ease);
 }
-button.week:hover { border-color: var(--ink-faint); }
 .week .date { display: flex; align-items: center; gap: 6px; font-size: 0.92rem; white-space: nowrap; }
 .week .alert { display: inline-flex; color: var(--warn); }
 .week .count { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--ink-soft); white-space: nowrap; }
@@ -247,6 +256,7 @@ button.week:hover { border-color: var(--ink-faint); }
 .week.next { border-color: var(--ink-faint); }
 .week.next .count, .week.next .link { color: var(--ink-soft); }
 .week .link { padding: 0; font: inherit; font-size: 0.85rem; letter-spacing: 0; text-transform: none; text-decoration: underline; text-underline-offset: 3px; }
+.week .link:hover { font-weight: 400; }  /* Inter here, which would widen */
 .icon.spin { animation: spin 1.6s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .icon.spin { animation: none; } }
 #view-home h1 { margin-bottom: 14px; }
@@ -284,9 +294,7 @@ button.week:hover { border-color: var(--ink-faint); }
   background: var(--surface);
   border: 1px solid var(--rule);
   border-radius: var(--radius-md);
-  transition: border-color .35s var(--ease);
 }
-.jobs li:hover { border-color: var(--ink-faint); }
 .jobs a { display: flex; flex-direction: column; gap: 4px; padding: 18px 20px 14px; text-decoration: none; color: inherit; border-radius: var(--radius-md); }
 .jobs a:hover { color: inherit; }
 .jobs .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
@@ -309,6 +317,32 @@ button.week:hover { border-color: var(--ink-faint); }
   color: var(--ink); background: var(--neutral-fill); border-radius: var(--radius-pill); padding: 6px 10px;
 }
 .tag.warn { color: var(--warn); background: none; border: 1px dashed var(--warn); padding: 5px 9px; }
+
+/* Fluid hover: in a list of cards, one hover outline glides from card to
+   card instead of each border lighting up on its own. app.js moves it
+   (fluidHover) by setting --glide-x/y/w/h. It matches the card's own
+   border, turns ink over a selected card and dashed over a dashed one. */
+.fluid { position: relative; }
+.fluid::after {
+  content: "";
+  position: absolute; left: 0; top: 0;
+  width: var(--glide-w, 0); height: var(--glide-h, 0);
+  transform: translate(var(--glide-x, 0), var(--glide-y, 0));
+  border: 1px solid var(--ink-faint);
+  border-radius: var(--radius-md);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    transform var(--slow) var(--ease-bounce), width var(--slow) var(--ease-bounce), height var(--slow) var(--ease-bounce);
+}
+.fluid.glide-on::after { opacity: 1; }
+.fluid.glide-snap::after { transition: opacity var(--fast) var(--ease); }
+.fluid.glide-selected::after { border-color: var(--ink); }
+.fluid.glide-dashed::after { border-style: dashed; }
+@media (prefers-reduced-motion: reduce) {
+  .fluid::after { transition: opacity var(--fast) linear; }
+  .secondary, .link, .primary.compact { transition-property: background, color; }
+}
 
 .tracker { text-align: center; margin-top: 28px; }
 .tip { color: var(--ink-faint); font-size: 0.9rem; margin: 10px 0 0; }
