@@ -1,6 +1,6 @@
 # Design Job Finder
 
-Finds product design and/or brand design jobs that match your level, location and pay, and adds them to a spreadsheet or Notion. Run it once a week. If you want, it also drafts resume bullets and a cover letter opening for each job, based only on notes you write about your own experience.
+For product, UX, UI and brand designers who are tired of checking job sites. Once a week it finds design jobs that match your level, location and pay, and adds them to a spreadsheet or Notion. You don't need to know how to code.
 
 ```
 Status            Company   Title                            Location     Salary              Link
@@ -8,73 +8,35 @@ Ready for Review  Acme      Senior Product Designer, Growth  Remote - US  $185,0
 New               Globex    Staff Product Designer           Chicago, IL  unlisted (check …)  https://…
 Applied           Initech   Design Manager, Platform         Remote - US  $200,000–$250,000   https://…
 ```
-<sub>Your tracker: a spreadsheet (shown above) or a Notion database. Each row also says why the job matched, and holds the draft if you turned drafts on.</sub>
+<sub>Each row also says why the job matched. If you turn on drafts, it holds tailored resume bullets and a cover letter opening too.</sub>
 
----
+## Install
 
-## Contents
+You need a Mac. (On Windows or Linux, see [For developers](#for-developers).)
 
-- [Who it's for](#who-its-for)
-- [Installation](#installation)
-- [What it does](#what-it-does)
-- [What it doesn't do](#what-it-doesnt-do)
-- [Run every week (or as often as you'd like)](#run-every-week-or-as-often-as-youd-like)
-- [Change your search criteria](#change-your-search-criteria)
-- [Extras (optional)](#extras-optional)
-- [Need help?](#need-help)
-- [For developers](#for-developers)
-- [Credits](#credits)
-- [License](#license)
-
-## Who it's for
-
-Product, UX, UI and brand designers who do not want to check job sites every week. You don't need to know how to code: you paste one line into Terminal to install it, and after that you use the **Design Job Finder** app.
-
-## Installation
 1. Open **Terminal**: press **⌘ Command + Space**, type `Terminal`, press **Return**.
-2. Copy this line, paste it into Terminal, and press **Return**:
+2. Paste this line and press **Return**:
 
    ```
    curl -fsSL https://raw.githubusercontent.com/eriklevitch/design-job-finder/main/install.sh | bash
    ```
 
-3. The **Design Job Finder** app opens in its own window and asks five short questions:
-   1. **Level:** senior and above, leadership, both, or any level.
-   2. **Location:** your cities, and whether remote counts.
-   3. **Pay:** your minimum per year.
-   4. **Companies:** ones you want to work at. Type their names and it looks up their job pages.
-   5. **Tracker:** a spreadsheet, or Notion.
+3. Design Job Finder opens and asks five questions: your **level**, **locations**, **minimum pay**, **companies** you'd like to work at, and whether to use a **spreadsheet or Notion**.
+4. Click **Find my first jobs**.
 
-4. Click **Find my first jobs**. They appear in Design Job Finder and in your tracker.
+That's the last time you need Terminal. Design Job Finder is now in your Dock.
 
-Design Job Finder is now in your Dock. To find it later, you can also press **⌘ Command + Space** and type `Design Job Finder`. It opens where you left it, at the size you left it. Links to job postings and other sites open in your usual browser.
+## How it works
 
----
+It searches Indeed and the careers pages of the companies you pick (any company on Greenhouse, Lever or Ashby, which covers most tech companies). It keeps jobs whose title, level, location, pay and posting date match, skips ones already in your tracker, and adds the rest.
 
-## What it does
+It won't apply for you or contact anyone. It doesn't collect data: your settings, notes and tracker stay on your Mac. It doesn't search LinkedIn, which blocks automated searches, and for now it only finds jobs in the US.
 
-1. Searches Indeed and the careers pages of companies you choose. This works for any company that posts jobs on Greenhouse, Lever or Ashby, which most tech companies do.
-2. Keeps jobs whose title, level, location, pay and posting date match your configuration.
-3. Skips jobs already in your tracker.
-4. Adds the rest to your tracker, with a draft for each (if you turned drafts on).
+## Each week
 
-## What it doesn't do
+Open **Design Job Finder** from your Dock. It shows this week's new jobs, how old each posting is, and why it matched. Click **Find new jobs** to check again (1–3 minutes), or turn on **Check every Monday** and your Mac will check at 9am and send you a notification.
 
-- It doesn't apply for you. 
-- It doesn't email or message anyone.
-- It doesn't collect any data. There's no analytics. Your settings, notes, keys and tracker stay in a folder on your local drive.
-- It doesn't search LinkedIn because LinkedIn doesn't allow automated searches. 
-- It only finds US based jobs for now, and compares pay in US dollars.
-
----
-
-## Run every week (or as often as you'd like)
-
-Click **Design Job Finder** in your Dock. It opens on this week's new jobs, with how old each posting is and why it matched. To see an earlier week, pick it from the **This week** menu. To check again now, click **Find new jobs**. It takes 1–3 minutes. **Open spreadsheet** (or **Open Notion**) in the sidebar opens your tracker.
-
-**Let it check for you:** turn on **Check every Monday** in the sidebar. Your Mac checks every Monday at 9am and sends a notification with the number of new jobs. If it's asleep then, it checks when it wakes. Turn it off to stop.
-
-Then go through the new rows in your tracker. When you apply, or decide not to, update **Status**:
+As you go through jobs, update **Status** in your tracker:
 
 | Status | Meaning |
 |---|---|
@@ -94,11 +56,12 @@ Then go through the new rows in your tracker. When you apply, or decide not to, 
 - Drafts are also saved as text files in the `drafts` folder, which makes them easier to copy.
 </details>
 
----
+## Change your search
 
-## Change your search criteria
+Open **Settings** in Design Job Finder, change what you like, and click **Save**. Add or remove companies on the **Companies** page.
 
-In Design Job Finder, open **Settings**, change what you like, and click **Save**. To add or remove companies, use the **Companies** page.
+<details>
+<summary><b>Editing settings by hand</b></summary>
 
 For finer changes, right-click `config.yaml` in your job-search folder, choose **Open With → TextEdit**, and edit the **YOUR SEARCH** section at the top. Saving in Settings or Companies rewrites the type of design, level, location, pay and company lines, so make hand edits to those after you've used the app.
 
@@ -115,6 +78,7 @@ For finer changes, right-click `config.yaml` in your job-search folder, choose *
 | `tracker` | `"spreadsheet"` or `"notion"`. |
 
 Keep the format exactly as you see it: words in `"quotes"`, lists in `[square brackets]`, separated by commas. Then click **Find new jobs** to check the results.
+</details>
 
 <details>
 <summary><b>Adding a company Design Job Finder couldn't find</b></summary>
@@ -128,9 +92,9 @@ Open the company's careers page and click any job. Look at the web address:
 If the address is anything else (for example, Workday or the company's own site), it can't be checked directly. Indeed will often still list their jobs.
 </details>
 
-## Extras (optional)
+### Extras
 
-Turn these on in **Settings → Extras** (the tracker choice is under **Settings → Your search**), then click **Save**.
+Turn these on in **Settings → Extras**, then click **Save**.
 
 <details>
 <summary><b>Tailored drafts (about 1–2 cents per job)</b></summary>
@@ -162,8 +126,6 @@ Design Job Finder builds the database for you, with all the columns. In **Settin
 
 Paste the secret and the link, then click **Connect Notion**. Drafts appear inside each job's page.
 </details>
-
----
 
 ## Need help?
 
@@ -207,8 +169,6 @@ If Design Job Finder still opens in your browser after updating, quit it (⌘ Q,
 
 If **Check every Monday** is on, turn it off first. Then drag the job-search folder and **Design Job Finder** (in the Applications folder in your home folder) to the Trash, and remove Design Job Finder from your Dock. Nothing else was installed.
 </details>
-
----
 
 ## For developers
 
@@ -259,10 +219,6 @@ Everything in the first five rows is personal and is never uploaded (see `.gitig
 If you use Claude Code or a similar tool, open this folder in it and ask: "Set this up for me" or "Add these companies to my search". `CLAUDE.md` tells the assistant how the project works.
 </details>
 
-## Credits
+---
 
-Indeed search uses [JobSpy](https://github.com/speedyapply/JobSpy). The app uses the [Inter](https://rsms.me/inter/) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/) fonts (SIL Open Font License). Company job lists come from the public Greenhouse, Lever and Ashby job-board APIs.
-
-## License
-
-MIT
+Indeed search uses [JobSpy](https://github.com/speedyapply/JobSpy). The app uses the [Inter](https://rsms.me/inter/) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/) fonts (SIL Open Font License). Company job lists come from the public Greenhouse, Lever and Ashby job-board APIs. MIT license.
