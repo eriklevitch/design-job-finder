@@ -14,8 +14,8 @@ Applied           Initech   Design Manager, Platform         Remote - US  $200,0
 
 ## Contents
 
-- [Installation](#installation)
 - [Who it's for](#who-its-for)
+- [Installation](#installation)
 - [What it does](#what-it-does)
 - [What it doesn't do](#what-it-doesnt-do)
 - [Run every week (or as often as you'd like)](#run-every-week-or-as-often-as-youd-like)
@@ -25,6 +25,10 @@ Applied           Initech   Design Manager, Platform         Remote - US  $200,0
 - [For developers](#for-developers)
 - [Credits](#credits)
 - [License](#license)
+
+## Who it's for
+
+Product, UX, UI and brand designers who do not want to check job sites every week. You don't need to know how to code: you paste one line into Terminal to install it, and after that you use the **Design Job Finder** app.
 
 ## Installation
 1. Open **Terminal**: press **⌘ Command + Space**, type `Terminal`, press **Return**.
@@ -46,10 +50,6 @@ Applied           Initech   Design Manager, Platform         Remote - US  $200,0
 Design Job Finder is now in your Dock. To find it later, you can also press **⌘ Command + Space** and type `Design Job Finder`. It opens where you left it, at the size you left it. Links to job postings and other sites open in your usual browser.
 
 ---
-
-## Who it's for
-
-Product, UX, UI and brand designers who do not want to check job sites every week. You don't need to know how to code: you paste one line into Terminal to install it, and after that you use the **Design Job Finder** app.
 
 ## What it does
 
