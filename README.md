@@ -14,11 +14,10 @@ Applied           Initech   Design Manager, Platform         Remote - US  $200,0
 
 ## Contents
 
+- [Installation](#installation)
 - [Who it's for](#who-its-for)
 - [What it does](#what-it-does)
 - [What it doesn't do](#what-it-doesnt-do)
-- [What you need](#what-you-need)
-- [Installation](#installation)
 - [Run every week (or as often as you'd like)](#run-every-week-or-as-often-as-youd-like)
 - [Change your search criteria](#change-your-search-criteria)
 - [Extras (optional)](#extras-optional)
@@ -26,6 +25,32 @@ Applied           Initech   Design Manager, Platform         Remote - US  $200,0
 - [For developers](#for-developers)
 - [Credits](#credits)
 - [License](#license)
+
+## Installation
+
+- A Mac. Windows works too, with a few manual steps (see [For developers](#for-developers)).
+- About 10 minutes to set up.
+- No money, unless you turn on drafts. Those cost about 1–2 cents per job, paid to Anthropic. The other extras (Adzuna and Notion) are free.
+
+1. Open **Terminal**: press **⌘ Command + Space**, type `Terminal`, press **Return**.
+2. Copy this line, paste it into Terminal, and press **Return**:
+
+   ```
+   curl -fsSL https://raw.githubusercontent.com/eriklevitch/design-job-finder/main/install.sh | bash
+   ```
+
+3. The **Design Job Finder** app opens in its own window and asks five short questions:
+   1. **Level:** senior and above, leadership, both, or any level.
+   2. **Location:** your cities, and whether remote counts.
+   3. **Pay:** your minimum per year.
+   4. **Companies:** ones you want to work at. Type their names and it looks up their job pages.
+   5. **Tracker:** a spreadsheet, or Notion.
+
+4. Click **Find my first jobs**. They appear in Design Job Finder and in your tracker.
+
+Design Job Finder is now in your Dock. To find it later, you can also press **⌘ Command + Space** and type `Design Job Finder`. It opens where you left it, at the size you left it. Links to job postings and other sites open in your usual browser.
+
+---
 
 ## Who it's for
 
@@ -46,33 +71,7 @@ Product, UX, UI and brand designers who do not want to check job sites every wee
 - It doesn't search LinkedIn because LinkedIn doesn't allow automated searches. 
 - It only finds US based jobs for now, and compares pay in US dollars.
 
-## What you need
-
-- A Mac. Windows works too, with a few manual steps (see [For developers](#for-developers)).
-- About 10 minutes to set up.
-- No money, unless you turn on drafts. Those cost about 1–2 cents per job, paid to Anthropic. The other extras (Adzuna and Notion) are free.
-
 ---
-
-## Installation
-
-1. Open **Terminal**: press **⌘ Command + Space**, type `Terminal`, press **Return**.
-2. Copy this line, paste it into Terminal, and press **Return**:
-
-   ```
-   curl -fsSL https://raw.githubusercontent.com/eriklevitch/design-job-finder/main/install.sh | bash
-   ```
-
-3. The **Design Job Finder** app opens in its own window and asks five short questions:
-   1. **Level:** senior and above, leadership, both, or any level.
-   2. **Location:** your cities, and whether remote counts.
-   3. **Pay:** your minimum per year.
-   4. **Companies:** ones you want to work at. Type their names and it looks up their job pages.
-   5. **Tracker:** a spreadsheet, or Notion.
-
-4. Click **Find my first jobs**. They appear in Design Job Finder and in your tracker.
-
-Design Job Finder is now in your Dock. To find it later, you can also press **⌘ Command + Space** and type `Design Job Finder`. It opens where you left it, at the size you left it. Links to job postings and other sites open in your usual browser.
 
 ## Run every week (or as often as you'd like)
 
