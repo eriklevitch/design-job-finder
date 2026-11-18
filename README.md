@@ -18,7 +18,7 @@ Product, UX and UI designers who do not want to check job sites every week. You 
 
 ## What it does
 
-1. Searches Indeed and the careers pages of companies you provide. This works for any company that posts jobs on Greenhouse, Lever or Ashby, which most tech companies do.
+1. Searches Indeed and the careers pages of companies you choose. This works for any company that posts jobs on Greenhouse, Lever or Ashby, which most tech companies do.
 2. Keeps jobs whose title, level, location, pay and posting date match your configuration.
 3. Skips jobs already in your tracker.
 4. Adds the rest to your tracker, with a draft for each (if you turned drafts on).
@@ -33,7 +33,7 @@ Product, UX and UI designers who do not want to check job sites every week. You 
 
 ## What you need
 
-- A Mac. Windows works too, with a few manual steps (see [To fool around with](#to-fool-around-with)).
+- A Mac. Windows works too, with a few manual steps (see [For developers](#for-developers)).
 - About 10 minutes to set up.
 - No money, unless you turn on drafts. Those cost about 1–2 cents per job, paid to Anthropic. The other extras (Adzuna and Notion) are free.
 
@@ -49,21 +49,21 @@ Product, UX and UI designers who do not want to check job sites every week. You 
    ```
 
 3. The **Job Finder** app opens in its own window and asks five short questions:
-   1. **Level:** senior individual contributor, leadership, both, or any.
+   1. **Level:** senior and above, leadership, both, or any level.
    2. **Location:** your cities, and whether remote counts.
    3. **Pay:** your minimum per year.
    4. **Companies:** ones you want to work at. Type their names and it looks up their job pages.
    5. **Tracker:** a spreadsheet, or Notion.
 
-4. Click **Find my jobs**. Your first jobs appear on the page and in your tracker.
+4. Click **Find my jobs**. Your first jobs appear in Job Finder and in your tracker.
 
 Job Finder is now in your Dock. To find it later, you can also press **⌘ Command + Space** and type `Job Finder`. It opens where you left it, at the size you left it. Links to job postings and other sites open in your usual browser.
 
 ## Run every week (or as often as you'd like)
 
-Click **Job Finder** in your Dock. It opens on this week's new jobs, each with how old the posting is and why it matched. To see an earlier week, pick it from the **This week** menu at the top left. To look again now, click **Find new jobs** (top right). It takes 1–3 minutes. **Open spreadsheet** (or **Open Notion**) opens your tracker.
+Click **Job Finder** in your Dock. It opens on this week's new jobs, with how old each posting is and why it matched. To see an earlier week, pick it from the **This week** menu. To check again now, click **Find new jobs**. It takes 1–3 minutes. **Open spreadsheet** (or **Open Notion**) in the sidebar opens your tracker.
 
-**Let it run on its own:** tick **Check for me every Monday morning**. Your Mac then searches every Monday at 9am and sends a notification with the number of new jobs. If your Mac is asleep at that time, it searches when it wakes. Untick the box to stop.
+**Let it check for you:** turn on **Check every Monday** in the sidebar. Your Mac checks every Monday at 9am and sends a notification with the number of new jobs. If it's asleep then, it checks when it wakes. Turn it off to stop.
 
 Then go through the new rows in your tracker. When you apply, or decide not to, update **Status**:
 
@@ -80,7 +80,7 @@ Then go through the new rows in your tracker. When you apply, or decide not to, 
 
 - **Excel, Google Sheets and LibreOffice** edit `applications.csv` directly. Change Status, Date applied and Notes, then save.
 - **Numbers** saves your edits as a separate `.numbers` file, and new jobs keep going to `applications.csv`. To keep everything in one place, use Excel or Google Sheets, or switch to Notion (Job Finder → **Settings**).
-- **Close the spreadsheet before you click Find new jobs**, so its new rows don't get overwritten when you save.
+- **Close the spreadsheet before you click Find new jobs.** Otherwise your next save erases the new rows.
 - Don't edit the **ID** column (the last one). It's how the tool recognizes jobs it has already added.
 - Drafts are also saved as text files in the `drafts` folder, which makes them easier to copy.
 </details>
@@ -89,9 +89,9 @@ Then go through the new rows in your tracker. When you apply, or decide not to, 
 
 ## Change your search criteria
 
-In Job Finder, click **Settings**. Change what you like and click **Save search settings**.
+In Job Finder, open **Settings**, change what you like, and click **Save**. To add or remove companies, use the **Companies** page.
 
-For finer changes, right-click `config.yaml` in your job-search folder, choose **Open With → TextEdit**, and change the **YOUR SEARCH** section at the top. Note that clicking **Save search settings** in Job Finder rewrites the level, location, pay and company lines, so make hand edits to those last, or redo them after using Settings.
+For finer changes, right-click `config.yaml` in your job-search folder, choose **Open With → TextEdit**, and edit the **YOUR SEARCH** section at the top. Saving in Settings or Companies rewrites the level, location, pay and company lines, so make hand edits to those after you've used the app.
 
 | Setting | What it means |
 |---|---|
@@ -101,13 +101,13 @@ For finer changes, right-click `config.yaml` in your job-search folder, choose *
 | `search_location` | The city (or "United States") used when searching Indeed. |
 | `min_salary` | Jobs whose posted pay tops out below this are skipped. Jobs that don't list pay are always kept. |
 | `max_posting_age_days` | How recent a posting must be. |
-| `greenhouse_companies`, `lever_companies`, `ashby_companies` | Companies checked directly. Settings fills these in for you. |
+| `greenhouse_companies`, `lever_companies`, `ashby_companies` | Companies checked directly. The **Companies** page fills these in for you. |
 | `tracker` | `"spreadsheet"` or `"notion"`. |
 
 Keep the format exactly as you see it: words in `"quotes"`, lists in `[square brackets]`, separated by commas. Then click **Find new jobs** to check the results.
 
 <details>
-<summary><b>Adding a company that Job Finder couldn't find</b></summary>
+<summary><b>Adding a company Job Finder couldn't find</b></summary>
 
 Open the company's careers page and click any job. Look at the web address:
 
@@ -120,7 +120,7 @@ If the address is anything else (for example, Workday or the company's own site)
 
 ## Extras (optional)
 
-Turn on any of these in Job Finder → **Settings**.
+Turn these on in **Settings → Extras** (the tracker choice is under **Settings → Your search**), then click **Save**.
 
 <details>
 <summary><b>Tailored drafts (about 1–2 cents per job)</b></summary>
@@ -129,8 +129,8 @@ For every new job, it writes three resume bullets and a cover letter opening. It
 
 1. Create an account at [console.anthropic.com](https://console.anthropic.com), add a few dollars of credit, then go to **API Keys → Create Key**.
 2. In **Settings → Extras**, paste the key in **Anthropic API key**.
-3. In the **Your experience** box below it, replace the examples with your real experience: companies, what you led, and results with numbers. Drafts can only be as specific as these notes.
-4. Click **Save drafts**. The key then shows **✓ Connected**.
+3. Under **Your experience**, replace the examples with your real experience: companies, what you led, and results with numbers. Drafts can only be as specific as these notes.
+4. Click **Save**. The key then shows **Connected**.
 
 You can also change the drafts' writing rules under `writing_style` in `config.yaml`.
 </details>
@@ -138,7 +138,7 @@ You can also change the drafts' writing rules under `writing_style` in `config.y
 <details>
 <summary><b>More listings from Adzuna (free)</b></summary>
 
-Adzuna adds listings from many other job sites. Sign up at [developer.adzuna.com](https://developer.adzuna.com), copy your **App ID** and **App Key**, paste them in **Settings → More listings from Adzuna**, and click **Save Adzuna keys**.
+Adzuna adds listings from many other job sites. Sign up at [developer.adzuna.com](https://developer.adzuna.com), copy your **App ID** and **App Key**, paste them in **Settings → Extras → More listings from Adzuna**, and click **Save**.
 </details>
 
 <details>
@@ -175,13 +175,13 @@ The **Why it matched** column shows which settings it matched. To block a word i
 One of the job sources may have failed. Open the `logs` folder in your job-search folder and open `app_run.log` (or `scheduled.log` for the Monday check) in TextEdit.
 
 - **`[jobspy] error`** means the Indeed search failed. This happens when Indeed changes its site or limits how often it can be searched. The other sources still run. To fix it, update by pasting the install line into Terminal again. Your settings, notes and tracker are kept.
-- **`404 Not Found` next to a company** means that company's name is wrong or it moved to a different careers system. Remove it in **Settings → Companies** and type the company name again, or see "Adding a company that Job Finder couldn't find" above.
+- **`404 Not Found` next to a company** means that company's name is wrong or it moved to a different careers system. Remove it on the **Companies** page and add it again, or see "Adding a company Job Finder couldn't find" above.
 </details>
 
 <details>
-<summary><b>A company shows "not found" in Settings</b></summary>
+<summary><b>A company shows "Not found"</b></summary>
 
-It uses a careers system Job Finder can't check (for example Workday, or the company's own site), or its job page has a name that's different from the company name. See "Adding a company that Job Finder couldn't find" above. Indeed often lists their jobs anyway.
+Job Finder can't read that company's careers page. It may use a system Job Finder can't check (like Workday, or the company's own site), or its page may use a different name. On the **Companies** page, try the spelling from their careers page address, or see "Adding a company Job Finder couldn't find" above. Indeed often lists their jobs anyway.
 </details>
 
 <details>
@@ -195,12 +195,12 @@ If Job Finder still opens in your browser after updating, quit it (⌘ Q, or clo
 <details>
 <summary><b>How do I uninstall?</b></summary>
 
-If you ticked **Check for me every Monday morning**, untick it first. Then drag the job-search folder and **Job Finder** (in the Applications folder in your home folder) to the Trash, and remove Job Finder from your Dock. Nothing else was installed.
+If **Check every Monday** is on, turn it off first. Then drag the job-search folder and **Job Finder** (in the Applications folder in your home folder) to the Trash, and remove Job Finder from your Dock. Nothing else was installed.
 </details>
 
 ---
 
-## To fool around with
+## For developers
 
 <details>
 <summary><b>Manual install (Mac, Linux, Windows)</b></summary>

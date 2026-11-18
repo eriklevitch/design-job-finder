@@ -215,7 +215,7 @@ function levelOptions() {
   });
 }
 const TRACKERS = [
-  ["spreadsheet", "A spreadsheet", "Opens in Excel, Numbers or Google Sheets. Nothing to set up."],
+  ["spreadsheet", "A spreadsheet", "Opens in Excel or Google Sheets. Nothing to set up."],
   ["notion", "Notion", "Needs a free Notion account and about 3 minutes."],
 ];
 
