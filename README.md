@@ -12,6 +12,21 @@ Applied           Initech   Design Manager, Platform         Remote - US  $200,0
 
 ---
 
+## Contents
+
+- [Who it's for](#who-its-for)
+- [What it does](#what-it-does)
+- [What it doesn't do](#what-it-doesnt-do)
+- [What you need](#what-you-need)
+- [Installation](#installation)
+- [Run every week (or as often as you'd like)](#run-every-week-or-as-often-as-youd-like)
+- [Change your search criteria](#change-your-search-criteria)
+- [Extras (optional)](#extras-optional)
+- [Need help?](#need-help)
+- [For developers](#for-developers)
+- [Credits](#credits)
+- [License](#license)
+
 ## Who it's for
 
 Product, UX, UI and brand designers who do not want to check job sites every week. You don't need to know how to code: you paste one line into Terminal to install it, and after that you use the **Design Job Finder** app.
