@@ -620,3 +620,31 @@ def test_open_app_browser_flag_skips_window(monkeypatch):
     monkeypatch.setattr(app_server.webbrowser, "open", opened.append)
     app_server.open_app(use_browser=True)
     assert windows == [] and opened == ["http://127.0.0.1:1/#t=x"]
+
+
+SCREEN = [(0, 0, 1728, 1117)]
+
+
+def test_window_place_defaults_when_nothing_saved(tmp_path):
+    assert app_server.window_place(tmp_path / "w.json", SCREEN) == app_server.DEFAULT_WINDOW
+
+
+def test_window_place_round_trip(tmp_path):
+    path = tmp_path / "w.json"
+    app_server.save_window_place(path, {"width": 1400, "height": 900, "x": 50, "y": 40})
+    assert app_server.window_place(path, SCREEN) == {"width": 1400, "height": 900, "x": 50, "y": 40}
+
+
+def test_window_place_drops_position_off_screen(tmp_path):
+    # Saved on a monitor that's no longer plugged in.
+    path = tmp_path / "w.json"
+    path.write_text(json.dumps({"width": 1400, "height": 900, "x": 3000, "y": 40}))
+    assert app_server.window_place(path, SCREEN) == {"width": 1400, "height": 900}
+
+
+def test_window_place_ignores_tiny_or_broken_sizes(tmp_path):
+    path = tmp_path / "w.json"
+    path.write_text(json.dumps({"width": 10, "height": 10}))
+    assert app_server.window_place(path, SCREEN) == {"width": 900, "height": 600}
+    path.write_text("not json")
+    assert app_server.window_place(path, SCREEN) == app_server.DEFAULT_WINDOW

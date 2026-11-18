@@ -11,6 +11,7 @@ history.tmp
 
 # The app's running state
 .app_state.json
+.window.json
 .run.lock
 
 # Installed software and caches

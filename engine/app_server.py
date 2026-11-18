@@ -37,6 +37,7 @@ from settings import CONFIG_PATH, CRASH_MESSAGE, ROOT, load_env, scrub
 
 STATIC = Path(__file__).resolve().parent / "app"
 STATE_PATH = ROOT / ".app_state.json"
+WINDOW_PATH = ROOT / ".window.json"  # where the window was and how big, for next time
 LOGS = ROOT / "logs"
 RUN_SUMMARY = LOGS / "app_run.json"
 RUN_LOG = LOGS / "app_run.log"
@@ -401,10 +402,56 @@ def open_window(url: str) -> bool:
     look_like_job_finder()
     # Links to other sites (like console.anthropic.com) open in your browser.
     webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
-    webview.create_window("Job Finder", url, width=1280, height=820,
-                          min_size=(900, 600), background_color="#111214")
+    place = window_place(WINDOW_PATH, [(s.x, s.y, s.width, s.height) for s in webview.screens])
+    window = webview.create_window("Job Finder", url, **place, min_size=MIN_WINDOW,
+                                   background_color="#111214")
+
+    # Saved every time it changes (a tiny file), so it's kept however the
+    # app ends: closing the window, Cmd+Q, or restarting the Mac.
+    def resized(width, height):
+        place.update(width=int(width), height=int(height))
+        save_window_place(WINDOW_PATH, place)
+
+    def moved(x, y):
+        place.update(x=int(x), y=int(y))
+        save_window_place(WINDOW_PATH, place)
+
+    window.events.resized += resized
+    window.events.moved += moved
     webview.start(private_mode=False)  # keeps saved sort order etc. between launches
     return True
+
+
+DEFAULT_WINDOW = {"width": 1280, "height": 820}
+MIN_WINDOW = (900, 600)
+
+
+def window_place(path: Path, screens: list[tuple[int, int, int, int]]) -> dict:
+    """Where to open the window: where it was last time, if that still
+    fits on a screen you have now (say you unplugged a monitor)."""
+    saved = read_json(path) or {}
+    try:
+        place = {"width": max(int(saved["width"]), MIN_WINDOW[0]),
+                 "height": max(int(saved["height"]), MIN_WINDOW[1])}
+    except (KeyError, TypeError, ValueError):
+        return dict(DEFAULT_WINDOW)
+    try:
+        x, y = int(saved["x"]), int(saved["y"])
+    except (KeyError, TypeError, ValueError):
+        return place
+    # Keep the position only if the window's top-left corner area is on a screen.
+    for sx, sy, sw, sh in screens:
+        if sx <= x + 100 <= sx + sw and sy <= y + 20 <= sy + sh:
+            place.update(x=x, y=y)
+            break
+    return place
+
+
+def save_window_place(path: Path, place: dict) -> None:
+    try:
+        path.write_text(json.dumps(place))
+    except OSError:
+        pass  # not worth bothering anyone about
 
 
 def look_like_job_finder() -> None:
