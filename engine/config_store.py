@@ -21,8 +21,8 @@ LEAD_LEVELS = ["manager", "director", "head of", "vp"]
 LEVEL_CHOICES = [
     ("Senior and above (Senior, Staff, Principal, Lead)", IC_LEVELS),
     ("Leadership (Manager, Director, Head of Design, VP)", LEAD_LEVELS),
-    ("Both of the above", IC_LEVELS + LEAD_LEVELS),
-    ("Any level", []),
+    ("Senior and leadership (Everything in the two options above)", IC_LEVELS + LEAD_LEVELS),
+    ("Any level (Junior and intern roles are still left out)", []),
 ]
 ROLE_DEFAULTS = {1: "senior product designer", 2: "design leader",
                  3: "senior product designer", 4: "product designer"}
@@ -163,7 +163,7 @@ def connect_notion(token: str, link: str) -> tuple[bool, str]:
     try:
         db = create_database(token, page_id)
     except Exception as e:
-        return False, (f"Notion said: {e}. Most often this means step 2 was skipped: "
-                       "add 'Job search' under ••• → Connections on that page.")
+        return False, (f"Notion didn’t accept that ({e}). Usually this means step 2 was missed: "
+                       "on your Notion page, click ••• → Connections and add “Job search”.")
     save_env({"NOTION_TOKEN": token, "NOTION_DATABASE_ID": db["id"]})
     return True, db["url"]

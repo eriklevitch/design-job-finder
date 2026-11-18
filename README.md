@@ -89,9 +89,9 @@ Then go through the new rows in your tracker. When you apply, or decide not to, 
 
 ## Change your search criteria
 
-In Job Finder, click **Settings**. Change what you like and click **Save settings**.
+In Job Finder, click **Settings**. Change what you like and click **Save search settings**.
 
-For finer changes, right-click `config.yaml` in your job-search folder, choose **Open With → TextEdit**, and change the **YOUR SEARCH** section at the top. Note that clicking **Save settings** in Job Finder rewrites the level, location, pay and company lines, so make hand edits to those last, or redo them after using Settings.
+For finer changes, right-click `config.yaml` in your job-search folder, choose **Open With → TextEdit**, and change the **YOUR SEARCH** section at the top. Note that clicking **Save search settings** in Job Finder rewrites the level, location, pay and company lines, so make hand edits to those last, or redo them after using Settings.
 
 | Setting | What it means |
 |---|---|
@@ -128,9 +128,9 @@ Turn on any of these in Job Finder → **Settings**.
 For every new job, it writes three resume bullets and a cover letter opening. It uses only what you've written in `portfolio_notes.md`, so it won't invent experience you don't have.
 
 1. Create an account at [console.anthropic.com](https://console.anthropic.com), add a few dollars of credit, then go to **API Keys → Create Key**.
-2. In **Settings → Drafts**, paste the key in **Anthropic key**.
+2. In **Settings → Drafts**, paste the key in **Anthropic API key**.
 3. In the **Your experience** box below it, replace the examples with your real experience: companies, what you led, and results with numbers. Drafts can only be as specific as these notes.
-4. Click **Save drafts settings**. The key then shows **✓ Connected**.
+4. Click **Save drafts**. The key then shows **✓ Connected**.
 
 You can also change the drafts' writing rules under `writing_style` in `config.yaml`.
 </details>
@@ -138,7 +138,7 @@ You can also change the drafts' writing rules under `writing_style` in `config.y
 <details>
 <summary><b>More listings from Adzuna (free)</b></summary>
 
-Adzuna adds listings from many other job sites. Sign up at [developer.adzuna.com](https://developer.adzuna.com), copy your **App ID** and **App Key**, paste them in **Settings → More listings from Adzuna**, and click **Save**.
+Adzuna adds listings from many other job sites. Sign up at [developer.adzuna.com](https://developer.adzuna.com), copy your **App ID** and **App Key**, paste them in **Settings → More listings from Adzuna**, and click **Save Adzuna keys**.
 </details>
 
 <details>

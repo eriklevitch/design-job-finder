@@ -99,7 +99,7 @@ function renderCompanies(where) {
     name.textContent = c.name || c.slug;
     li.append(name);
     const note = { checking: "checking…", missing: "not found", error: "couldn’t check" }[c.status]
-      || (c.jobs != null ? `✓ ${c.jobs} open` : "");
+      || (c.jobs != null ? `✓ ${c.jobs} open job${c.jobs === 1 ? "" : "s"}` : "");
     if (note) {
       const n = document.createElement("span");
       n.className = "note";
@@ -114,16 +114,18 @@ function renderCompanies(where) {
     ul.append(li);
   });
   const missing = companies[where].some((c) => c.status === "missing");
+  const failed = companies[where].some((c) => c.status === "error");
   let help = ul.nextElementSibling;
   if (!help || !help.classList.contains("chip-help")) {
     help = document.createElement("p");
     help.className = "chip-help";
     ul.after(help);
   }
-  help.textContent = missing
-    ? "“Not found” means the company uses a careers system this can’t check. Indeed often lists their jobs anyway."
-    : "";
-  help.hidden = !missing;
+  help.textContent = [
+    missing ? "“Not found” means Job Finder can’t read that company’s careers page. Indeed often lists their jobs anyway, so you may still see them." : "",
+    failed ? "“Couldn’t check” means the lookup didn’t finish. Remove the company and add it again to retry." : "",
+  ].filter(Boolean).join(" ");
+  help.hidden = !(missing || failed);
 }
 
 async function addCompanies(where, text) {
@@ -229,7 +231,7 @@ function setupError(text) {
 $("setup-back").onclick = () => { if (step > 1) { step--; showStep(); } };
 $("setup-next").onclick = async () => {
   if (step === 2 && !splitCities($("setup-cities").value).length && !$("setup-remote").checked) {
-    return setupError("Add a city, or tick remote jobs.");
+    return setupError("Add a city, or check “Include remote jobs”.");
   }
   if (step === 3 && $("setup-pay").value.trim() && !/^\$?[\d,.]+k?$/i.test($("setup-pay").value.trim())) {
     return setupError("Type a number like 150k, or 0 for no minimum.");
@@ -283,14 +285,14 @@ function renderHome() {
   const last = state.last_run;
   $("last-run").textContent = last && last.finished_at
     ? `Last checked ${whenText(last.finished_at)} · ${last.added} new job${last.added === 1 ? "" : "s"}`
-    : "Find matching jobs and add them to your tracker.";
+    : `Find matching jobs and add them to ${notion ? "Notion" : "your spreadsheet"}.`;
   $("schedule").checked = state.schedule_on;
   $("schedule").closest("label").hidden = !state.can_schedule;
   if (state.run) renderRun(state.run);
 }
 
 const SUGGEST = {
-  bad_location: ["Most jobs were skipped because of their location.", "Add cities or remote", "sec-location"],
+  bad_location: ["Most jobs were skipped because of their location.", "Add cities or remote jobs", "sec-location"],
   no_seniority: ["Most jobs were skipped because of their level.", "Change the level", "sec-level"],
   salary_too_low: ["Most jobs were skipped because their pay is below your minimum.", "Change the minimum pay", "sec-pay"],
 };
@@ -420,7 +422,7 @@ $("settings-save").onclick = async () => {
   const problem = stillChecking("settings")
     ? "Still looking up companies. One moment…"
     : chosen("set-tracker") === "notion" && !state.connected.notion
-      ? "Connect Notion first, or pick the spreadsheet." : "";
+      ? "Connect Notion first, or pick the spreadsheet. You can switch any time." : "";
   if (problem) {
     $("settings-error").textContent = problem;
     $("settings-error").hidden = false;
