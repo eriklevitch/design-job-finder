@@ -1,5 +1,5 @@
 #!/bin/bash
-# Installs (or updates) Product Design Job Finder.
+# Installs (or updates) Design Job Finder.
 #
 #   curl -fsSL https://raw.githubusercontent.com/eriklevitch/product-design-job-finder/main/install.sh | bash
 #
@@ -10,7 +10,7 @@
 #      If the folder already exists, it updates the code and leaves your
 #      settings, notes, keys and tracker alone.
 #   3. Installs the libraries it needs into that folder (nothing system-wide).
-#   4. Makes the "Job Finder" app, adds it to the Dock and opens it.
+#   4. Makes the "Design Job Finder" app, adds it to the Dock and opens it.
 set -e
 
 REPO="${JOBSEARCH_REPO:-eriklevitch/product-design-job-finder}"
@@ -20,7 +20,7 @@ LOCAL_SOURCE="${JOBSEARCH_SOURCE_DIR:-}"
 
 bold() { printf "\n\033[1m%s\033[0m\n" "$1"; }
 
-bold "Product Design Job Finder: installing"
+bold "Design Job Finder: installing"
 
 # 1. Python ---------------------------------------------------------
 PY=""
@@ -65,7 +65,7 @@ if [ ! -x "$DEST/venv/bin/python" ]; then
     "$PY" -m venv "$DEST/venv"
   else
     # No suitable Python on this Mac: fetch uv, which brings its own.
-    echo "Getting Python (only used by Job Finder)..."
+    echo "Getting Python (only used by Design Job Finder)..."
     UV_DIR="$DEST/.uv"
     if [ ! -x "$UV_DIR/uv" ]; then
       curl -LsSf https://astral.sh/uv/install.sh |
@@ -95,10 +95,10 @@ if [ "$(uname)" = "Darwin" ]; then
       rm -f "$DEST/.app_state.json"
     fi
     # Open it the way the Dock does, so it gets its own window (and Terminal is free).
-    open "${JOBSEARCH_APP_DIR:-$HOME/Applications}/Job Finder.app" \
+    open "${JOBSEARCH_APP_DIR:-$HOME/Applications}/Design Job Finder.app" \
       || "$DEST/venv/bin/python" "$DEST/engine/app_server.py" --browser >/dev/null
-    bold "Done. Job Finder is open."
-    echo "Next time, click Job Finder in your Dock (or search for it with ⌘ Space)."
+    bold "Done. Design Job Finder is open."
+    echo "Next time, click Design Job Finder in your Dock (or search for it with ⌘ Space)."
   else
     "$DEST/venv/bin/python" "$DEST/engine/mac_app.py" >/dev/null
   fi

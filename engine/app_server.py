@@ -1,4 +1,4 @@
-"""The Job Finder app: a small page with a "Find new jobs" button, your
+"""The Design Job Finder app: a small page with a "Find new jobs" button, your
 settings and the weekly schedule. It opens in its own window (or in your
 browser if the window part isn't installed).
 
@@ -313,7 +313,7 @@ def make_handler(app: App):
             if not self.host_ok():
                 return self.send(403, b"Forbidden", "text/plain")
             if not secrets.compare_digest(self.headers.get("X-Token", ""), app.token):
-                return self.send_json(403, {"error": "This window is out of date. Click Job Finder in your Dock to open it again."})
+                return self.send_json(403, {"error": "This window is out of date. Click Design Job Finder in your Dock to open it again."})
             try:
                 length = min(int(self.headers.get("Content-Length") or 0), 1_000_000)
                 body = json.loads(self.rfile.read(length) or b"{}")
@@ -339,7 +339,7 @@ def bind(port: int = FIRST_PORT) -> ThreadingHTTPServer:
             return ThreadingHTTPServer(("127.0.0.1", p), None)
         except OSError:
             continue
-    raise OSError("No free port for Job Finder")
+    raise OSError("No free port for Design Job Finder")
 
 
 def serve() -> None:
@@ -396,7 +396,7 @@ def open_app(use_browser: bool = False) -> int:
             if url:
                 break
     if not url:
-        print("Job Finder couldn't start. See logs/app.log in your job-search folder.")
+        print("Design Job Finder couldn't start. See logs/app.log in your job-search folder.")
         return 1
     if use_browser or not open_window(url):
         webbrowser.open(url)
@@ -417,7 +417,7 @@ def open_window(url: str) -> bool:
     # Links to other sites (like console.anthropic.com) open in your browser.
     webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
     place = window_place(WINDOW_PATH, [(s.x, s.y, s.width, s.height) for s in webview.screens])
-    window = webview.create_window("Job Finder", url, **place, min_size=MIN_WINDOW,
+    window = webview.create_window("Design Job Finder", url, **place, min_size=MIN_WINDOW,
                                    background_color="#111214")
 
     # Saved every time it changes (a tiny file), so it's kept however the
@@ -477,8 +477,8 @@ def look_like_job_finder() -> None:
     except ImportError:
         return
     info = NSBundle.mainBundle().infoDictionary()
-    info["CFBundleName"] = "Job Finder"
-    info["CFBundleDisplayName"] = "Job Finder"
+    info["CFBundleName"] = "Design Job Finder"
+    info["CFBundleDisplayName"] = "Design Job Finder"
     icon = ROOT / "assets" / "JobFinder.icns"
     if icon.exists():
         image = NSImage.alloc().initWithContentsOfFile_(str(icon))

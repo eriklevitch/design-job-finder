@@ -1,4 +1,4 @@
-# Product Design Job Finder
+# Design Job Finder
 
 Finds product design or brand design jobs (or both) that match your level, location and pay, and adds them to a spreadsheet or Notion. Run it once a week. If you want, it also drafts resume bullets and a cover letter opening for each job, based only on notes you write about your own experience.
 
@@ -14,7 +14,7 @@ Applied           Initech   Design Manager, Platform         Remote - US  $200,0
 
 ## Who it's for
 
-Product, UX, UI and brand designers who do not want to check job sites every week. You don't need to know how to code: you paste one line into Terminal to install it, and after that you use the **Job Finder** app.
+Product, UX, UI and brand designers who do not want to check job sites every week. You don't need to know how to code: you paste one line into Terminal to install it, and after that you use the **Design Job Finder** app.
 
 ## What it does
 
@@ -48,20 +48,20 @@ Product, UX, UI and brand designers who do not want to check job sites every wee
    curl -fsSL https://raw.githubusercontent.com/eriklevitch/product-design-job-finder/main/install.sh | bash
    ```
 
-3. The **Job Finder** app opens in its own window and asks five short questions:
+3. The **Design Job Finder** app opens in its own window and asks five short questions:
    1. **Level:** senior and above, leadership, both, or any level.
    2. **Location:** your cities, and whether remote counts.
    3. **Pay:** your minimum per year.
    4. **Companies:** ones you want to work at. Type their names and it looks up their job pages.
    5. **Tracker:** a spreadsheet, or Notion.
 
-4. Click **Find my first jobs**. They appear in Job Finder and in your tracker.
+4. Click **Find my first jobs**. They appear in Design Job Finder and in your tracker.
 
-Job Finder is now in your Dock. To find it later, you can also press **⌘ Command + Space** and type `Job Finder`. It opens where you left it, at the size you left it. Links to job postings and other sites open in your usual browser.
+Design Job Finder is now in your Dock. To find it later, you can also press **⌘ Command + Space** and type `Design Job Finder`. It opens where you left it, at the size you left it. Links to job postings and other sites open in your usual browser.
 
 ## Run every week (or as often as you'd like)
 
-Click **Job Finder** in your Dock. It opens on this week's new jobs, with how old each posting is and why it matched. To see an earlier week, pick it from the **This week** menu. To check again now, click **Find new jobs**. It takes 1–3 minutes. **Open spreadsheet** (or **Open Notion**) in the sidebar opens your tracker.
+Click **Design Job Finder** in your Dock. It opens on this week's new jobs, with how old each posting is and why it matched. To see an earlier week, pick it from the **This week** menu. To check again now, click **Find new jobs**. It takes 1–3 minutes. **Open spreadsheet** (or **Open Notion**) in the sidebar opens your tracker.
 
 **Let it check for you:** turn on **Check every Monday** in the sidebar. Your Mac checks every Monday at 9am and sends a notification with the number of new jobs. If it's asleep then, it checks when it wakes. Turn it off to stop.
 
@@ -79,7 +79,7 @@ Then go through the new rows in your tracker. When you apply, or decide not to, 
 <summary><b>Tips for the spreadsheet</b></summary>
 
 - **Excel, Google Sheets and LibreOffice** edit `applications.csv` directly. Change Status, Date applied and Notes, then save.
-- **Numbers** saves your edits as a separate `.numbers` file, and new jobs keep going to `applications.csv`. To keep everything in one place, use Excel or Google Sheets, or switch to Notion (Job Finder → **Settings**).
+- **Numbers** saves your edits as a separate `.numbers` file, and new jobs keep going to `applications.csv`. To keep everything in one place, use Excel or Google Sheets, or switch to Notion (Design Job Finder → **Settings**).
 - **Close the spreadsheet before you click Find new jobs.** Otherwise your next save erases the new rows.
 - Don't edit the **ID** column (the last one). It's how the tool recognizes jobs it has already added.
 - Drafts are also saved as text files in the `drafts` folder, which makes them easier to copy.
@@ -89,7 +89,7 @@ Then go through the new rows in your tracker. When you apply, or decide not to, 
 
 ## Change your search criteria
 
-In Job Finder, open **Settings**, change what you like, and click **Save**. To add or remove companies, use the **Companies** page.
+In Design Job Finder, open **Settings**, change what you like, and click **Save**. To add or remove companies, use the **Companies** page.
 
 For finer changes, right-click `config.yaml` in your job-search folder, choose **Open With → TextEdit**, and edit the **YOUR SEARCH** section at the top. Saving in Settings or Companies rewrites the type of design, level, location, pay and company lines, so make hand edits to those after you've used the app.
 
@@ -108,7 +108,7 @@ For finer changes, right-click `config.yaml` in your job-search folder, choose *
 Keep the format exactly as you see it: words in `"quotes"`, lists in `[square brackets]`, separated by commas. Then click **Find new jobs** to check the results.
 
 <details>
-<summary><b>Adding a company Job Finder couldn't find</b></summary>
+<summary><b>Adding a company Design Job Finder couldn't find</b></summary>
 
 Open the company's careers page and click any job. Look at the web address:
 
@@ -145,10 +145,10 @@ Adzuna adds listings from many other job sites. Sign up at [developer.adzuna.com
 <details>
 <summary><b>Notion instead of a spreadsheet (free)</b></summary>
 
-Job Finder builds the database for you, with all the columns. In **Settings → Where new jobs go**, choose **Notion**. It asks you to:
+Design Job Finder builds the database for you, with all the columns. In **Settings → Where new jobs go**, choose **Notion**. It asks you to:
 
-1. Go to [notion.so/profile/integrations](https://www.notion.so/profile/integrations), click **New integration**, name it "Job Finder", save, and copy the **Internal Integration Secret**.
-2. Open (or create) the Notion page the tracker should live in. Click **•••** (top right) → **Connections** and add "Job Finder".
+1. Go to [notion.so/profile/integrations](https://www.notion.so/profile/integrations), click **New integration**, name it "Design Job Finder", save, and copy the **Internal Integration Secret**.
+2. Open (or create) the Notion page the tracker should live in. Click **•••** (top right) → **Connections** and add "Design Job Finder".
 3. On that page, click **Share → Copy link**.
 
 Paste the secret and the link, then click **Connect Notion**. Drafts appear inside each job's page.
@@ -161,7 +161,7 @@ Paste the secret and the link, then click **Connect Notion**. Drafts appear insi
 <details>
 <summary><b>It found 0 matches</b></summary>
 
-Your settings may be too narrow. When most jobs were skipped because of location, level or pay, Job Finder says so and has a button that takes you to that setting. Otherwise, try "Any level", more cities, remote included, a lower minimum pay, or more companies.
+Your settings may be too narrow. When most jobs were skipped because of location, level or pay, Design Job Finder says so and has a button that takes you to that setting. Otherwise, try "Any level", more cities, remote included, a lower minimum pay, or more companies.
 </details>
 
 <details>
@@ -176,13 +176,13 @@ The **Why it matched** column shows which settings it matched. To block a word i
 One of the job sources may have failed. Open the `logs` folder in your job-search folder and open `app_run.log` (or `scheduled.log` for the Monday check) in TextEdit.
 
 - **`[jobspy] error`** means the Indeed search failed. This happens when Indeed changes its site or limits how often it can be searched. The other sources still run. To fix it, update by pasting the install line into Terminal again. Your settings, notes and tracker are kept.
-- **`404 Not Found` next to a company** means that company's name is wrong or it moved to a different careers system. Remove it on the **Companies** page and add it again, or see "Adding a company Job Finder couldn't find" above.
+- **`404 Not Found` next to a company** means that company's name is wrong or it moved to a different careers system. Remove it on the **Companies** page and add it again, or see "Adding a company Design Job Finder couldn't find" above.
 </details>
 
 <details>
 <summary><b>A company shows "Not found"</b></summary>
 
-Job Finder can't read that company's careers page. It may use a system Job Finder can't check (like Workday, or the company's own site), or its page may use a different name. On the **Companies** page, try the spelling from their careers page address, or see "Adding a company Job Finder couldn't find" above. Indeed often lists their jobs anyway.
+Design Job Finder can't read that company's careers page. It may use a system Design Job Finder can't check (like Workday, or the company's own site), or its page may use a different name. On the **Companies** page, try the spelling from their careers page address, or see "Adding a company Design Job Finder couldn't find" above. Indeed often lists their jobs anyway.
 </details>
 
 <details>
@@ -190,13 +190,13 @@ Job Finder can't read that company's careers page. It may use a system Job Finde
 
 Paste the install line into Terminal again. Your settings, notes, keys and tracker are kept.
 
-If Job Finder still opens in your browser after updating, quit it (⌘ Q, or close the browser tab) and click it in your Dock again.
+If Design Job Finder still opens in your browser after updating, quit it (⌘ Q, or close the browser tab) and click it in your Dock again.
 </details>
 
 <details>
 <summary><b>How do I uninstall?</b></summary>
 
-If **Check every Monday** is on, turn it off first. Then drag the job-search folder and **Job Finder** (in the Applications folder in your home folder) to the Trash, and remove Job Finder from your Dock. Nothing else was installed.
+If **Check every Monday** is on, turn it off first. Then drag the job-search folder and **Design Job Finder** (in the Applications folder in your home folder) to the Trash, and remove Design Job Finder from your Dock. Nothing else was installed.
 </details>
 
 ---
@@ -216,7 +216,7 @@ venv/bin/pip install -r requirements.txt        # Windows: venv\Scripts\pip inst
 venv/bin/python engine/setup_wizard.py           # Windows: venv\Scripts\python engine\setup_wizard.py
 ```
 
-Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), and `engine/open_tracker.py` to open the tracker. You can also use Job Finder without the Dock app: `venv/bin/python engine/app_server.py` starts it in its own window (add `--browser` to use your browser instead; on Windows and Linux it opens in your browser). Monday checks and the Dock app only work on a Mac.
+Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), and `engine/open_tracker.py` to open the tracker. You can also use Design Job Finder without the Dock app: `venv/bin/python engine/app_server.py` starts it in its own window (add `--browser` to use your browser instead; on Windows and Linux it opens in your browser). Monday checks and the Dock app only work on a Mac.
 </details>
 
 <details>
@@ -224,12 +224,12 @@ Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), an
 
 | File | What it is |
 |---|---|
-| `config.yaml` | Your settings (made by Job Finder from `config.example.yaml`). |
+| `config.yaml` | Your settings (made by Design Job Finder from `config.example.yaml`). |
 | `portfolio_notes.md` | Your experience, used for drafts. |
 | `.env` | Your keys (hidden file). |
 | `applications.csv`, `drafts/` | Your tracker and drafts. |
 | `logs/`, `history.json` | What the latest searches did, and the jobs they found (about 8 weeks). |
-| `engine/` | The code. `app_server.py` and `app/` are the Job Finder app (a page shown in its own window), `mac_app.py` makes the Dock app, `schedule.py` and `scheduled_run.py` run the Monday search, `config_store.py` saves settings, `main.py` runs the search, `sources.py` fetches and filters jobs, `draft.py` writes drafts, `tracker_csv.py` and `notion_client.py` save jobs, `check_boards.py` checks company names. |
+| `engine/` | The code. `app_server.py` and `app/` are the Design Job Finder app (a page shown in its own window), `mac_app.py` makes the Dock app, `schedule.py` and `scheduled_run.py` run the Monday search, `config_store.py` saves settings, `main.py` runs the search, `sources.py` fetches and filters jobs, `draft.py` writes drafts, `tracker_csv.py` and `notion_client.py` save jobs, `check_boards.py` checks company names. |
 | `tests/` | Automated checks for the filtering rules and the app. |
 
 Everything in the first five rows is personal and is never uploaded (see `.gitignore`).

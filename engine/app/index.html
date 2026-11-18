@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Job Finder</title>
+<title>Design Job Finder</title>
 <link rel="icon" href="/static/icon.svg">
 <link rel="stylesheet" href="/static/app.css">
 </head>
@@ -11,13 +11,13 @@
 
 <!-- ── First-run questions: the whole window, no sidebar ─────────── -->
 <section id="view-setup" class="setup" hidden>
-  <header class="setup-top"><img src="/static/icon.svg" alt="" width="24" height="24"> Job Finder</header>
+  <header class="setup-top"><img src="/static/icon.svg" alt="" width="24" height="24"> Design Job Finder</header>
   <div class="setup-body">
     <div class="segs" id="setup-segs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
     <p class="step-of" id="step-count"></p>
     <div class="step" data-step="1">
       <h1>What are you looking for?</h1>
-      <p class="lede">Your answers here narrow down the jobs Job Finder finds.</p>
+      <p class="lede">Your answers here narrow down the jobs Design Job Finder finds.</p>
       <div class="stack">
         <div class="field"><span>Type of design</span><div class="options" id="setup-field"></div></div>
         <div class="field"><span>Level</span><div class="options" id="setup-level"></div></div>
@@ -56,7 +56,7 @@
     </div>
     <div class="step" data-step="5">
       <h1>Where should new jobs go?</h1>
-      <p class="lede">Job Finder adds each new job here, so you can track what you’ve applied to.</p>
+      <p class="lede">Design Job Finder adds each new job here, so you can track what you’ve applied to.</p>
       <div class="cards2" id="setup-tracker"></div>
       <div class="notion-connect" data-for="setup" hidden></div>
     </div>
@@ -71,7 +71,7 @@
 <!-- ── The app: sidebar and pages ─────────────────────────────────── -->
 <div class="app" id="app" hidden>
   <aside class="side">
-    <div class="side-head"><img src="/static/icon.svg" alt="" width="24" height="24"> Job Finder</div>
+    <div class="side-head"><img src="/static/icon.svg" alt="" width="24" height="24"> Design Job Finder</div>
     <nav class="nav" aria-label="Pages">
       <button data-page="jobs"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg><span class="grow">Jobs</span><span class="count" id="nav-jobs" hidden></span></button>
       <button data-page="companies"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><span class="grow">Companies</span><span class="count" id="nav-companies" hidden></span></button>
@@ -171,7 +171,7 @@
       <div class="form">
         <div class="tab-panel" data-panel="search">
           <h1>Your search</h1>
-          <p class="lede">What Job Finder looks for on every check.</p>
+          <p class="lede">What Design Job Finder looks for on every check.</p>
 
           <section class="sec" id="sec-field">
             <div class="about"><h2>Type of design</h2><p>Which job titles count.</p></div>
@@ -182,7 +182,7 @@
           </section>
 
           <section class="sec" id="sec-level">
-            <div class="about"><h2>Level</h2><p>Job Finder looks for jobs at this level.</p></div>
+            <div class="about"><h2>Level</h2><p>Design Job Finder looks for jobs at this level.</p></div>
             <div class="stack">
               <div class="options" id="set-level"></div>
               <label class="field"><span>Your title in drafts</span>
@@ -213,7 +213,7 @@
           </section>
 
           <section class="sec" id="sec-tracker">
-            <div class="about"><h2>Where new jobs go</h2><p>Job Finder adds each new job here, so you can track what you’ve applied to.</p></div>
+            <div class="about"><h2>Where new jobs go</h2><p>Design Job Finder adds each new job here, so you can track what you’ve applied to.</p></div>
             <div class="stack">
               <div class="cards2" id="set-tracker"></div>
               <div class="notion-connect" data-for="settings" hidden></div>
@@ -223,10 +223,10 @@
 
         <div class="tab-panel" data-panel="extras" hidden>
           <h1>Extras</h1>
-          <p class="lede">Both are optional. Job Finder works fine without them.</p>
+          <p class="lede">Both are optional. Design Job Finder works fine without them.</p>
 
           <section class="sec" id="sec-drafts">
-            <div class="about"><h2>Drafts <span class="optional">About 1–2¢ a job</span></h2><p>Job Finder writes 3 resume bullets and the start of a cover letter for each new job, using only what you write under Your experience. It uses Anthropic’s AI, billed to your Anthropic account.</p></div>
+            <div class="about"><h2>Drafts <span class="optional">About 1–2¢ a job</span></h2><p>Design Job Finder writes 3 resume bullets and the start of a cover letter for each new job, using only what you write under Your experience. It uses Anthropic’s AI, billed to your Anthropic account.</p></div>
             <div class="stack">
               <label class="field"><span>Anthropic API key <span class="status" id="anthropic-status"></span></span>
                 <input class="input" id="anthropic-key" type="password" placeholder="sk-ant-…" autocomplete="off">
@@ -261,14 +261,14 @@
   </main>
 </div>
 
-<!-- Messages that apply anywhere, like "Job Finder was closed". -->
+<!-- Messages that apply anywhere, like "Design Job Finder was closed". -->
 <div class="toast" id="banner" role="alert" hidden><span id="banner-text"></span>
   <button class="btn btn-icon" id="banner-close" aria-label="Dismiss"><svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
 
 <template id="notion-template">
   <ol class="notion-steps">
-    <li>Go to <a href="https://www.notion.so/profile/integrations" target="_blank" rel="noopener">notion.so/profile/integrations</a>, click <b>New integration</b>, name it “Job Finder”, save, and copy the <b>Internal Integration Secret</b> (a long code that lets Job Finder add jobs to Notion).</li>
-    <li>Open the Notion page where you want your jobs to go, or make a new one. Click <b>•••</b> (top right) → <b>Connections</b> and add “Job Finder”.</li>
+    <li>Go to <a href="https://www.notion.so/profile/integrations" target="_blank" rel="noopener">notion.so/profile/integrations</a>, click <b>New integration</b>, name it “Design Job Finder”, save, and copy the <b>Internal Integration Secret</b> (a long code that lets Design Job Finder add jobs to Notion).</li>
+    <li>Open the Notion page where you want your jobs to go, or make a new one. Click <b>•••</b> (top right) → <b>Connections</b> and add “Design Job Finder”.</li>
     <li>On that page, click <b>Share → Copy link</b>.</li>
   </ol>
   <div class="stack">

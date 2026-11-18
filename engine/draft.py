@@ -41,7 +41,7 @@ def generate_draft(job: dict, portfolio_notes: str, config: dict) -> str:
     if workspace_id:
         extra_headers["anthropic-workspace-id"] = workspace_id
 
-    role = config.get("your_role") or "product designer"
+    role = config.get("your_role") or "designer"
     style = config.get("writing_style") or DEFAULT_WRITING_STYLE
     style_lines = "\n".join(f"- {line}" for line in style)
 

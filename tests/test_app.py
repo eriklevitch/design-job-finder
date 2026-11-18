@@ -1,4 +1,4 @@
-"""Tests for the Job Finder app: settings, the local server, the weekly
+"""Tests for the Design Job Finder app: settings, the local server, the weekly
 schedule and the Mac app bundle. Nothing here touches your real files,
 Dock or schedule."""
 import json
@@ -147,7 +147,7 @@ def call(app, path, body=None, token="secret-token", host=None, method="POST"):
 
 def test_server_serves_page(server):
     status, body = call(server, "/", method="GET")
-    assert status == 200 and b"Job Finder" in body
+    assert status == 200 and b"Design Job Finder" in body
     assert call(server, "/static/fonts/Inter.woff2", method="GET")[0] == 200
 
 
@@ -257,14 +257,26 @@ def test_scheduled_run_messages():
 
 
 def test_mac_app_bundle(tmp_path):
-    app = mac_app.build(tmp_path / "Job Finder.app", root=tmp_path / "my folder")
+    app = mac_app.build(tmp_path / "Design Job Finder.app", root=tmp_path / "my folder")
     info = plistlib.loads((app / "Contents" / "Info.plist").read_bytes())
-    assert info["CFBundleExecutable"] == "Job Finder"
-    exe = app / "Contents" / "MacOS" / "Job Finder"
+    assert info["CFBundleExecutable"] == "Design Job Finder"
+    exe = app / "Contents" / "MacOS" / "Design Job Finder"
     assert exe.stat().st_mode & 0o111
     script = exe.read_text()
     assert "'" + str(tmp_path / "my folder" / "venv" / "bin" / "python") + "'" in script
     assert (app / "Contents" / "Resources" / "JobFinder.icns").exists()
+
+
+def test_mac_app_replaces_old_name(tmp_path):
+    old = mac_app.build(tmp_path / "Job Finder.app", root=tmp_path)
+    other = tmp_path / "Job Finder Notes.app"
+    other.mkdir()
+    mac_app.build(tmp_path / "Design Job Finder.app", root=tmp_path)
+    assert not old.exists() and other.exists()
+    tile = lambda url: {"tile-data": {"file-data": {"_CFURLString": url}}}
+    assert mac_app.is_old_tile(tile("file:///Users/a/Applications/Job%20Finder.app/"))
+    assert not mac_app.is_old_tile(tile("file:///Users/a/Applications/Design%20Job%20Finder.app/"))
+    assert not mac_app.is_old_tile({})
 
 
 # ── This week's jobs (history.json) ─────────────────────────────────

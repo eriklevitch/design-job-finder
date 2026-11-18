@@ -1,14 +1,14 @@
 # Job search settings.
 #
-# Job Finder (Settings) creates your own copy of this file, called config.yaml,
+# Design Job Finder (Settings) creates your own copy of this file, called config.yaml,
 # from your answers. You can also edit config.yaml by hand: open it in
 # TextEdit (or any text editor), change a line, save. Keep the format
 # exactly as you see it: words in "quotes", lists in [ square brackets ].
-# Then click "Find new jobs" in Job Finder to check the results.
+# Then click "Find new jobs" in Design Job Finder to check the results.
 
 # ════ YOUR SEARCH ═════════════════════════════════════════════════
 
-# A job title has to include at least one of these. Job Finder → Settings
+# A job title has to include at least one of these. Design Job Finder → Settings
 # → Type of design fills this in for product design, brand design or both.
 title_keywords: ["product design", "ux", "ui designer", "experience designer", "interaction designer", "design manager", "manager, design", "head of design", "director of design", "director, design", "design director", "design lead", "vp of design", "vp, design", "vp design"]
 
@@ -40,7 +40,7 @@ max_posting_age_days: 30
 #   job-boards.greenhouse.io/NAME   -> greenhouse_companies
 #   jobs.lever.co/NAME              -> lever_companies
 #   jobs.ashbyhq.com/NAME           -> ashby_companies
-# Job Finder → Settings finds these for you when you type company names.
+# Design Job Finder → Settings finds these for you when you type company names.
 greenhouse_companies: []
 lever_companies: []
 ashby_companies: []

@@ -1,4 +1,4 @@
-// Job Finder page. Talks only to the small server on this Mac (app_server.py).
+// Design Job Finder page. Talks only to the small server on this Mac (app_server.py).
 "use strict";
 
 const $ = (id) => document.getElementById(id);
@@ -30,7 +30,7 @@ async function api(path, body = {}) {
       body: JSON.stringify(body),
     });
   } catch (_) {
-    throw new Error("Job Finder was closed. Click Job Finder in your Dock to open it again.");
+    throw new Error("Design Job Finder was closed. Click Design Job Finder in your Dock to open it again.");
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || "Something went wrong.");
@@ -249,7 +249,7 @@ function jobSites() {
   return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names.join("");
 }
 const HELP = {
-  missing: () => "“Not found” means Job Finder can’t read that company’s careers page. Try another spelling, like the one in their careers page address, or remove it."
+  missing: () => "“Not found” means Design Job Finder can’t read that company’s careers page. Try another spelling, like the one in their careers page address, or remove it."
     + (jobSites() ? ` ${jobSites()} often list${jobSites().includes(" and ") ? "" : "s"} their jobs anyway.` : ""),
   error: () => "“Couldn’t look up” means the lookup didn’t finish. Remove the company and add it again to retry.",
 };
@@ -285,7 +285,7 @@ function renderCompanies(where) {
   $("co-sub").textContent = sites ? `Each check includes these careers pages, along with ${sites}.`
     : "Each check includes these careers pages.";
   $("co-empty-text").textContent = "Add companies you’d love to work at, and each check will include their careers pages."
-    + (sites ? ` Without any, Job Finder still searches ${sites}.` : "");
+    + (sites ? ` Without any, Design Job Finder still searches ${sites}.` : "");
   $("companies").replaceChildren(...list.map((c) => {
     const x = button("btn btn-icon", () => removeCompany(where, c), icon("x", "sm"));
     x.setAttribute("aria-label", `Remove ${companyName(c)}`);
@@ -407,7 +407,7 @@ function startSetup() {
   $("setup-remote").checked = s.remote;
   $("setup-pay").value = s.min_salary ? money(s.min_salary) : "";
   $("setup-companies-lede").textContent = jobSites()
-    ? `Optional. Each check includes these companies’ careers pages. Job Finder also searches ${jobSites()}, so you’ll still find jobs if you skip this.`
+    ? `Optional. Each check includes these companies’ careers pages. Design Job Finder also searches ${jobSites()}, so you’ll still find jobs if you skip this.`
     : "Each check includes these companies’ careers pages.";
   companies.setup = fromSettings();
   renderCompanies("setup");
@@ -705,8 +705,8 @@ function renderJobs() {
   } else if (!week) {
     title = "Let’s find your first jobs";
     sub = state.last_run && state.last_run.finished_at
-      ? `Job Finder now keeps each week’s jobs on this page. Your earlier ones are in ${where}.`
-      : `Job Finder checks ${jobSites() ? jobSites() + " and " : ""}the careers pages of your companies, then adds the jobs that match to ${where}.`;
+      ? `Design Job Finder now keeps each week’s jobs on this page. Your earlier ones are in ${where}.`
+      : `Design Job Finder checks ${jobSites() ? jobSites() + " and " : ""}the careers pages of your companies, then adds the jobs that match to ${where}.`;
     if (!running) actions.push(button("btn btn-primary", findJobs, icon("rotateCw"), "Find my first jobs"));
   } else if (!week.checked) {
     title = week.this_week ? "Not checked yet this week" : `Not checked the week of ${longDate(week.start)}`;
@@ -723,7 +723,7 @@ function renderJobs() {
       title = week.this_week ? "Nothing new this week" : `Nothing new the week of ${longDate(week.start)}`;
       sub = last.matches && last.already >= last.matches
         ? `${when} You’re up to date: the ${plural(last.matches, "job")} that matched ${last.matches === 1 ? "is" : "are"} already in ${where}.`
-        : `${when} Job Finder looked at ${plural(last.scanned || 0, "listing")} and none matched your search.`;
+        : `${when} Design Job Finder looked at ${plural(last.scanned || 0, "listing")} and none matched your search.`;
       const tip = isLatest ? suggestion(last) : null;
       if (tip) {
         sub += " " + tip[0];
@@ -965,7 +965,7 @@ $("discard").onclick = () => openSettings();
   try {
     state = await api("/api/state");
   } catch (e) {
-    banner(token ? e.message : "Click Job Finder in your Dock to open it.");
+    banner(token ? e.message : "Click Design Job Finder in your Dock to open it.");
     return;
   }
   if (!state.set_up) return startSetup();

@@ -1,6 +1,6 @@
 """Finds new jobs and adds them to your tracker.
 
-Most people run this from the Job Finder app ("Find new jobs"). From
+Most people run this from the Design Job Finder app ("Find new jobs"). From
 Terminal:
   python engine/main.py             find jobs and add new ones to your tracker
   python engine/main.py --dry-run   preview matches; writes nothing, costs nothing
@@ -174,7 +174,7 @@ def main(argv=None):
     if lock is None:
         # Not a problem: the app follows the search that's already running.
         print("A search is already running. Try again when it finishes.")
-        report.update(state="busy", message="Job Finder is already looking for jobs.")
+        report.update(state="busy", message="Design Job Finder is already looking for jobs.")
         return 1
     try:
         outcome = search(report, dry_run)
@@ -286,7 +286,7 @@ def keep_matches(report: Report, jobs: list[dict], config: dict) -> list[dict]:
     report.update(scanned=stats["scanned"], skipped=skipped, matches=len(matches))
     if not matches:
         print("\nNo matching jobs this time. If that keeps happening, try a wider")
-        print("search: open Job Finder → Settings, or see 'Change your search' in the README.")
+        print("search: open Design Job Finder → Settings, or see 'Change your search' in the README.")
         raise Finish("No jobs matched your search this time.", added=[])
     return matches
 
@@ -368,7 +368,7 @@ def add_jobs(report: Report, tracker, new_jobs: list[dict], config: dict) -> Fin
 
     print(f"\nDone. Added {len(added)} new job(s) to {tracker.describe()}.")
     if not drafting:
-        print("Tip: add an Anthropic key (Job Finder → Settings) to get tailored resume")
+        print("Tip: add an Anthropic key (Design Job Finder → Settings) to get tailored resume")
         print("bullets and a cover letter opening with every job.")
     return Finish(f"Added {len(added)} new job{'s' if len(added) != 1 else ''} to "
                   f"{friendly_name(tracker)}.", added=[job_card(j) for j in added],

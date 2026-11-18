@@ -1,4 +1,4 @@
-"""Question-and-answer setup in Terminal. Most people use the Job Finder
+"""Question-and-answer setup in Terminal. Most people use the Design Job Finder
 app instead, which asks the same questions on a page.
 
 Creates (or updates) your settings in config.yaml, your keys in .env and
@@ -186,9 +186,9 @@ def setup_notion() -> bool:
     say()
     say("Three steps in Notion:")
     say("  1. Go to https://www.notion.so/profile/integrations, click 'New integration',")
-    say("     name it 'Job Finder', save, and copy the 'Internal Integration Secret'.")
+    say("     name it 'Design Job Finder', save, and copy the 'Internal Integration Secret'.")
     say("  2. Open (or create) the Notion page the tracker should live in.")
-    say("     Click ••• (top right) → Connections → add 'Job Finder'.")
+    say("     Click ••• (top right) → Connections → add 'Design Job Finder'.")
     say("  3. On that page, click Share → Copy link.")
     token = ask("Paste the Integration Secret (step 1)")
     link = ask("Paste the page link (step 3)")
@@ -206,7 +206,7 @@ def setup_notion() -> bool:
 def main() -> int:
     load_env()
     first_time = not CONFIG_PATH.exists()
-    say("Job Finder setup")
+    say("Design Job Finder setup")
     say("Five short questions. Press Return to accept the answer in [brackets].")
     if not first_time:
         say("Your current settings are shown as the defaults.")
@@ -230,7 +230,7 @@ def main() -> int:
         say("For good drafts, add your experience to portfolio_notes.md in this")
         say("folder (right-click it → Open With → TextEdit).")
     say()
-    say("Every week: open Job Finder and click 'Find new jobs'.")
+    say("Every week: open Design Job Finder and click 'Find new jobs'.")
     if ask_yes("\nRun your first search now?", True):
         say()
         python = sys.executable

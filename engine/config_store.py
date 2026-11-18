@@ -1,4 +1,4 @@
-"""Reading and saving your settings. Used by the Job Finder app and by
+"""Reading and saving your settings. Used by the Design Job Finder app and by
 the Terminal setup (setup_wizard.py), so both behave the same way.
 
 Edits config.yaml line by line, so every comment and advanced setting
@@ -201,6 +201,6 @@ def connect_notion(token: str, link: str) -> tuple[bool, str]:
         db = create_database(token, page_id)
     except Exception as e:
         return False, (f"Notion didn’t accept that ({e}). Usually this means step 2 was missed: "
-                       "on your Notion page, click ••• → Connections and add “Job Finder”.")
+                       "on your Notion page, click ••• → Connections and add “Design Job Finder”.")
     save_env({"NOTION_TOKEN": token, "NOTION_DATABASE_ID": db["id"]})
     return True, db["url"]

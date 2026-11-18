@@ -12,7 +12,7 @@ SUMMARY = ROOT / "logs" / "scheduled_summary.json"
 
 
 def notify(message: str) -> None:
-    script = f'display notification {json.dumps(message)} with title "Job Finder"'
+    script = f'display notification {json.dumps(message)} with title "Design Job Finder"'
     subprocess.run(["osascript", "-e", script], check=False, capture_output=True)
 
 
@@ -24,9 +24,9 @@ def message_for(summary: dict, exit_code: int) -> str:
         added = len(summary.get("added") or [])
         if added:
             return (f"Found {added} new job{'s' if added != 1 else ''}. "
-                    "Open Job Finder to see them.")
+                    "Open Design Job Finder to see them.")
         return "No new jobs this week."
-    return summary.get("message") or "This week's check didn't finish. Open Job Finder to try again."
+    return summary.get("message") or "This week's check didn't finish. Open Design Job Finder to try again."
 
 
 def main() -> int:

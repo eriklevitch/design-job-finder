@@ -1,5 +1,5 @@
 """Opens your tracker: the spreadsheet, or Notion in your browser.
-The Job Finder app's "Open spreadsheet" button runs this."""
+The Design Job Finder app's "Open spreadsheet" button runs this."""
 import subprocess
 import sys
 import webbrowser
