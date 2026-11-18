@@ -4,7 +4,8 @@ People using this project are often designers, not developers. Keep
 explanations plain and avoid jargon.
 
 - **The app:** people use **Job Finder**, a small page served on 127.0.0.1 by
-  `engine/app_server.py` (page in `engine/app/`), opened from a Dock app
+  `engine/app_server.py` (page in `engine/app/`) and shown in its own window
+  (pywebview; `--browser` uses the browser instead), opened from a Dock app
   that `engine/mac_app.py` builds in `~/Applications`. Don't send them back
   to Terminal or to editing files when the app can do it.
 - **Setup:** point them to Job Finder → Settings, or edit the "YOUR SEARCH"

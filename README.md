@@ -48,7 +48,7 @@ Product, UX and UI designers who do not want to check job sites every week. You 
    curl -fsSL https://raw.githubusercontent.com/eriklevitch/product-design-job-finder/main/install.sh | bash
    ```
 
-3. **Job Finder** opens in your browser and asks five short questions:
+3. The **Job Finder** app opens in its own window and asks five short questions:
    1. **Level:** senior individual contributor, leadership, both, or any.
    2. **Location:** your cities, and whether remote counts.
    3. **Pay:** your minimum per year.
@@ -57,7 +57,7 @@ Product, UX and UI designers who do not want to check job sites every week. You 
 
 4. Click **Find my jobs**. Your first jobs appear on the page and in your tracker.
 
-Job Finder is now in your Dock. To find it later, you can also press **⌘ Command + Space** and type `Job Finder`.
+Job Finder is now in your Dock. To find it later, you can also press **⌘ Command + Space** and type `Job Finder`. It opens where you left it, at the size you left it. Links to job postings and other sites open in your usual browser.
 
 ## Run every week (or as often as you'd like)
 
@@ -188,6 +188,8 @@ It uses a careers system Job Finder can't check (for example Workday, or the com
 <summary><b>How do I update to the newest version?</b></summary>
 
 Paste the install line into Terminal again. Your settings, notes, keys and tracker are kept.
+
+If Job Finder still opens in your browser after updating, quit it (⌘ Q, or close the browser tab) and click it in your Dock again.
 </details>
 
 <details>
@@ -213,7 +215,7 @@ venv/bin/pip install -r requirements.txt        # Windows: venv\Scripts\pip inst
 venv/bin/python engine/setup_wizard.py           # Windows: venv\Scripts\python engine\setup_wizard.py
 ```
 
-Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), and `engine/open_tracker.py` to open the tracker. You can also use the Job Finder page without the Dock app: `venv/bin/python engine/app_server.py` starts it and opens your browser. Monday checks and the Dock app only work on a Mac.
+Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), and `engine/open_tracker.py` to open the tracker. You can also use Job Finder without the Dock app: `venv/bin/python engine/app_server.py` starts it in its own window (add `--browser` to use your browser instead; on Windows and Linux it opens in your browser). Monday checks and the Dock app only work on a Mac.
 </details>
 
 <details>
@@ -226,7 +228,7 @@ Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), an
 | `.env` | Your keys (hidden file). |
 | `applications.csv`, `drafts/` | Your tracker and drafts. |
 | `logs/`, `history.json` | What the latest searches did, and the jobs they found (about 8 weeks). |
-| `engine/` | The code. `app_server.py` and `app/` are the Job Finder page, `mac_app.py` makes the Dock app, `schedule.py` and `scheduled_run.py` run the Monday search, `config_store.py` saves settings, `main.py` runs the search, `sources.py` fetches and filters jobs, `draft.py` writes drafts, `tracker_csv.py` and `notion_client.py` save jobs, `check_boards.py` checks company names. |
+| `engine/` | The code. `app_server.py` and `app/` are the Job Finder app (a page shown in its own window), `mac_app.py` makes the Dock app, `schedule.py` and `scheduled_run.py` run the Monday search, `config_store.py` saves settings, `main.py` runs the search, `sources.py` fetches and filters jobs, `draft.py` writes drafts, `tracker_csv.py` and `notion_client.py` save jobs, `check_boards.py` checks company names. |
 | `tests/` | Automated checks for the filtering rules and the app. |
 
 Everything in the first five rows is personal and is never uploaded (see `.gitignore`).

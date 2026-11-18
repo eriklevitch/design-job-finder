@@ -94,8 +94,10 @@ if [ "$(uname)" = "Darwin" ]; then
       [ -n "$pid" ] && kill "$pid" 2>/dev/null || true
       rm -f "$DEST/.app_state.json"
     fi
-    "$DEST/venv/bin/python" "$DEST/engine/app_server.py" >/dev/null
-    bold "Done. Job Finder is open in your browser."
+    # Open it the way the Dock does, so it gets its own window (and Terminal is free).
+    open "${JOBSEARCH_APP_DIR:-$HOME/Applications}/Job Finder.app" \
+      || "$DEST/venv/bin/python" "$DEST/engine/app_server.py" --browser >/dev/null
+    bold "Done. Job Finder is open."
     echo "Next time, click Job Finder in your Dock (or search for it with ⌘ Space)."
   else
     "$DEST/venv/bin/python" "$DEST/engine/mac_app.py" >/dev/null
