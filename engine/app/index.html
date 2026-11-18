@@ -34,15 +34,15 @@
     </div>
     <div class="step" data-step="3">
       <h1>What’s the lowest yearly pay you’d consider?</h1>
-      <p class="lede">Jobs that don’t list pay are always kept, so you can check them yourself.</p>
+      <p class="lede">Jobs that don’t list pay are always included, so you can decide for yourself.</p>
       <label class="field"><span>Minimum yearly pay, in US dollars</span>
         <input class="input" id="setup-pay" inputmode="numeric" placeholder="e.g. 150k" autocomplete="off">
-        <small>A job is kept if the top of its pay range meets your minimum. Type 0 for no minimum.</small>
+        <small>A job counts if the top of its pay range reaches your minimum. Type 0 for no minimum.</small>
       </label>
     </div>
     <div class="step" data-step="4">
       <h1>Any companies you’d love to work at?</h1>
-      <p class="lede">Optional. Job Finder checks these companies’ careers pages every time it looks. It also searches the job site Indeed, so you’ll still find jobs if you skip this.</p>
+      <p class="lede">Optional. Each check includes these companies’ careers pages. Job Finder also searches Indeed, so you’ll still find jobs if you skip this.</p>
       <div class="stack">
         <div class="company-add" data-for="setup">
           <input class="input" placeholder="Company name, e.g. Figma" autocomplete="off" aria-label="Company name">
@@ -53,7 +53,7 @@
     </div>
     <div class="step" data-step="5">
       <h1>Where should new jobs go?</h1>
-      <p class="lede">Job Finder adds each new job here, and you mark what you decide.</p>
+      <p class="lede">Job Finder adds each new job here, so you can track what you’ve applied to.</p>
       <div class="cards2" id="setup-tracker"></div>
       <div class="notion-connect" data-for="setup" hidden></div>
     </div>
@@ -77,7 +77,7 @@
     <div class="side-foot">
       <button class="side-row" id="open-tracker">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="3" x2="21" y1="15" y2="15"/><line x1="9" x2="9" y1="9" y2="21"/><line x1="15" x2="15" y1="9" y2="21"/></svg>
-        <span class="grow"><span id="open-tracker-label">Open my spreadsheet</span><small id="close-sheet">Close it before the next check, so your edits aren’t overwritten.</small></span>
+        <span class="grow"><span id="open-tracker-label">Open spreadsheet</span><small id="close-sheet">Close it before a check so edits aren’t lost.</small></span>
         <svg class="icon sm faint" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
       </button>
       <label class="side-row" id="schedule-row">
@@ -132,19 +132,19 @@
     <header class="top"><span class="title"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>Companies <span class="count" id="co-count"></span></span></header>
     <div class="toolbar">
       <div class="company-add" data-for="companies">
-        <input class="input" placeholder="Add a company, e.g. Figma" autocomplete="off" aria-label="Company name">
+        <input class="input" placeholder="Add companies, e.g. Figma, Linear" autocomplete="off" aria-label="Company name">
         <button class="btn btn-secondary" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add</button>
       </div>
     </div>
     <div class="scroll">
-      <div class="summary"><b id="co-title"></b><span>Job Finder checks these careers pages every time it looks. It also searches the job site Indeed.</span></div>
+      <div class="summary"><b id="co-title"></b><span>Each check includes these careers pages, along with Indeed.</span></div>
       <div id="co-notices"></div>
       <div class="table-wrap" id="co-wrap">
         <table class="companies">
           <thead><tr>
             <th><span class="h">Company</span></th>
             <th><span class="h">Status</span></th>
-            <th><span class="h">Careers page</span></th>
+            <th><span class="h">Hosted on</span></th>
             <th><span class="h">Open jobs</span></th>
             <th class="shrink"><span class="visually-hidden">Remove</span></th>
           </tr></thead>
@@ -153,7 +153,7 @@
       </div>
       <div class="empty" id="co-empty" hidden>
         <h2>No companies yet</h2>
-        <p>Add companies you’d love to work at, and Job Finder will check their careers pages every time it looks. Without any, it still searches Indeed.</p>
+        <p>Add companies you’d love to work at, and each check will include their careers pages. Without any, Job Finder still searches Indeed.</p>
       </div>
     </div>
   </main>
@@ -168,7 +168,7 @@
       <div class="form">
         <div class="tab-panel" data-panel="search">
           <h1>Your search</h1>
-          <p class="lede">What Job Finder looks for each time it checks.</p>
+          <p class="lede">What Job Finder looks for on every check.</p>
 
           <section class="sec" id="sec-level">
             <div class="about"><h2>Level</h2><p>Job Finder looks for product design jobs at this level.</p></div>
@@ -176,7 +176,7 @@
               <div class="options" id="set-level"></div>
               <label class="field"><span>Your title in drafts</span>
                 <input class="input" id="set-role" autocomplete="off">
-                <small>Only used if you turn on drafts, under Extras. Clear it to go back to the title that matches your level.</small>
+                <small>Only used in drafts (see Extras). Leave it empty to use the title for your level.</small>
               </label>
             </div>
           </section>
@@ -194,15 +194,15 @@
           </section>
 
           <section class="sec" id="sec-pay">
-            <div class="about"><h2>Pay</h2><p>Jobs that don’t list pay are always kept, so you can check them yourself.</p></div>
+            <div class="about"><h2>Pay</h2><p>Jobs that don’t list pay are always included, so you can decide for yourself.</p></div>
             <label class="field"><span>Minimum yearly pay, in US dollars</span>
               <input class="input" id="set-pay" inputmode="numeric" placeholder="e.g. 150k" autocomplete="off">
-              <small>A job is kept if the top of its pay range meets your minimum. Type 0 for no minimum.</small>
+              <small>A job counts if the top of its pay range reaches your minimum. Type 0 for no minimum.</small>
             </label>
           </section>
 
           <section class="sec" id="sec-tracker">
-            <div class="about"><h2>Where new jobs go</h2><p>Job Finder adds each new job here, and you mark what you decide.</p></div>
+            <div class="about"><h2>Where new jobs go</h2><p>Job Finder adds each new job here, so you can track what you’ve applied to.</p></div>
             <div class="stack">
               <div class="cards2" id="set-tracker"></div>
               <div class="notion-connect" data-for="settings" hidden></div>
@@ -212,10 +212,10 @@
 
         <div class="tab-panel" data-panel="extras" hidden>
           <h1>Extras</h1>
-          <p class="lede">Both are optional. Job Finder works without them.</p>
+          <p class="lede">Both are optional. Job Finder works fine without them.</p>
 
           <section class="sec" id="sec-drafts">
-            <div class="about"><h2>Drafts <span class="optional">Optional</span></h2><p>Job Finder can write 3 resume bullets and the start of a cover letter for each new job, using only your notes. This uses Anthropic’s AI and costs about 1–2 cents per job, charged to your Anthropic account.</p></div>
+            <div class="about"><h2>Drafts <span class="optional">About 1–2¢ a job</span></h2><p>Job Finder writes 3 resume bullets and the start of a cover letter for each new job, using only what you write under Your experience. It uses Anthropic’s AI, billed to your Anthropic account.</p></div>
             <div class="stack">
               <label class="field"><span>Anthropic API key <span class="status" id="anthropic-status"></span></span>
                 <input class="input" id="anthropic-key" type="password" placeholder="sk-ant-…" autocomplete="off">
@@ -223,13 +223,13 @@
               </label>
               <label class="field"><span>Your experience</span>
                 <textarea class="input" id="notes" rows="10"></textarea>
-                <small>Companies, what you led, and results with numbers. Drafts only use what’s written here, so the more specific these notes are, the better the drafts.</small>
+                <small>Companies, what you led, and results with numbers. Drafts use only what’s written here, so the more specific you are, the better they’ll be.</small>
               </label>
             </div>
           </section>
 
           <section class="sec" id="sec-adzuna">
-            <div class="about"><h2>More listings from Adzuna <span class="optional">Optional, free</span></h2><p>Adzuna collects listings from many other job sites. Make a free account at <a href="https://developer.adzuna.com" target="_blank" rel="noopener">developer.adzuna.com</a> and paste the App ID and App Key it gives you.</p></div>
+            <div class="about"><h2>More listings from Adzuna <span class="optional">Free</span></h2><p>Adzuna collects listings from many other job sites. Make a free account at <a href="https://developer.adzuna.com" target="_blank" rel="noopener">developer.adzuna.com</a> and paste the App ID and App Key it gives you.</p></div>
             <div class="stack">
               <span class="status" id="adzuna-status"></span>
               <div class="row2">
@@ -256,8 +256,8 @@
 
 <template id="notion-template">
   <ol class="notion-steps">
-    <li>Go to <a href="https://www.notion.so/profile/integrations" target="_blank" rel="noopener">notion.so/profile/integrations</a>, click <b>New integration</b>, name it “Job search”, save, and copy the <b>Internal Integration Secret</b> (a long code that lets Job Finder add jobs to Notion).</li>
-    <li>Open the Notion page where you want your jobs to go, or make a new one. Click <b>•••</b> (top right) → <b>Connections</b> and add “Job search”.</li>
+    <li>Go to <a href="https://www.notion.so/profile/integrations" target="_blank" rel="noopener">notion.so/profile/integrations</a>, click <b>New integration</b>, name it “Job Finder”, save, and copy the <b>Internal Integration Secret</b> (a long code that lets Job Finder add jobs to Notion).</li>
+    <li>Open the Notion page where you want your jobs to go, or make a new one. Click <b>•••</b> (top right) → <b>Connections</b> and add “Job Finder”.</li>
     <li>On that page, click <b>Share → Copy link</b>.</li>
   </ol>
   <div class="stack">

@@ -61,7 +61,7 @@ Job Finder is now in your Dock. To find it later, you can also press **⌘ Comma
 
 ## Run every week (or as often as you'd like)
 
-Click **Job Finder** in your Dock. It opens on this week's new jobs, each with how old the posting is and why it matched. The row of weeks at the top shows the last four weeks; click one to see its jobs. To look again now, click **Find new jobs** (top right). It takes 1–3 minutes. **Open my spreadsheet** (or **Open Notion**) opens your tracker.
+Click **Job Finder** in your Dock. It opens on this week's new jobs, each with how old the posting is and why it matched. To see an earlier week, pick it from the **This week** menu at the top left. To look again now, click **Find new jobs** (top right). It takes 1–3 minutes. **Open spreadsheet** (or **Open Notion**) opens your tracker.
 
 **Let it run on its own:** tick **Check for me every Monday morning**. Your Mac then searches every Monday at 9am and sends a notification with the number of new jobs. If your Mac is asleep at that time, it searches when it wakes. Untick the box to stop.
 
@@ -128,7 +128,7 @@ Turn on any of these in Job Finder → **Settings**.
 For every new job, it writes three resume bullets and a cover letter opening. It uses only what you've written in `portfolio_notes.md`, so it won't invent experience you don't have.
 
 1. Create an account at [console.anthropic.com](https://console.anthropic.com), add a few dollars of credit, then go to **API Keys → Create Key**.
-2. In **Settings → Drafts**, paste the key in **Anthropic API key**.
+2. In **Settings → Extras**, paste the key in **Anthropic API key**.
 3. In the **Your experience** box below it, replace the examples with your real experience: companies, what you led, and results with numbers. Drafts can only be as specific as these notes.
 4. Click **Save drafts**. The key then shows **✓ Connected**.
 
@@ -146,8 +146,8 @@ Adzuna adds listings from many other job sites. Sign up at [developer.adzuna.com
 
 Job Finder builds the database for you, with all the columns. In **Settings → Where new jobs go**, choose **Notion**. It asks you to:
 
-1. Go to [notion.so/profile/integrations](https://www.notion.so/profile/integrations), click **New integration**, name it "Job search", save, and copy the **Internal Integration Secret**.
-2. Open (or create) the Notion page the tracker should live in. Click **•••** (top right) → **Connections** and add "Job search".
+1. Go to [notion.so/profile/integrations](https://www.notion.so/profile/integrations), click **New integration**, name it "Job Finder", save, and copy the **Internal Integration Secret**.
+2. Open (or create) the Notion page the tracker should live in. Click **•••** (top right) → **Connections** and add "Job Finder".
 3. On that page, click **Share → Copy link**.
 
 Paste the secret and the link, then click **Connect Notion**. Drafts appear inside each job's page.
@@ -172,7 +172,7 @@ The **Why it matched** column shows which settings it matched. To block a word i
 <details>
 <summary><b>A search found far fewer jobs than usual</b></summary>
 
-One of the job sources may have failed. Open the `logs` folder in your job-search folder and open `app_run.log` (or `scheduled.log` for the Monday search) in TextEdit.
+One of the job sources may have failed. Open the `logs` folder in your job-search folder and open `app_run.log` (or `scheduled.log` for the Monday check) in TextEdit.
 
 - **`[jobspy] error`** means the Indeed search failed. This happens when Indeed changes its site or limits how often it can be searched. The other sources still run. To fix it, update by pasting the install line into Terminal again. Your settings, notes and tracker are kept.
 - **`404 Not Found` next to a company** means that company's name is wrong or it moved to a different careers system. Remove it in **Settings → Companies** and type the company name again, or see "Adding a company that Job Finder couldn't find" above.
@@ -213,7 +213,7 @@ venv/bin/pip install -r requirements.txt        # Windows: venv\Scripts\pip inst
 venv/bin/python engine/setup_wizard.py           # Windows: venv\Scripts\python engine\setup_wizard.py
 ```
 
-Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), and `engine/open_tracker.py` to open the tracker. You can also use the Job Finder page without the Dock app: `venv/bin/python engine/app_server.py` starts it and opens your browser. The Monday search and the Dock app only work on a Mac.
+Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), and `engine/open_tracker.py` to open the tracker. You can also use the Job Finder page without the Dock app: `venv/bin/python engine/app_server.py` starts it and opens your browser. Monday checks and the Dock app only work on a Mac.
 </details>
 
 <details>

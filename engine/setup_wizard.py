@@ -178,9 +178,9 @@ def setup_notion() -> bool:
     say()
     say("Three steps in Notion:")
     say("  1. Go to https://www.notion.so/profile/integrations, click 'New integration',")
-    say("     name it 'Job search', save, and copy the 'Internal Integration Secret'.")
+    say("     name it 'Job Finder', save, and copy the 'Internal Integration Secret'.")
     say("  2. Open (or create) the Notion page the tracker should live in.")
-    say("     Click ••• (top right) → Connections → add 'Job search'.")
+    say("     Click ••• (top right) → Connections → add 'Job Finder'.")
     say("  3. On that page, click Share → Copy link.")
     token = ask("Paste the Integration Secret (step 1)")
     link = ask("Paste the page link (step 3)")
@@ -198,7 +198,7 @@ def setup_notion() -> bool:
 def main() -> int:
     load_env()
     first_time = not CONFIG_PATH.exists()
-    say("Job search setup")
+    say("Job Finder setup")
     say("Five short questions. Press Return to accept the answer in [brackets].")
     if not first_time:
         say("Your current settings are shown as the defaults.")

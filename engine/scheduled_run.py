@@ -26,7 +26,7 @@ def message_for(summary: dict, exit_code: int) -> str:
             return (f"Found {added} new job{'s' if added != 1 else ''}. "
                     "Open Job Finder to see them.")
         return "No new jobs this week."
-    return summary.get("message") or "The weekly search didn't finish. Open Job Finder to try again."
+    return summary.get("message") or "This week's check didn't finish. Open Job Finder to try again."
 
 
 def main() -> int:

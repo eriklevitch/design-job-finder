@@ -129,7 +129,7 @@ document.querySelectorAll(".nav [data-page]").forEach((b) => {
 // The sidebar: counts, the tracker button and the Monday check.
 function renderSide() {
   const notion = state.settings.tracker === "notion" && state.connected.notion;
-  $("open-tracker-label").textContent = notion ? "Open Notion" : "Open my spreadsheet";
+  $("open-tracker-label").textContent = notion ? "Open Notion" : "Open spreadsheet";
   $("close-sheet").hidden = notion;
 
   const weeks = state.weeks || [];
@@ -236,13 +236,13 @@ const stillChecking = (where) => companies[where].some((c) => c.status === "chec
 
 const STATUS = {
   found: () => el("span", "status", el("span", "dot ok"), "Found"),
-  checking: () => el("span", "status", icon("loader", "sm spin"), "Checking…"),
+  checking: () => el("span", "status", icon("loader", "sm spin"), "Looking up…"),
   missing: () => el("span", "status", el("span", "dot bad"), "Not found"),
-  error: () => el("span", "status", el("span", "dot warn"), "Couldn’t check"),
+  error: () => el("span", "status", el("span", "dot warn"), "Couldn’t look up"),
 };
 const HELP = {
-  missing: "“Not found” means Job Finder can’t read that company’s careers page. Try the name it uses there, or remove it. Indeed often lists their jobs anyway.",
-  error: "“Couldn’t check” means the lookup didn’t finish. Remove the company and add it again to retry.",
+  missing: "“Not found” means Job Finder can’t read that company’s careers page. Try another spelling, like the one in their careers page address, or remove it. Indeed often lists their jobs anyway.",
+  error: "“Couldn’t look up” means the lookup didn’t finish. Remove the company and add it again to retry.",
 };
 
 function removeCompany(where, c) {
@@ -255,7 +255,7 @@ function renderCompanies(where) {
   const list = companies[where];
   if (where === "setup") {
     $("setup-companies").replaceChildren(...list.map((c) => {
-      const note = { checking: "checking…", missing: "not found", error: "couldn’t check" }[c.status];
+      const note = { checking: "looking up…", missing: "not found", error: "couldn’t look up" }[c.status];
       const dot = c.status === "checking" ? icon("loader", "xs spin")
         : el("span", "dot " + ({ found: "ok", missing: "bad", error: "warn" }[c.status] || "ok"));
       const x = button("", () => removeCompany(where, c), icon("x", "xs"));
@@ -495,7 +495,7 @@ function nextCheckShort(iso) {
 
 // dir 1 is each column's natural order: newest, highest pay, A to Z.
 const SORTS = {
-  posted: ["Posted", "Newest first", (j) => { const d = localDate(j.posted_date); return d ? -d.getTime() : null; }],
+  posted: ["Date posted", "Newest first", (j) => { const d = localDate(j.posted_date); return d ? -d.getTime() : null; }],
   pay: ["Pay", "Highest first", (j) => { const top = payTop(j.salary); return top == null ? null : -top; }],
   company: ["Company", "A to Z", (j) => (j.company || "").toLowerCase() || null],
 };
@@ -615,9 +615,9 @@ function jobRow(job) {
 }
 
 const SUGGEST = {
-  bad_location: ["Most jobs were skipped because of their location.", "Add cities or remote jobs", "sec-location"],
-  no_seniority: ["Most jobs were skipped because of their level.", "Change the level", "sec-level"],
-  salary_too_low: ["Most jobs were skipped because their pay is below your minimum.", "Change the minimum pay", "sec-pay"],
+  bad_location: ["were left out because of their location.", "Add cities or remote jobs", "sec-location"],
+  no_seniority: ["were left out because of their level.", "Change level", "sec-level"],
+  salary_too_low: ["were left out because their pay is below your minimum.", "Lower minimum pay", "sec-pay"],
 };
 
 // When nothing matched, point at the setting that skipped the most jobs.
@@ -626,7 +626,7 @@ function suggestion(last) {
   const top = Object.entries(last.skipped || {}).filter(([k]) => SUGGEST[k]).sort((a, b) => b[1] - a[1])[0];
   if (!top) return null;
   const [text, label, section] = SUGGEST[top[0]];
-  return [`${text} (${top[1]} of ${last.scanned})`, label, section];
+  return [`${top[1]} of ${last.scanned} ${text}`, label, section];
 }
 
 // The fix for a problem (a button to the right setting) and its details,
@@ -672,7 +672,7 @@ function renderJobs() {
   $("sort-wrap").hidden = !jobs.length;
   $("sort-btn").replaceChildren(icon("arrowUpDown"), el("span", "muted", "Sorted by"), SORTS[sort.key][0]);
   $("find").disabled = running;
-  $("find").replaceChildren(icon("rotateCw", running ? "spin" : ""), running ? "Looking…" : problem ? "Try again" : "Find new jobs");
+  $("find").replaceChildren(icon("rotateCw", running ? "spin" : ""), running ? "Finding jobs…" : problem ? "Try again" : "Find new jobs");
   // A specific fix (like reconnecting Notion) comes before trying again,
   // and the first search has its own button in the middle of the page.
   $("find").hidden = !running && (!week || !!(problem && problem.fix));
@@ -682,7 +682,7 @@ function renderJobs() {
   const actions = [];
   if (problem) {
     title = "The last check didn’t finish";
-    sub = jobs.length ? `Jobs it found before that are below. Last checked ${whenText(state.last_checked)}.` : problem.message || "Something went wrong.";
+    sub = jobs.length ? "Jobs it found before it stopped are below." : problem.message || "Something went wrong.";
   } else if (!week) {
     title = "Let’s find your first jobs";
     sub = state.last_run && state.last_run.finished_at
@@ -692,19 +692,19 @@ function renderJobs() {
   } else if (!week.checked) {
     title = week.this_week ? "Not checked yet this week" : `Not checked the week of ${longDate(week.start)}`;
     sub = week.this_week
-      ? `${state.last_checked ? `Last checked ${whenText(state.last_checked)}. ` : ""}Click Find new jobs to look now.`
+      ? `${state.last_checked ? `Last checked ${whenText(state.last_checked)}. ` : ""}Click “Find new jobs” to check now.`
       : "Your Mac was off or asleep all that week, or Monday checks were turned off.";
   } else {
     const n = jobs.length;
     const when = `${week.this_week ? "Last checked" : "Checked"} ${whenText(last.finished_at)}.`;
     if (n) {
       title = `${plural(n, "new job")} ${week.this_week ? "this week" : `from the week of ${longDate(week.start)}`}`;
-      sub = `${when} ${n === 1 ? "It matches" : "Each one matches"} your level, location and pay. Open the ones that look good, then mark what you decide in ${where}.`;
+      sub = `${when} ${n === 1 ? "It matches" : "Each one matches"} your level, location and pay, and ${n === 1 ? "it’s" : "they’re"} in ${where} too.`;
     } else {
       title = week.this_week ? "Nothing new this week" : `Nothing new the week of ${longDate(week.start)}`;
       sub = last.matches && last.already >= last.matches
         ? `${when} You’re up to date: the ${plural(last.matches, "job")} that matched ${last.matches === 1 ? "is" : "are"} already in ${where}.`
-        : `${when} Job Finder looked at ${plural(last.scanned || 0, "listing")} and none matched your settings.`;
+        : `${when} Job Finder looked at ${plural(last.scanned || 0, "listing")} and none matched your search.`;
       const tip = isLatest ? suggestion(last) : null;
       if (tip) {
         sub += " " + tip[0];
@@ -738,7 +738,7 @@ function renderJobs() {
   if (last && last.source_problem) notices.push(notice("notice", "source:" + ran + ":" + last.source_problem, el("p", "", last.source_problem)));
   if (last && last.draft_problem && isLatest) {
     notices.push(notice("notice", "drafts:" + ran + ":" + last.draft_problem, el("p", "", last.draft_problem),
-      el("div", "actions", button("btn btn-secondary", () => openSettings("sec-drafts"), "Open drafts settings"))));
+      el("div", "actions", button("btn btn-secondary", () => openSettings("sec-drafts"), "Open Drafts settings"))));
   }
   $("notices").replaceChildren(...notices.filter(Boolean));
 

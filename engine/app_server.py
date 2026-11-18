@@ -246,7 +246,7 @@ class App:
             return 200, {"ok": opened, "message": message}
         if path == "/api/schedule":
             if sys.platform != "darwin":
-                return 400, {"error": "The Monday search only works on a Mac."}
+                return 400, {"error": "Monday checks only work on a Mac."}
             schedule.turn_on() if body.get("on") else schedule.turn_off()
             return 200, {"schedule_on": schedule.is_on(), "next_check": next_check()}
         if path == "/api/ping":
@@ -296,7 +296,7 @@ def make_handler(app: App):
             if not self.host_ok():
                 return self.send(403, b"Forbidden", "text/plain")
             if not secrets.compare_digest(self.headers.get("X-Token", ""), app.token):
-                return self.send_json(403, {"error": "Please reopen Job Finder."})
+                return self.send_json(403, {"error": "This window is out of date. Click Job Finder in your Dock to open it again."})
             try:
                 length = min(int(self.headers.get("Content-Length") or 0), 1_000_000)
                 body = json.loads(self.rfile.read(length) or b"{}")

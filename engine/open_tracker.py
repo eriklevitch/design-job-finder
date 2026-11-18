@@ -1,5 +1,5 @@
 """Opens your tracker: the spreadsheet, or Notion in your browser.
-The Job Finder app's "Open my spreadsheet" button runs this."""
+The Job Finder app's "Open spreadsheet" button runs this."""
 import subprocess
 import sys
 import webbrowser
@@ -29,7 +29,7 @@ def open_tracker() -> tuple[bool, str]:
         print("Notion isn't set up yet, so opening the spreadsheet instead.")
     path = resolve_path(config.get("spreadsheet_path", "applications.csv"))
     if not path.exists():
-        return False, "No jobs saved yet. Click 'Find new jobs' first."
+        return False, "No jobs saved yet. Click “Find new jobs” first."
     open_file(path)
     return True, f"Opened {path.name}."
 

@@ -212,7 +212,7 @@ def search(report: "Report", dry_run: bool) -> int:
     config = load_config()
 
     n = count_companies(config)
-    report.update(step=f"Checking Indeed and {n} company career page{'s' if n != 1 else ''}…"
+    report.update(step=f"Checking Indeed and {n} careers page{'s' if n != 1 else ''}…"
                   if n else "Checking Indeed…")
     print("=== Looking for jobs ===")
     sites = track_sites(report, config)
@@ -233,7 +233,7 @@ def search(report: "Report", dry_run: bool) -> int:
         return 1
     report.update(source_problem=source_problem(failed))
 
-    report.update(step=f"Comparing {len(jobs)} jobs with your settings…")
+    report.update(step=f"Comparing {len(jobs)} listings with your search…")
     print("\n=== Checking them against your settings ===")
     matches, stats = filter_jobs(jobs, config)
     print(f"Checked:  {stats['scanned']}")
@@ -248,7 +248,7 @@ def search(report: "Report", dry_run: bool) -> int:
     if not matches:
         print("\nNo matching jobs this time. If that keeps happening, try a wider")
         print("search: open Job Finder → Settings, or see 'Change your search' in the README.")
-        report.finish("No jobs matched your settings this time.", added=[])
+        report.finish("No jobs matched your search this time.", added=[])
         save_run(report, dry_run)
         return 0
 
@@ -312,14 +312,15 @@ def search(report: "Report", dry_run: bool) -> int:
             tracker_call(tracker, tracker.add_job, job, draft_text)
         except TrackerProblem as p:
             print(f"\n{p.message}")
-            message = f"Saved {len(added)} jobs, then stopped. {p.message}" if added else p.message
+            message = (f"Saved {len(added)} job{'s' if len(added) != 1 else ''}, then stopped. "
+                       f"{p.message}" if added else p.message)
             report.fail(message, fix=p.fix, details=p.details, added=[job_card(j) for j in added])
             save_run(report, dry_run)
             return 1
         except PermissionError:
             print(f"\nCouldn't write to {tracker.describe()}. If it's open in another app,")
             print("close it and run Find Jobs again.")
-            report.fail(f"Saved {len(added)} jobs, then couldn't save more. If your "
+            report.fail(f"Saved {len(added)} job{'s' if len(added) != 1 else ''}, then couldn't save more. If your "
                         "spreadsheet is open in another app, close it and try again.",
                         added=[job_card(j) for j in added])
             save_run(report, dry_run)
@@ -349,10 +350,11 @@ def draft_problem(errors: list[str], total: int) -> str:
     if not errors:
         return ""
     if any("401" in e or "authentication" in e or "x-api-key" in e for e in errors):
-        return ("Drafts couldn't be written because Anthropic didn't accept your key. "
-                "Check it in Settings → Drafts.")
+        return ("No drafts were written because Anthropic didn't accept your key. "
+                "Check it in Settings → Extras.")
     if any("credit" in e.lower() or "billing" in e.lower() for e in errors):
-        return "Drafts couldn't be written: your Anthropic account is out of credit."
+        return ("No drafts were written because your Anthropic account is out of credit. "
+                "Add credit at console.anthropic.com. The jobs were still added.")
     return f"{len(errors)} of {total} drafts couldn't be written. The jobs were still added."
 
 
