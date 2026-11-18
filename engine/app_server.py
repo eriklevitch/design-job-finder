@@ -23,10 +23,15 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
+try:
+    import fcntl  # Mac and Linux
+except ImportError:  # Windows: searches aren't locked, so there's nothing to follow
+    fcntl = None
+
 import config_store as store
 import history
 import schedule
-from settings import CONFIG_PATH, ROOT, load_env
+from settings import CONFIG_PATH, CRASH_MESSAGE, ROOT, load_env, scrub
 
 STATIC = Path(__file__).resolve().parent / "app"
 STATE_PATH = ROOT / ".app_state.json"
@@ -34,6 +39,8 @@ LOGS = ROOT / "logs"
 RUN_SUMMARY = LOGS / "app_run.json"
 RUN_LOG = LOGS / "app_run.log"
 LAST_RUN = ROOT / "last_run.json"  # older versions; only read when there's no history yet
+LOCK_PATH = ROOT / ".run.lock"                  # held by whichever search is running
+SCHEDULED_SUMMARY = LOGS / "scheduled_summary.json"  # the Monday check's progress
 FIRST_PORT = 8765
 IDLE_SECONDS = 15 * 60
 CONTENT_TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
@@ -110,11 +117,37 @@ def read_json(path: Path) -> dict | None:
 
 # ── Running a search in the background ──────────────────────────────
 
+def search_running(lock_path: Path) -> bool:
+    """True while any search holds the lock (the app's, or the Monday check)."""
+    if fcntl is None:
+        return False
+    try:
+        with open(lock_path, "a") as f:
+            try:
+                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                return True
+            fcntl.flock(f, fcntl.LOCK_UN)
+            return False
+    except OSError:
+        return False
+
+
+def log_tail(path: Path, lines: int = 25) -> str:
+    try:
+        return "\n".join(path.read_text(errors="replace").splitlines()[-lines:])
+    except OSError:
+        return ""
+
+
 class Runner:
-    def __init__(self, command=None, summary: Path = RUN_SUMMARY, log: Path = RUN_LOG):
+    def __init__(self, command=None, summary: Path = RUN_SUMMARY, log: Path = RUN_LOG,
+                 lock: Path = LOCK_PATH, other_summary: Path = SCHEDULED_SUMMARY):
         self.command = command or [sys.executable, "-u", str(ROOT / "engine" / "main.py")]
         self.summary = summary
         self.log = log
+        self.lock_path = lock
+        self.other_summary = other_summary
         self.process = None
         self.lock = threading.Lock()
 
@@ -134,15 +167,25 @@ class Runner:
             log.close()
         return {"state": "running", "step": "Starting…"}
 
+    def other_search(self) -> dict | None:
+        """Progress of a search this app didn't start (the Monday check)."""
+        if not search_running(self.lock_path):
+            return None
+        other = read_json(self.other_summary) or {}
+        step = other.get("step") if other.get("state") == "running" else None
+        return {"state": "running", "step": f"The Monday check is running. {step or 'Looking for jobs…'}"}
+
     def status(self) -> dict | None:
         if self.process is None:
-            return None
+            return self.other_search()
         summary = read_json(self.summary) or {"state": "running", "step": "Starting…"}
-        finished = self.process.poll() is not None
-        if finished and summary.get("state") == "running":
-            summary = {"state": "error",
-                       "message": "Something went wrong. The details are in "
-                                  "logs/app_run.log in your job-search folder."}
+        if self.process.poll() is None:
+            return summary
+        if summary.get("state") == "busy":  # another search had started first: follow it
+            return self.other_search() or {"state": "done"}
+        if summary.get("state") == "running":  # stopped without saying why
+            return {"state": "error", "message": CRASH_MESSAGE,
+                    "details": scrub(log_tail(self.log))}
         return summary
 
 

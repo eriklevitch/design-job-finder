@@ -433,9 +433,11 @@ function renderHome() {
     title.textContent = "The last check didn’t finish";
     sub.textContent = week && week.jobs.length
       ? `Jobs it found before that are below. Last checked ${whenText(state.last_checked)}.` : "";
-    $("home-problem").replaceChildren(icon("circleAlert", 16), problem.message || "Something went wrong.");
+    $("home-problem").replaceChildren(icon("circleAlert", 16),
+      el("div", "", el("p", "", problem.message || "Something went wrong."), problemActions(problem)));
+    // A specific fix (like reconnecting Notion) comes before trying again.
     $("find-big").textContent = "Try again";
-    $("find-big").hidden = false;
+    $("find-big").hidden = !!problem.fix;
   } else if (!week) {
     title.textContent = "Let’s find your first jobs";
     sub.textContent = state.last_run && state.last_run.finished_at
@@ -494,6 +496,30 @@ function renderHome() {
   $("schedule-note").textContent = state.schedule_on && state.next_check
     ? nextCheckText(state.next_check)
     : "Your Mac looks for new jobs on its own and lets you know what it found. If it’s asleep then, it checks when it wakes.";
+}
+
+// The fix for a problem (a button to the right setting) and its details,
+// which people can copy to ask someone for help. Keys are already hidden.
+function problemActions(problem) {
+  const actions = [];
+  if (problem.fix && problem.fix.section) {
+    const fix = el("button", "secondary", problem.fix.label || "Open Settings");
+    fix.onclick = () => openSettings(problem.fix.section);
+    actions.push(fix);
+  }
+  if (problem.details) {
+    const copy = el("button", "link", "Copy details");
+    copy.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(problem.details);
+        copy.textContent = "Copied";
+      } catch (_) {
+        banner("Couldn’t copy the details. They’re also in the logs folder inside your job-search folder.");
+      }
+    };
+    actions.push(copy);
+  }
+  return actions.length ? el("div", "actions", ...actions) : null;
 }
 
 async function setSchedule(on) {

@@ -11,6 +11,7 @@ import urllib.request
 from datetime import datetime, timedelta
 
 import pytest
+import requests
 import yaml
 
 import app_server
@@ -176,7 +177,8 @@ def wait_until_done(runner):
 def test_runner_reports_progress_and_result(tmp_path):
     script = tmp_path / "fake.py"
     script.write_text(FAKE_SEARCH)
-    runner = app_server.Runner([sys.executable, str(script)], tmp_path / "s.json", tmp_path / "r.log")
+    runner = app_server.Runner([sys.executable, str(script)], tmp_path / "s.json", tmp_path / "r.log",
+                              lock=tmp_path / ".run.lock", other_summary=tmp_path / "other.json")
     assert runner.status() is None
     runner.start()
     assert runner.busy()
@@ -188,7 +190,8 @@ def test_runner_reports_progress_and_result(tmp_path):
 def test_runner_explains_a_crash(tmp_path):
     script = tmp_path / "crash.py"
     script.write_text("raise SystemExit(3)")
-    runner = app_server.Runner([sys.executable, str(script)], tmp_path / "s.json", tmp_path / "r.log")
+    runner = app_server.Runner([sys.executable, str(script)], tmp_path / "s.json", tmp_path / "r.log",
+                              lock=tmp_path / ".run.lock", other_summary=tmp_path / "other.json")
     runner.start()
     assert wait_until_done(runner)["state"] == "error"
 
@@ -337,3 +340,107 @@ def test_no_internet_is_not_reported_as_no_matches(tmp_path, monkeypatch):
     data = json.loads(summary.read_text())
     assert data["state"] == "error" and "internet" in data["message"]
     assert history.load()[-1]["state"] == "error"
+
+
+# ── Problems explained plainly ──────────────────────────────────────
+
+def test_scrub_hides_keys():
+    from settings import scrub
+    text = ("GET https://api.adzuna.com/search?app_id=abc&app_key=xyz123 failed; "
+            "key sk-ant-api03-SECRET and secret_ABC123 and ntn_456")
+    clean = scrub(text)
+    for secret in ("abc&", "xyz123", "sk-ant-api03-SECRET", "secret_ABC123", "ntn_456"):
+        assert secret not in clean
+    assert "app_key=[hidden]" in clean
+
+
+def _http_error(status):
+    resp = requests.Response()
+    resp.status_code = status
+    return requests.HTTPError(f"{status} error from Notion: nope", response=resp)
+
+
+def test_notion_problems_say_what_to_do():
+    lost = main_module.notion_problem(_http_error(401))
+    assert "Reconnect" in lost.message and lost.fix["section"] == "sec-tracker"
+    assert main_module.notion_problem(_http_error(404)).fix
+    offline = main_module.notion_problem(requests.ConnectionError("down"))
+    assert "internet" in offline.message and offline.fix is None
+    assert "error 500" in main_module.notion_problem(_http_error(500)).message
+
+
+def test_only_notion_errors_are_translated():
+    class NotionTracker:
+        def add_job(self, *a):
+            raise _http_error(401)
+
+    class CsvTracker(NotionTracker):
+        pass
+    with pytest.raises(main_module.TrackerProblem):
+        main_module.tracker_call(NotionTracker(), NotionTracker().add_job)
+    with pytest.raises(requests.HTTPError):
+        main_module.tracker_call(CsvTracker(), CsvTracker().add_job)
+
+
+def test_crash_is_explained_and_saved(tmp_path, monkeypatch):
+    monkeypatch.setattr(history, "PATH", tmp_path / "history.json")
+    monkeypatch.setattr(main_module, "LOCK_PATH", tmp_path / ".run.lock")
+    monkeypatch.setattr(main_module, "load_env", lambda: None)
+
+    def broken():
+        raise RuntimeError("boom with sk-ant-api03-SECRET")
+    monkeypatch.setattr(main_module, "load_config", broken)
+    summary = tmp_path / "s.json"
+    assert main_module.main(["--summary", str(summary)]) == 1
+    data = json.loads(summary.read_text())
+    assert data["state"] == "error" and data["message"] == main_module.CRASH_MESSAGE
+    assert "boom" in data["details"] and "SECRET" not in data["details"]
+    assert history.load()[-1]["details"] == data["details"]
+
+
+def test_second_search_reports_busy_not_error(tmp_path, monkeypatch):
+    monkeypatch.setattr(main_module, "LOCK_PATH", tmp_path / ".run.lock")
+    first = main_module.take_lock()
+    summary = tmp_path / "s.json"
+    assert main_module.main(["--summary", str(summary)]) == 1
+    assert json.loads(summary.read_text())["state"] == "busy"
+    first.close()
+
+
+def test_app_follows_the_monday_check(tmp_path, monkeypatch):
+    monkeypatch.setattr(main_module, "LOCK_PATH", tmp_path / ".run.lock")
+    (tmp_path / "other.json").write_text(json.dumps({"state": "running", "step": "Checking Indeed…"}))
+    runner = app_server.Runner(["x"], tmp_path / "s.json", tmp_path / "r.log",
+                               lock=tmp_path / ".run.lock", other_summary=tmp_path / "other.json")
+    assert runner.status() is None  # nothing running
+    held = main_module.take_lock()
+    status = runner.status()
+    assert status["state"] == "running" and "Monday check" in status["step"]
+    assert "Checking Indeed" in status["step"]
+    held.close()
+    assert runner.status() is None
+
+
+def test_busy_click_follows_the_other_search(tmp_path):
+    script = tmp_path / "busy.py"
+    script.write_text("import json, sys\n"
+                      "json.dump({'state': 'busy'}, open(sys.argv[sys.argv.index('--summary') + 1], 'w'))")
+    runner = app_server.Runner([sys.executable, str(script)], tmp_path / "s.json", tmp_path / "r.log",
+                               lock=tmp_path / ".run.lock", other_summary=tmp_path / "other.json")
+    runner.start()
+    assert wait_until_done(runner) == {"state": "done"}  # the other one already finished
+
+
+def test_silent_crash_shows_details_without_keys(tmp_path):
+    script = tmp_path / "crash.py"
+    script.write_text("print('oops: key=TOPSECRET'); raise SystemExit(3)")
+    runner = app_server.Runner([sys.executable, str(script)], tmp_path / "s.json", tmp_path / "r.log",
+                               lock=tmp_path / ".run.lock", other_summary=tmp_path / "other.json")
+    runner.start()
+    result = wait_until_done(runner)
+    assert result["message"] == app_server.CRASH_MESSAGE
+    assert "oops" in result["details"] and "TOPSECRET" not in result["details"]
+
+
+def test_monday_check_stays_quiet_when_it_waited():
+    assert scheduled_run.message_for({"state": "busy"}, 1) == ""

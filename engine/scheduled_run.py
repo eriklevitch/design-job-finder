@@ -17,6 +17,9 @@ def notify(message: str) -> None:
 
 
 def message_for(summary: dict, exit_code: int) -> str:
+    """The notification text; empty when there's nothing to say."""
+    if summary.get("state") == "busy":
+        return ""  # you were already searching from the app; that search reports itself
     if summary.get("state") == "done":
         added = len(summary.get("added") or [])
         if added:
@@ -36,7 +39,9 @@ def main() -> int:
         summary = json.loads(SUMMARY.read_text())
     except (OSError, ValueError):
         summary = {}
-    notify(message_for(summary, code))
+    message = message_for(summary, code)
+    if message:
+        notify(message)
     return code
 
 

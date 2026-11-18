@@ -254,6 +254,8 @@ button.week:hover { border-color: var(--ink-faint); }
 #view-home .hint { margin: 0 0 28px; }
 .problem { display: flex; align-items: flex-start; gap: 10px; color: var(--warn); margin: -12px 0 24px; }
 .problem .icon { margin-top: 4px; }
+.problem p { margin: 0; }
+.problem .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-top: 14px; }
 .notes:empty { display: none; }
 .note { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--ink-soft); font-size: 0.95rem; margin: -12px 0 24px; }
 .note + .note { margin-top: -16px; }

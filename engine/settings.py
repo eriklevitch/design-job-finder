@@ -4,6 +4,7 @@ Everything is resolved from the project folder, so the scripts work no
 matter which folder you run them from (or when double-clicked).
 """
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -75,3 +76,18 @@ def resolve_path(p: str) -> Path:
     """Relative paths in config.yaml are relative to the project folder."""
     path = Path(p).expanduser()
     return path if path.is_absolute() else ROOT / path
+
+
+# ── Problems shown on the page ──────────────────────────────────────
+
+CRASH_MESSAGE = ("Something unexpected stopped the check. Try again. If it keeps happening, "
+                 "use Copy details to ask someone for help.")
+
+_SECRET = re.compile(r"sk-ant-[\w-]+|\b(?:secret|ntn)_\w+|"
+                     r"\b(app_key|app_id|api_key|apikey|token|key)=[^&\s'\"]+", re.I)
+
+
+def scrub(text: str) -> str:
+    """Hides keys and secrets in error details before they're shown or
+    copied, so "Copy details" never hands someone your keys."""
+    return _SECRET.sub(lambda m: f"{m.group(1)}=[hidden]" if m.group(1) else "[hidden]", text or "")

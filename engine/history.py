@@ -12,7 +12,7 @@ from settings import ROOT
 PATH = ROOT / "history.json"
 WEEKS_KEPT = 8
 FIELDS = ("finished_at", "state", "message", "scanned", "matches", "already",
-          "skipped", "source_problem", "draft_problem")
+          "skipped", "source_problem", "draft_problem", "details", "fix")
 
 
 def _when(run: dict) -> datetime | None:

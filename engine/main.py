@@ -14,6 +14,7 @@ summary so you can see what happened.
 """
 import json
 import sys
+import traceback
 from datetime import datetime
 from pathlib import Path
 
@@ -24,7 +25,9 @@ except ImportError:  # Windows: no lock, runs simply aren't guarded
 
 import history
 import sources
-from settings import ROOT, load_config, load_env, resolve_path
+import requests
+
+from settings import CRASH_MESSAGE, ROOT, load_config, load_env, resolve_path, scrub
 from sources import fetch_adzuna, fetch_greenhouse, fetch_lever, fetch_ashby, fetch_jobspy, filter_jobs
 from tracker_csv import CsvTracker
 from draft import drafting_key, load_portfolio_notes, generate_draft
@@ -140,10 +143,53 @@ def main(argv=None):
     report = Report(summary_path, dry_run)
     lock = take_lock()  # released automatically when this program ends
     if lock is None:
+        # Not a problem: the app follows the search that's already running.
         print("A search is already running. Try again when it finishes.")
-        report.update(state="error", message="Job Finder is already looking for jobs. "
-                                             "Try again in a few minutes.")
+        report.update(state="busy", message="Job Finder is already looking for jobs.")
         return 1
+    try:
+        return search(report, dry_run)
+    except Exception:
+        details = scrub(traceback.format_exc())
+        print(details)
+        report.fail(CRASH_MESSAGE, details=details[-4000:], added=report.data.get("added") or [])
+        save_run(report, dry_run)
+        return 1
+
+
+class TrackerProblem(Exception):
+    """Notion stopped accepting jobs; says why in plain words."""
+
+    def __init__(self, message: str, fix: dict | None = None, details: str = ""):
+        super().__init__(message)
+        self.message, self.fix, self.details = message, fix, details
+
+
+def notion_problem(e: requests.RequestException) -> TrackerProblem:
+    status = getattr(getattr(e, "response", None), "status_code", None)
+    details = scrub(str(e))
+    if status in (401, 403, 404):
+        return TrackerProblem("Notion isn't accepting new jobs. It may have been disconnected "
+                              "from your page. Reconnect it in Settings, then try again.",
+                              {"label": "Reconnect Notion", "section": "sec-tracker"}, details)
+    if status is None:
+        return TrackerProblem("Couldn't reach Notion. Check your internet connection, "
+                              "then try again.", None, details)
+    return TrackerProblem(f"Notion had a problem saving jobs (error {status}). "
+                          "Try again in a few minutes.", None, details)
+
+
+def tracker_call(tracker, fn, *args):
+    """Runs one tracker step, turning Notion's errors into a TrackerProblem."""
+    try:
+        return fn(*args)
+    except requests.RequestException as e:
+        if friendly_name(tracker) == "Notion":
+            raise notion_problem(e) from e
+        raise
+
+
+def search(report: "Report", dry_run: bool) -> int:
     load_env()
     config = load_config()
 
@@ -192,7 +238,13 @@ def main(argv=None):
         return 0
 
     tracker = get_tracker(config)
-    existing = tracker.existing_job_keys()
+    try:
+        existing = tracker_call(tracker, tracker.existing_job_keys)
+    except TrackerProblem as p:
+        print(f"\n{p.message}")
+        report.fail(p.message, fix=p.fix, details=p.details, added=[])
+        save_run(report, dry_run)
+        return 1
 
     # Also skip repeats within this run (the same job can appear twice,
     # e.g. on two pages of results).
@@ -231,7 +283,13 @@ def main(argv=None):
                 note = f"  (draft failed: {e})"
                 draft_errors.append(str(e))
         try:
-            tracker.add_job(job, draft_text)
+            tracker_call(tracker, tracker.add_job, job, draft_text)
+        except TrackerProblem as p:
+            print(f"\n{p.message}")
+            message = f"Saved {len(added)} jobs, then stopped. {p.message}" if added else p.message
+            report.fail(message, fix=p.fix, details=p.details, added=[job_card(j) for j in added])
+            save_run(report, dry_run)
+            return 1
         except PermissionError:
             print(f"\nCouldn't write to {tracker.describe()}. If it's open in another app,")
             print("close it and run Find Jobs again.")
@@ -242,6 +300,7 @@ def main(argv=None):
             return 1
         job["has_draft"] = bool(draft_text)
         added.append(job)
+        report.data["added"] = [job_card(j) for j in added]  # kept if something breaks later
         print(f"  + {job['company']}: {job['title']}{note}")
 
     print(f"\nDone. Added {len(added)} new job(s) to {tracker.describe()}.")
