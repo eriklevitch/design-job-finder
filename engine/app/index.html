@@ -8,173 +8,266 @@
 <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
-<main class="shell">
-  <header class="top">
-    <span class="brand"><img src="/static/icon.svg" alt="" width="30" height="30"> Job Finder</span>
-    <div class="top-actions">
-      <button class="link" id="to-home" hidden><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Back</button>
-      <button class="link" id="to-settings" hidden>Settings</button>
-      <button class="primary compact" id="find" hidden><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg><span id="find-label">Find new jobs</span></button>
-    </div>
-  </header>
 
-  <p id="banner" class="banner" hidden></p>
-
-  <!-- ── First-run questions ─────────────────────────────── -->
-  <section id="view-setup" hidden>
-    <p class="step-count key" id="step-count"></p>
+<!-- ── First-run questions: the whole window, no sidebar ─────────── -->
+<section id="view-setup" class="setup" hidden>
+  <header class="setup-top"><img src="/static/icon.svg" alt="" width="24" height="24"> Job Finder</header>
+  <div class="setup-body">
+    <div class="segs" id="setup-segs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    <p class="step-of" id="step-count"></p>
     <div class="step" data-step="1">
       <h1>What level are you looking for?</h1>
-      <p class="hint">Job Finder looks for product design jobs. Your answers here narrow them down.</p>
-      <div class="choices" id="setup-level"></div>
+      <p class="lede">Job Finder looks for product design jobs. Your answers here narrow them down.</p>
+      <div class="options" id="setup-level"></div>
     </div>
     <div class="step" data-step="2">
       <h1>Where can you work?</h1>
-      <label class="field"><span class="key">Cities or areas</span>
-        <input id="setup-cities" placeholder="e.g. New York, Brooklyn" autocomplete="off">
-        <small>Separate them with commas. Use the names job listings use, like “New York”, not “NYC”. Leave it empty if you only want remote jobs.</small>
-      </label>
-      <label class="check"><input type="checkbox" id="setup-remote"> <span>Include remote jobs (US only)</span></label>
+      <p class="lede">Use the names job listings use, like “New York”, not “NYC”.</p>
+      <div class="stack">
+        <label class="field"><span>Cities or areas</span>
+          <input class="input" id="setup-cities" placeholder="e.g. New York, Brooklyn" autocomplete="off">
+          <small>Separate them with commas. Leave it empty if you only want remote jobs.</small>
+        </label>
+        <label class="toggle-row"><span class="grow">Include remote jobs (US only)</span>
+          <span class="switch"><input type="checkbox" id="setup-remote"><span></span></span></label>
+      </div>
     </div>
     <div class="step" data-step="3">
       <h1>What’s the lowest yearly pay you’d consider?</h1>
-      <label class="field"><span class="key">Minimum yearly pay, in US dollars</span>
-        <input id="setup-pay" inputmode="numeric" placeholder="e.g. 150k" autocomplete="off">
-        <small>A job is kept if the top of its pay range meets your minimum. Jobs that don’t list pay are always kept, so you can check them yourself. Type 0 for no minimum.</small>
+      <p class="lede">Jobs that don’t list pay are always kept, so you can check them yourself.</p>
+      <label class="field"><span>Minimum yearly pay, in US dollars</span>
+        <input class="input" id="setup-pay" inputmode="numeric" placeholder="e.g. 150k" autocomplete="off">
+        <small>A job is kept if the top of its pay range meets your minimum. Type 0 for no minimum.</small>
       </label>
     </div>
     <div class="step" data-step="4">
       <h1>Any companies you’d love to work at?</h1>
-      <p class="hint">Optional. Job Finder checks these companies’ careers pages every time it looks. It also searches the job site Indeed, so you’ll still find jobs if you skip this.</p>
-      <div class="company-add" data-for="setup">
-        <input placeholder="Company name, e.g. Figma" autocomplete="off">
-        <button class="secondary">Add</button>
+      <p class="lede">Optional. Job Finder checks these companies’ careers pages every time it looks. It also searches the job site Indeed, so you’ll still find jobs if you skip this.</p>
+      <div class="stack">
+        <div class="company-add" data-for="setup">
+          <input class="input" placeholder="Company name, e.g. Figma" autocomplete="off" aria-label="Company name">
+          <button class="btn btn-secondary" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add</button>
+        </div>
+        <ul class="taglist" id="setup-companies"></ul>
       </div>
-      <ul class="chips" id="setup-companies"></ul>
     </div>
     <div class="step" data-step="5">
       <h1>Where should new jobs go?</h1>
-      <div class="choices" id="setup-tracker"></div>
+      <p class="lede">Job Finder adds each new job here, and you mark what you decide.</p>
+      <div class="cards2" id="setup-tracker"></div>
       <div class="notion-connect" data-for="setup" hidden></div>
     </div>
     <p class="error" id="setup-error" hidden></p>
-    <div class="nav">
-      <button class="link" id="setup-back">Back</button>
-      <button class="primary" id="setup-next">Next</button>
+    <div class="setup-nav">
+      <button class="btn btn-secondary" id="setup-back">Back</button>
+      <button class="btn btn-primary" id="setup-next">Next</button>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- ── Home ────────────────────────────────────────────── -->
-  <section id="view-home" hidden>
-    <nav class="weeks" id="weeks" aria-label="Weeks" hidden></nav>
-    <h1 id="home-title"></h1>
-    <p class="hint" id="home-sub"></p>
-    <div class="problem" id="home-problem" hidden></div>
-    <button class="primary big" id="find-big" hidden></button>
-    <div class="progress" id="run-progress" hidden><span class="spinner"></span><span id="run-step"></span></div>
-    <ul class="sites" id="run-sites" aria-label="Job sites being checked" hidden></ul>
-    <div class="notes" id="home-notes"></div>
-    <div class="suggest" id="run-suggest" hidden>
-      <p id="suggest-text"></p>
-      <button class="secondary" id="suggest-go"></button>
+<!-- ── The app: sidebar and pages ─────────────────────────────────── -->
+<div class="app" id="app" hidden>
+  <aside class="side">
+    <div class="side-head"><img src="/static/icon.svg" alt="" width="24" height="24"> Job Finder</div>
+    <nav class="nav" aria-label="Pages">
+      <button data-page="jobs"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg><span class="grow">Jobs</span><span class="count" id="nav-jobs" hidden></span></button>
+      <button data-page="companies"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><span class="grow">Companies</span><span class="count" id="nav-companies" hidden></span></button>
+      <button data-page="settings"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg><span class="grow">Settings</span></button>
+    </nav>
+    <div class="side-foot">
+      <button class="side-row" id="open-tracker">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="3" x2="21" y1="15" y2="15"/><line x1="9" x2="9" y1="9" y2="21"/><line x1="15" x2="15" y1="9" y2="21"/></svg>
+        <span class="grow"><span id="open-tracker-label">Open my spreadsheet</span><small id="close-sheet">Close it before the next check, so your edits aren’t overwritten.</small></span>
+        <svg class="icon sm faint" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+      </button>
+      <label class="side-row" id="schedule-row">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+        <span class="grow">Check every Monday<small id="schedule-note"></small></span>
+        <span class="switch"><input type="checkbox" id="schedule"><span></span></span>
+      </label>
     </div>
-    <ul class="jobs" id="jobs"></ul>
+  </aside>
 
-    <div class="tracker">
-      <button class="secondary" id="open-tracker">Open my spreadsheet</button>
-      <p class="tip" id="close-sheet" hidden>Close it again before the next check, so your edits aren’t overwritten.</p>
+  <!-- Jobs -->
+  <main class="main" id="view-jobs" hidden>
+    <header class="top"><span class="title"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>Jobs</span></header>
+    <div class="toolbar">
+      <div class="menu-wrap" id="week-wrap"><button class="btn btn-secondary" id="week-btn" aria-haspopup="menu" aria-expanded="false"></button></div>
+      <div class="menu-wrap" id="sort-wrap"><button class="btn btn-secondary" id="sort-btn" aria-haspopup="menu" aria-expanded="false"></button></div>
+      <span class="grow"></span>
+      <button class="btn btn-primary" id="find"></button>
     </div>
-
-    <label class="check schedule"><input type="checkbox" id="schedule">
-      <span><b>Check for me every Monday morning</b>
-      <small id="schedule-note"></small></span>
-    </label>
-  </section>
-
-  <!-- ── Settings ────────────────────────────────────────── -->
-  <section id="view-settings" hidden>
-    <h1>Settings</h1>
-
-    <h2 class="group">Your search</h2>
-    <fieldset id="sec-level"><legend>Level</legend>
-      <div class="choices" id="set-level"></div>
-      <label class="field"><span class="key">Your title in drafts</span>
-        <input id="set-role" autocomplete="off">
-        <small>Only used if you turn on drafts, further down this page. Clear it to go back to the title that matches your level.</small>
-      </label>
-    </fieldset>
-
-    <fieldset id="sec-location"><legend>Location</legend>
-      <label class="field"><span class="key">Cities or areas</span>
-        <input id="set-cities" placeholder="e.g. New York, Brooklyn" autocomplete="off">
-        <small>Separate them with commas. Use the names job listings use, like “New York”, not “NYC”. Leave it empty if you only want remote jobs.</small>
-      </label>
-      <label class="check"><input type="checkbox" id="set-remote"> <span>Include remote jobs (US only)</span></label>
-    </fieldset>
-
-    <fieldset id="sec-pay"><legend>Pay</legend>
-      <label class="field"><span class="key">Minimum yearly pay, in US dollars</span>
-        <input id="set-pay" inputmode="numeric" placeholder="e.g. 150k" autocomplete="off">
-        <small>A job is kept if the top of its pay range meets your minimum. Jobs that don’t list pay are always kept, so you can check them yourself. Type 0 for no minimum.</small>
-      </label>
-    </fieldset>
-
-    <fieldset id="sec-companies"><legend>Companies <span class="optional">optional</span></legend>
-      <p class="hint">Job Finder checks these companies’ careers pages every time it looks. It also searches the job site Indeed.</p>
-      <div class="company-add" data-for="settings">
-        <input placeholder="Company name, e.g. Figma" autocomplete="off">
-        <button class="secondary">Add</button>
+    <div class="scroll">
+      <section class="run" id="run" aria-live="polite" hidden>
+        <div class="run-head"><span class="spinner"></span><span class="grow" id="run-step"></span><span class="soft" id="run-count"></span></div>
+        <div class="segs" id="run-segs" aria-hidden="true"></div>
+        <ul class="sites" id="run-sites" aria-label="Job sites being checked"></ul>
+      </section>
+      <div class="summary" id="summary" hidden><b id="summary-title"></b><span id="summary-sub"></span></div>
+      <div id="notices"></div>
+      <div class="table-wrap" id="jobs-wrap" hidden>
+        <table class="jobs">
+          <thead><tr>
+            <th data-sort="company"><button class="h"><svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>Company<span class="arrow"></span></button></th>
+            <th><span class="h"><svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>Role</span></th>
+            <th><span class="h"><svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>Location</span></th>
+            <th data-sort="pay"><button class="h"><svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Pay<span class="arrow"></span></button></th>
+            <th data-sort="posted"><button class="h"><svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Posted<span class="arrow"></span></button></th>
+            <th><span class="h"><svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Matched</span></th>
+          </tr></thead>
+          <tbody id="jobs"></tbody>
+          <tfoot><tr><td colspan="6" id="jobs-foot"></td></tr></tfoot>
+        </table>
       </div>
-      <ul class="chips" id="set-companies"></ul>
-    </fieldset>
-
-    <fieldset id="sec-tracker"><legend>Where new jobs go</legend>
-      <div class="choices" id="set-tracker"></div>
-      <div class="notion-connect" data-for="settings" hidden></div>
-    </fieldset>
-
-    <h2 class="group">Extras</h2>
-    <p class="hint">Both are optional. Job Finder works without them.</p>
-
-    <fieldset id="sec-drafts"><legend>Drafts <span class="optional">optional</span></legend>
-      <p class="hint">Job Finder can write 3 resume bullets and the start of a cover letter for each new job, using only your notes below. This uses Anthropic’s AI and costs about 1–2 cents per job, charged to your Anthropic account.</p>
-      <label class="field"><span class="key">Anthropic API key <span class="status" id="anthropic-status"></span></span>
-        <input id="anthropic-key" type="password" placeholder="sk-ant-…" autocomplete="off">
-        <small>Get one at <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> → API Keys → Create Key. You’ll need to add credit to that account before it works.</small>
-      </label>
-      <label class="field"><span class="key">Your experience</span>
-        <textarea id="notes" rows="10"></textarea>
-        <small>Companies, what you led, and results with numbers. Drafts only use what’s written here, so the more specific these notes are, the better the drafts.</small>
-      </label>
-    </fieldset>
-
-    <fieldset id="sec-adzuna"><legend>More listings from Adzuna <span class="optional">optional, free</span></legend>
-      <p class="hint">Adzuna collects listings from many other job sites. To add them, make a free account at <a href="https://developer.adzuna.com" target="_blank" rel="noopener">developer.adzuna.com</a> and paste the App ID and App Key it gives you. <span class="status" id="adzuna-status"></span></p>
-      <div class="row">
-        <label class="field"><span class="key">App ID</span> <input id="adzuna-id" autocomplete="off"></label>
-        <label class="field"><span class="key">App Key</span> <input id="adzuna-key" type="password" autocomplete="off"></label>
+      <div class="empty" id="jobs-empty" hidden>
+        <h2 id="empty-title"></h2>
+        <p id="empty-sub"></p>
+        <div class="actions" id="empty-actions"></div>
       </div>
-    </fieldset>
-
-    <div class="savebar" id="savebar">
-      <p id="save-status" aria-live="polite">No changes</p>
-      <button class="link" id="discard" hidden>Discard</button>
-      <button class="primary" id="save-all" disabled>Save</button>
     </div>
-  </section>
+  </main>
 
-  <template id="notion-template">
-    <ol class="notion-steps">
-      <li>Go to <a href="https://www.notion.so/profile/integrations" target="_blank" rel="noopener">notion.so/profile/integrations</a>, click <b>New integration</b>, name it “Job search”, save, and copy the <b>Internal Integration Secret</b> (a long code that lets Job Finder add jobs to Notion).</li>
-      <li>Open the Notion page where you want your jobs to go, or make a new one. Click <b>•••</b> (top right) → <b>Connections</b> and add “Job search”.</li>
-      <li>On that page, click <b>Share → Copy link</b>.</li>
-    </ol>
-    <label class="field"><span class="key">Secret from step 1</span> <input class="n-token" type="password" autocomplete="off"></label>
-    <label class="field"><span class="key">Page link from step 3</span> <input class="n-link" autocomplete="off"></label>
-    <button class="secondary n-go">Connect Notion</button>
+  <!-- Companies -->
+  <main class="main" id="view-companies" hidden>
+    <header class="top"><span class="title"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>Companies <span class="count" id="co-count"></span></span></header>
+    <div class="toolbar">
+      <div class="company-add" data-for="companies">
+        <input class="input" placeholder="Add a company, e.g. Figma" autocomplete="off" aria-label="Company name">
+        <button class="btn btn-secondary" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add</button>
+      </div>
+    </div>
+    <div class="scroll">
+      <div class="summary"><b id="co-title"></b><span>Job Finder checks these careers pages every time it looks. It also searches the job site Indeed.</span></div>
+      <div id="co-notices"></div>
+      <div class="table-wrap" id="co-wrap">
+        <table class="companies">
+          <thead><tr>
+            <th><span class="h">Company</span></th>
+            <th><span class="h">Status</span></th>
+            <th><span class="h">Careers page</span></th>
+            <th><span class="h">Open jobs</span></th>
+            <th class="shrink"><span class="visually-hidden">Remove</span></th>
+          </tr></thead>
+          <tbody id="companies"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="co-empty" hidden>
+        <h2>No companies yet</h2>
+        <p>Add companies you’d love to work at, and Job Finder will check their careers pages every time it looks. Without any, it still searches Indeed.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Settings -->
+  <main class="main" id="view-settings" hidden>
+    <header class="top" role="tablist" aria-label="Settings">
+      <button class="tab" role="tab" data-tab="search" aria-selected="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>Your search</button>
+      <button class="tab" role="tab" data-tab="extras" aria-selected="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h.01"/><path d="M17.8 6.2 19 5"/><path d="m3 21 9-9"/><path d="M12.2 6.2 11 5"/></svg>Extras</button>
+    </header>
+    <div class="scroll settings-scroll">
+      <div class="form">
+        <div class="tab-panel" data-panel="search">
+          <h1>Your search</h1>
+          <p class="lede">What Job Finder looks for each time it checks.</p>
+
+          <section class="sec" id="sec-level">
+            <div class="about"><h2>Level</h2><p>Job Finder looks for product design jobs at this level.</p></div>
+            <div class="stack">
+              <div class="options" id="set-level"></div>
+              <label class="field"><span>Your title in drafts</span>
+                <input class="input" id="set-role" autocomplete="off">
+                <small>Only used if you turn on drafts, under Extras. Clear it to go back to the title that matches your level.</small>
+              </label>
+            </div>
+          </section>
+
+          <section class="sec" id="sec-location">
+            <div class="about"><h2>Location</h2><p>Use the names job listings use, like “New York”, not “NYC”.</p></div>
+            <div class="stack">
+              <label class="field"><span>Cities or areas</span>
+                <input class="input" id="set-cities" placeholder="e.g. New York, Brooklyn" autocomplete="off">
+                <small>Separate them with commas. Leave it empty if you only want remote jobs.</small>
+              </label>
+              <label class="toggle-row"><span class="grow">Include remote jobs (US only)</span>
+                <span class="switch"><input type="checkbox" id="set-remote"><span></span></span></label>
+            </div>
+          </section>
+
+          <section class="sec" id="sec-pay">
+            <div class="about"><h2>Pay</h2><p>Jobs that don’t list pay are always kept, so you can check them yourself.</p></div>
+            <label class="field"><span>Minimum yearly pay, in US dollars</span>
+              <input class="input" id="set-pay" inputmode="numeric" placeholder="e.g. 150k" autocomplete="off">
+              <small>A job is kept if the top of its pay range meets your minimum. Type 0 for no minimum.</small>
+            </label>
+          </section>
+
+          <section class="sec" id="sec-tracker">
+            <div class="about"><h2>Where new jobs go</h2><p>Job Finder adds each new job here, and you mark what you decide.</p></div>
+            <div class="stack">
+              <div class="cards2" id="set-tracker"></div>
+              <div class="notion-connect" data-for="settings" hidden></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="tab-panel" data-panel="extras" hidden>
+          <h1>Extras</h1>
+          <p class="lede">Both are optional. Job Finder works without them.</p>
+
+          <section class="sec" id="sec-drafts">
+            <div class="about"><h2>Drafts <span class="optional">Optional</span></h2><p>Job Finder can write 3 resume bullets and the start of a cover letter for each new job, using only your notes. This uses Anthropic’s AI and costs about 1–2 cents per job, charged to your Anthropic account.</p></div>
+            <div class="stack">
+              <label class="field"><span>Anthropic API key <span class="status" id="anthropic-status"></span></span>
+                <input class="input" id="anthropic-key" type="password" placeholder="sk-ant-…" autocomplete="off">
+                <small>Get one at <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> → API Keys → Create Key. You’ll need to add credit to that account before it works.</small>
+              </label>
+              <label class="field"><span>Your experience</span>
+                <textarea class="input" id="notes" rows="10"></textarea>
+                <small>Companies, what you led, and results with numbers. Drafts only use what’s written here, so the more specific these notes are, the better the drafts.</small>
+              </label>
+            </div>
+          </section>
+
+          <section class="sec" id="sec-adzuna">
+            <div class="about"><h2>More listings from Adzuna <span class="optional">Optional, free</span></h2><p>Adzuna collects listings from many other job sites. Make a free account at <a href="https://developer.adzuna.com" target="_blank" rel="noopener">developer.adzuna.com</a> and paste the App ID and App Key it gives you.</p></div>
+            <div class="stack">
+              <span class="status" id="adzuna-status"></span>
+              <div class="row2">
+                <label class="field"><span>App ID</span><input class="input" id="adzuna-id" autocomplete="off"></label>
+                <label class="field"><span>App Key</span><input class="input" id="adzuna-key" type="password" autocomplete="off"></label>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="savebar" id="savebar">
+        <p id="save-status" aria-live="polite">No changes</p>
+        <button class="btn btn-ghost" id="discard" hidden>Discard</button>
+        <button class="btn btn-primary" id="save-all" disabled>Save</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Messages that apply anywhere, like "Job Finder was closed". -->
+<div class="toast" id="banner" role="alert" hidden><span id="banner-text"></span>
+  <button class="btn btn-icon" id="banner-close" aria-label="Dismiss"><svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+
+<template id="notion-template">
+  <ol class="notion-steps">
+    <li>Go to <a href="https://www.notion.so/profile/integrations" target="_blank" rel="noopener">notion.so/profile/integrations</a>, click <b>New integration</b>, name it “Job search”, save, and copy the <b>Internal Integration Secret</b> (a long code that lets Job Finder add jobs to Notion).</li>
+    <li>Open the Notion page where you want your jobs to go, or make a new one. Click <b>•••</b> (top right) → <b>Connections</b> and add “Job search”.</li>
+    <li>On that page, click <b>Share → Copy link</b>.</li>
+  </ol>
+  <div class="stack">
+    <label class="field"><span>Secret from step 1</span><input class="input n-token" type="password" autocomplete="off"></label>
+    <label class="field"><span>Page link from step 3</span><input class="input n-link" autocomplete="off"></label>
+    <div><button class="btn btn-secondary n-go" type="button">Connect Notion</button></div>
     <p class="n-msg" hidden></p>
-  </template>
-</main>
+  </div>
+</template>
+
 <script src="/static/app.js"></script>
 </body>
 </html>
