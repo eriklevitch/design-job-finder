@@ -4,9 +4,16 @@ portfolio_notes.md
 .env
 applications.csv
 drafts/
+logs/
+last_run.json
+
+# The app's running state
+.app_state.json
+.run.lock
 
 # Installed software and caches
 venv/
+.uv/
 __pycache__/
 .pytest_cache/
 *.pyc

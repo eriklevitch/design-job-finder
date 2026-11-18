@@ -5,7 +5,7 @@ import os
 import yaml
 
 from tracker_csv import CsvTracker, COLUMNS
-from setup_wizard import set_key, parse_money
+from config_store import set_key, parse_money
 from notion_client import page_id_from_link
 from settings import load_env, save_env
 from sources import filter_jobs
@@ -58,7 +58,7 @@ def test_set_key_replaces_block_and_flow_lists():
 
 
 def test_example_config_round_trips_through_set_key():
-    from setup_wizard import EXAMPLE_CONFIG
+    from config_store import EXAMPLE_CONFIG
     text = EXAMPLE_CONFIG.read_text()
     for key in ("seniority_keywords", "locations", "greenhouse_companies"):
         text = set_key(text, key, ["x"])

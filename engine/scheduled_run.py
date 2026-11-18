@@ -1,0 +1,44 @@
+"""The weekly search that runs on its own (see schedule.py). Finds jobs
+like "Find new jobs" does, then shows a Mac notification with the result.
+"""
+import json
+import subprocess
+import sys
+from datetime import datetime
+
+from settings import ROOT
+
+SUMMARY = ROOT / "logs" / "scheduled_summary.json"
+
+
+def notify(message: str) -> None:
+    script = f'display notification {json.dumps(message)} with title "Job Finder"'
+    subprocess.run(["osascript", "-e", script], check=False, capture_output=True)
+
+
+def message_for(summary: dict, exit_code: int) -> str:
+    if summary.get("state") == "done":
+        added = len(summary.get("added") or [])
+        if added:
+            return (f"Found {added} new job{'s' if added != 1 else ''}. "
+                    "Open Job Finder to see them.")
+        return "No new jobs this week."
+    return summary.get("message") or "The weekly search didn't finish. Open Job Finder to try again."
+
+
+def main() -> int:
+    SUMMARY.parent.mkdir(exist_ok=True)
+    SUMMARY.unlink(missing_ok=True)
+    print(f"--- {datetime.now():%Y-%m-%d %H:%M} weekly search ---", flush=True)
+    code = subprocess.run([sys.executable, str(ROOT / "engine" / "main.py"),
+                           "--summary", str(SUMMARY)], cwd=ROOT).returncode
+    try:
+        summary = json.loads(SUMMARY.read_text())
+    except (OSError, ValueError):
+        summary = {}
+    notify(message_for(summary, code))
+    return code
+
+
+if __name__ == "__main__":
+    sys.exit(main())

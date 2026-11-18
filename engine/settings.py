@@ -64,7 +64,7 @@ def load_config() -> dict:
     """Reads config.yaml, or explains how to create it."""
     if not CONFIG_PATH.exists():
         print("No settings found yet.")
-        print("Double-click 'Set Up.command' in the job-search folder to create them.")
+        print("Open the Job Finder app to create them.")
         sys.exit(1)
     with open(CONFIG_PATH) as f:
         config = yaml.safe_load(f) or {}

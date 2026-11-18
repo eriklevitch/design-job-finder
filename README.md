@@ -14,7 +14,7 @@ Applied           Initech   Design Manager, Platform         Remote - US  $200,0
 
 ## Who it's for
 
-Product, UX and UI designers who do not want to check job sites every week. You don't need to know how to code: you paste one line into Terminal to install it, and after that you use some files. 
+Product, UX and UI designers who do not want to check job sites every week. You don't need to know how to code: you paste one line into Terminal to install it, and after that you use the **Job Finder** app.
 
 ## What it does
 
@@ -33,7 +33,7 @@ Product, UX and UI designers who do not want to check job sites every week. You 
 
 ## What you need
 
-- A Mac. Windows works too, with a few manual steps (see [For tinkerers](#for-tinkerers)).
+- A Mac. Windows works too, with a few manual steps (see [To fool around with](#to-fool-around-with)).
 - About 10 minutes to set up.
 - No money, unless you turn on drafts. Those cost about 1–2 cents per job, paid to Anthropic. The other extras (Adzuna and Notion) are free.
 
@@ -48,31 +48,22 @@ Product, UX and UI designers who do not want to check job sites every week. You 
    curl -fsSL https://raw.githubusercontent.com/eriklevitch/product-design-job-finder/main/install.sh | bash
    ```
 
-3. Answer the five questions. Press **Return** to accept the suggestion shown in [brackets].
+3. **Job Finder** opens in your browser and asks five short questions:
    1. **Level:** senior individual contributor, leadership, both, or any.
    2. **Location:** your cities, and whether remote counts.
    3. **Pay:** your minimum per year.
    4. **Companies:** ones you want to work at. Type their names and it looks up their job pages.
-   5. **Optional extras:** drafts, more listings, and Notion instead of a spreadsheet. Skip any of them.
+   5. **Tracker:** a spreadsheet, or Notion.
 
-4. Say **yes** to "Run your first search now?" Your tracker opens with your first jobs.
+4. Click **Find my jobs**. Your first jobs appear on the page and in your tracker.
 
-Your **job-search** folder (in your home folder) then opens in Finder. Drag it to the Finder sidebar so it's easy to find later.
-
-<details>
-<summary><b>"Python 3.10 or newer isn't on your Mac yet"</b></summary>
-
-Go to [python.org/downloads](https://www.python.org/downloads/), click the yellow **Download** button, open the downloaded file and click **Continue** until it's done. Then paste the install line again.
-</details>
+Job Finder is now in your Dock. To find it later, you can also press **⌘ Command + Space** and type `Job Finder`.
 
 ## Run every week (or as often as you'd like)
 
-| Double-click | What it does |
-|---|---|
-| **Find Jobs** | Finds new jobs and adds them to your tracker. Takes 1–3 minutes. |
-| **Open Tracker** | Opens your spreadsheet, or Notion in your browser. |
-| **Preview Jobs** | Shows what would be added, without saving anything. Useful after you change your settings. |
-| **Set Up** | Asks the setup questions again. Your current answers are the defaults. |
+Click **Job Finder** in your Dock, then click **Find new jobs**. It takes 1–3 minutes and shows what it added. **Open my spreadsheet** (or **Open Notion**) opens your tracker.
+
+**Let it run on its own:** tick **Check for me every Monday morning**. Your Mac then searches every Monday at 9am and sends a notification with the number of new jobs. If your Mac is asleep at that time, it searches when it wakes. Untick the box to stop.
 
 Then go through the new rows in your tracker. When you apply, or decide not to, update **Status**:
 
@@ -88,23 +79,17 @@ Then go through the new rows in your tracker. When you apply, or decide not to, 
 <summary><b>Tips for the spreadsheet</b></summary>
 
 - **Excel, Google Sheets and LibreOffice** edit `applications.csv` directly. Change Status, Date applied and Notes, then save.
-- **Numbers** saves your edits as a separate `.numbers` file, and new jobs keep going to `applications.csv`. To keep everything in one place, use Excel or Google Sheets, or switch to Notion (run **Set Up** again).
-- **Close the spreadsheet before you run Find Jobs**, so its new rows don't get overwritten when you save.
+- **Numbers** saves your edits as a separate `.numbers` file, and new jobs keep going to `applications.csv`. To keep everything in one place, use Excel or Google Sheets, or switch to Notion (Job Finder → **Settings**).
+- **Close the spreadsheet before you click Find new jobs**, so its new rows don't get overwritten when you save.
 - Don't edit the **ID** column (the last one). It's how the tool recognizes jobs it has already added.
 - Drafts are also saved as text files in the `drafts` folder, which makes them easier to copy.
-</details>
-
-<details>
-<summary><b>The first time Mac says a file "can't be opened"</b></summary>
-
-Right-click the file, choose **Open**, then click **Open** again. You only need to do this once per file.
 </details>
 
 ---
 
 ## Change your search criteria
 
-Double-click **Set Up** and answer the questions again.
+In Job Finder, click **Settings**. Change what you like and click **Save settings**.
 
 For finer changes, right-click `config.yaml` in your job-search folder, choose **Open With → TextEdit**, and change the **YOUR SEARCH** section at the top:
 
@@ -116,13 +101,13 @@ For finer changes, right-click `config.yaml` in your job-search folder, choose *
 | `search_location` | The city (or "United States") used when searching Indeed. |
 | `min_salary` | Jobs whose posted pay tops out below this are skipped. Jobs that don't list pay are always kept. |
 | `max_posting_age_days` | How recent a posting must be. |
-| `greenhouse_companies`, `lever_companies`, `ashby_companies` | Companies checked directly. Set Up fills these in for you. |
+| `greenhouse_companies`, `lever_companies`, `ashby_companies` | Companies checked directly. Settings fills these in for you. |
 | `tracker` | `"spreadsheet"` or `"notion"`. |
 
-Keep the format exactly as you see it: words in `"quotes"`, lists in `[square brackets]`, separated by commas. Then double-click **Preview Jobs** to check the results.
+Keep the format exactly as you see it: words in `"quotes"`, lists in `[square brackets]`, separated by commas. Then click **Find new jobs** to check the results.
 
 <details>
-<summary><b>Adding a company that Set Up couldn't find</b></summary>
+<summary><b>Adding a company that Job Finder couldn't find</b></summary>
 
 Open the company's careers page and click any job. Look at the web address:
 
@@ -135,7 +120,7 @@ If the address is anything else (for example, Workday or the company's own site)
 
 ## Extras (optional)
 
-You can turn on any of these by running **Set Up** again.
+Turn on any of these in Job Finder → **Settings**.
 
 <details>
 <summary><b>Tailored drafts (about 1–2 cents per job)</b></summary>
@@ -143,8 +128,8 @@ You can turn on any of these by running **Set Up** again.
 For every new job, it writes three resume bullets and a cover letter opening. It uses only what you've written in `portfolio_notes.md`, so it won't invent experience you don't have.
 
 1. Create an account at [console.anthropic.com](https://console.anthropic.com), add a few dollars of credit, then go to **API Keys → Create Key**.
-2. Run **Set Up** and paste the key when asked.
-3. Open `portfolio_notes.md` in your job-search folder (right-click → **Open With → TextEdit**) and replace the examples with your real experience: companies, what you led, and results with numbers. Drafts can only be as specific as these notes.
+2. In **Settings → Drafts**, paste the key.
+3. In the **Your experience** box below it, replace the examples with your real experience: companies, what you led, and results with numbers. Drafts can only be as specific as these notes. Click **Save drafts settings**.
 
 You can also change the drafts' writing rules under `writing_style` in `config.yaml`.
 </details>
@@ -152,19 +137,19 @@ You can also change the drafts' writing rules under `writing_style` in `config.y
 <details>
 <summary><b>More listings from Adzuna (free)</b></summary>
 
-Adzuna adds listings from many other job sites. Sign up at [developer.adzuna.com](https://developer.adzuna.com), copy your **App ID** and **App Key**, then run **Set Up** and paste them when asked.
+Adzuna adds listings from many other job sites. Sign up at [developer.adzuna.com](https://developer.adzuna.com), copy your **App ID** and **App Key**, and paste them in **Settings → More listings from Adzuna**.
 </details>
 
 <details>
 <summary><b>Notion instead of a spreadsheet (free)</b></summary>
 
-Set Up builds the database for you, with all the columns. It asks you to:
+Job Finder builds the database for you, with all the columns. In **Settings → Where new jobs go**, choose **Notion**. It asks you to:
 
 1. Go to [notion.so/profile/integrations](https://www.notion.so/profile/integrations), click **New integration**, name it "Job search", save, and copy the **Internal Integration Secret**.
 2. Open (or create) the Notion page the tracker should live in. Click **•••** (top right) → **Connections** and add "Job search".
 3. On that page, click **Share → Copy link**.
 
-Paste the secret and the link when asked. Drafts appear inside each job's page.
+Paste the secret and the link, then click **Connect Notion**. Drafts appear inside each job's page.
 </details>
 
 ---
@@ -174,7 +159,7 @@ Paste the secret and the link when asked. Drafts appear inside each job's page.
 <details>
 <summary><b>It found 0 matches</b></summary>
 
-Your settings may be too narrow. Try **Set Up** again with "Any level", more cities, remote included, or a lower minimum pay. **Preview Jobs** shows how many jobs were skipped for each reason (title, level, location, pay, too old), which tells you which setting to loosen.
+Your settings may be too narrow. Job Finder tells you which setting skipped the most jobs and takes you straight to it. Try "Any level", more cities, remote included, or a lower minimum pay.
 </details>
 
 <details>
@@ -186,13 +171,13 @@ The **Why it matched** column shows which settings it matched. To block a word i
 <details>
 <summary><b>"[jobspy] error" in the output</b></summary>
 
-The Indeed search failed. This happens when Indeed changes its site or limits how often it can be searched. The other sources still run. To fix it, update by pasting the install line into Terminal again. Your settings, notes and tracker are kept.
+The Indeed search failed. (Job Finder keeps a full log in `logs/app_run.log` in your job-search folder.) This happens when Indeed changes its site or limits how often it can be searched. The other sources still run. To fix it, update by pasting the install line into Terminal again. Your settings, notes and tracker are kept.
 </details>
 
 <details>
 <summary><b>"404 Not Found" next to a company</b></summary>
 
-That company's name is wrong or it moved to a different careers system. Run **Set Up** and type the company name again, or see "Adding a company that Set Up couldn't find" above.
+That company's name is wrong or it moved to a different careers system. Remove it in **Settings → Companies** and type the company name again, or see "Adding a company that Job Finder couldn't find" above.
 </details>
 
 <details>
@@ -204,7 +189,7 @@ Paste the install line into Terminal again. Your settings, notes, keys and track
 <details>
 <summary><b>How do I uninstall?</b></summary>
 
-Drag the job-search folder to the Trash. Nothing else was installed.
+If you ticked **Check for me every Monday morning**, untick it first. Then drag the job-search folder and **Job Finder** (in the Applications folder in your home folder) to the Trash, and remove Job Finder from your Dock. Nothing else was installed.
 </details>
 
 ---
@@ -224,7 +209,7 @@ venv/bin/pip install -r requirements.txt        # Windows: venv\Scripts\pip inst
 venv/bin/python engine/setup_wizard.py           # Windows: venv\Scripts\python engine\setup_wizard.py
 ```
 
-Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), and `engine/open_tracker.py` to open the tracker.
+Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), and `engine/open_tracker.py` to open the tracker. The Job Finder page also works anywhere: `venv/bin/python engine/app_server.py` starts it and opens your browser.
 </details>
 
 <details>
@@ -232,21 +217,22 @@ Then run `venv/bin/python engine/main.py` each week (`--dry-run` to preview), an
 
 | File | What it is |
 |---|---|
-| `config.yaml` | Your settings (made by Set Up from `config.example.yaml`). |
+| `config.yaml` | Your settings (made by Job Finder from `config.example.yaml`). |
 | `portfolio_notes.md` | Your experience, used for drafts. |
 | `.env` | Your keys (hidden file). |
 | `applications.csv`, `drafts/` | Your tracker and drafts. |
-| `engine/` | The code. `main.py` runs the search, `sources.py` fetches and filters jobs, `draft.py` writes drafts, `tracker_csv.py` and `notion_client.py` save jobs, `check_boards.py` checks company names. |
+| `logs/`, `last_run.json` | What the latest searches did. |
+| `engine/` | The code. `app_server.py` and `app/` are the Job Finder page, `mac_app.py` makes the Dock app, `schedule.py` sets up the Monday search, `main.py` runs the search, `sources.py` fetches and filters jobs, `draft.py` writes drafts, `tracker_csv.py` and `notion_client.py` save jobs, `check_boards.py` checks company names. |
 | `tests/` | Automated checks for the filtering rules. |
 
-Everything in the first four rows is personal and is never uploaded (see `.gitignore`).
+Everything in the first five rows is personal and is never uploaded (see `.gitignore`).
 </details>
 
 <details>
 <summary><b>Checking that the filtering is right</b></summary>
 
 1. **Run the tests:** `venv/bin/pip install pytest` once, then `venv/bin/python -m pytest -q`. They check the title, level, location, date and pay rules against known examples. If you change a rule, add a test in `tests/test_sources.py`.
-2. **Preview against real jobs:** double-click **Preview Jobs**, open 3–5 of the links and confirm the title, location, pay and date really match.
+2. **Preview against real jobs:** run `venv/bin/python engine/main.py --dry-run` (it saves nothing), open 3–5 of the links and confirm the title, location, pay and date really match.
 3. **Check the skip counts.** If one reason looks too high, open a few raw postings. A common cause is a location written differently than you expected, such as "NYC" instead of "New York". Add the other spelling to `locations`.
 4. **Check company names:** `venv/bin/python engine/check_boards.py` checks every company in your settings and says which ones are on the wrong list or misspelled.
 </details>
@@ -259,7 +245,7 @@ If you use Claude Code or a similar tool, open this folder in it and ask: "Set t
 
 ## Credits
 
-Indeed search uses [JobSpy](https://github.com/speedyapply/JobSpy). Company job lists come from the public Greenhouse, Lever and Ashby job-board APIs.
+Indeed search uses [JobSpy](https://github.com/speedyapply/JobSpy). The app uses the [Inter](https://rsms.me/inter/) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/) fonts (SIL Open Font License). Company job lists come from the public Greenhouse, Lever and Ashby job-board APIs.
 
 ## License
 

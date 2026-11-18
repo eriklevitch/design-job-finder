@@ -1,31 +1,17 @@
-"""Question-and-answer setup. Double-click "Set Up.command" to run it.
+"""Question-and-answer setup in Terminal. Most people use the Job Finder
+app instead, which asks the same questions on a page.
 
 Creates (or updates) your settings in config.yaml, your keys in .env and
 a starter portfolio_notes.md. Safe to run again any time: your current
 answers are shown as defaults, so pressing Return keeps them.
 """
-import json
-import re
-import shutil
 import subprocess
 import sys
 
-import yaml
-
-from settings import CONFIG_PATH, ROOT, env, load_env, save_env
-
-EXAMPLE_CONFIG = ROOT / "config.example.yaml"
-NOTES = ROOT / "portfolio_notes.md"
-NOTES_EXAMPLE = ROOT / "portfolio_notes.example.md"
-
-IC_LEVELS = ["senior", "sr.", "sr ", "staff", "principal", "lead", "founding"]
-LEAD_LEVELS = ["manager", "director", "head of", "vp"]
-LEVEL_CHOICES = [
-    ("Senior and above (Senior, Staff, Principal, Lead)", IC_LEVELS),
-    ("Leadership (Manager, Director, Head of Design, VP)", LEAD_LEVELS),
-    ("Both of the above", IC_LEVELS + LEAD_LEVELS),
-    ("Any level", []),
-]
+from config_store import (LEVEL_CHOICES, ROLE_DEFAULTS, connect_notion, current_settings,
+                          level_choice, lookup_company, parse_money, save_keys,
+                          save_settings, set_key, split_list)  # noqa: F401 (set_key re-exported)
+from settings import CONFIG_PATH, ROOT, env, load_env
 
 
 # ── Small input helpers ─────────────────────────────────────────────
@@ -72,60 +58,13 @@ def heading(text: str) -> None:
     say(f"── {text} " + "─" * max(0, 56 - len(text)))
 
 
-def parse_money(text: str) -> int | None:
-    """'150k', '$150,000' and '150000' all become 150000."""
-    t = text.lower().replace("$", "").replace(",", "").replace(" ", "")
-    m = re.fullmatch(r"(\d+(?:\.\d+)?)(k?)", t)
-    if not m:
-        return None
-    value = float(m.group(1)) * (1000 if m.group(2) else 1)
-    return int(value)
-
-
-def split_list(text: str) -> list[str]:
-    return [part.strip() for part in text.split(",") if part.strip()]
-
-
-# ── Writing config.yaml ─────────────────────────────────────────────
-
-def set_key(text: str, key: str, value) -> str:
-    """Replaces a top-level `key: ...` line (and any indented list lines
-    under it) with `key: <value>`, keeping every comment and other
-    setting in the file. Adds the key if it isn't there."""
-    rendered = f"{key}: {json.dumps(value, ensure_ascii=False)}"
-    lines = text.splitlines()
-    for i, line in enumerate(lines):
-        if re.match(rf"^{re.escape(key)}\s*:", line):
-            end = i + 1
-            while end < len(lines) and lines[end].startswith((" ", "\t")):
-                end += 1
-            return "\n".join(lines[:i] + [rendered] + lines[end:]) + "\n"
-    marker = "# ════ ADVANCED"
-    for i, line in enumerate(lines):
-        if line.startswith(marker):
-            return "\n".join(lines[:i] + [rendered, ""] + lines[i:]) + "\n"
-    return text.rstrip("\n") + "\n" + rendered + "\n"
-
-
-def current_settings() -> dict:
-    if CONFIG_PATH.exists():
-        return yaml.safe_load(CONFIG_PATH.read_text()) or {}
-    return yaml.safe_load(EXAMPLE_CONFIG.read_text()) or {}
-
-
 # ── Questions ───────────────────────────────────────────────────────
 
 def ask_level(cfg: dict) -> tuple[list[str], str]:
     heading("1 of 5 · Level")
-    current = cfg.get("seniority_keywords")
-    default = 3
-    for i, (_, levels) in enumerate(LEVEL_CHOICES, 1):
-        if current is not None and sorted(current) == sorted(levels):
-            default = i
-    n = ask_choice("Which roles should it look for?", [c[0] for c in LEVEL_CHOICES], default)
-    role_default = (CONFIG_PATH.exists() and cfg.get("your_role")) or {
-        1: "senior product designer", 2: "design leader",
-        3: "senior product designer", 4: "product designer"}[n]
+    n = ask_choice("Which roles should it look for?", [c[0] for c in LEVEL_CHOICES],
+                   level_choice(cfg))
+    role_default = (CONFIG_PATH.exists() and cfg.get("your_role")) or ROLE_DEFAULTS[n]
     role = ask("In a few words, how should drafts describe you?", role_default)
     return LEVEL_CHOICES[n - 1][1], role
 
@@ -171,21 +110,14 @@ def ask_companies(cfg: dict) -> dict:
     names = split_list(ask("Company names, separated by commas (Return to skip)"))
     if not names:
         return lists
-    from check_boards import resolve
     say("Looking them up...")
-    key_for = {"greenhouse": "greenhouse_companies", "lever": "lever_companies",
-               "ashby": "ashby_companies"}
     not_found = []
     for name in names:
-        slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
-        # resolve() checks Greenhouse, then Lever and Ashby, plus common
-        # name variations ("acme" -> "acmehq", "acmeai"...).
-        r = resolve("greenhouse", slug)
-        if r["status"] in ("ok", "moved"):
-            target = key_for[r["ats"]]
-            if r["slug"] not in lists[target]:
-                lists[target].append(r["slug"])
-            say(f"  ✓ {name}: found ({r.get('jobs', 0)} open jobs)")
+        r = lookup_company(name)
+        if r["status"] == "found":
+            if r["slug"] not in lists[r["key"]]:
+                lists[r["key"]].append(r["slug"])
+            say(f"  ✓ {name}: found ({r['jobs']} open jobs)")
         elif r["status"] == "error":
             not_found.append(name)
             say(f"  ? {name}: couldn't check right now (internet hiccup). Try again later.")
@@ -211,11 +143,8 @@ def ask_addons(cfg: dict) -> str:
         say("  Your key is already saved.")
     key = ask("Paste your Anthropic key (Return to " + ("keep it)" if has_key else "skip)"))
     if key:
-        if not key.startswith("sk-ant-"):
-            say("  That doesn't look like an Anthropic key (they start with sk-ant-). Skipped.")
-        else:
-            save_env({"ANTHROPIC_API_KEY": key})
-            say("  Saved.")
+        problems = save_keys(anthropic=key)
+        say(f"  {problems[0]} Skipped." if problems else "  Saved.")
 
     # Adzuna
     say()
@@ -227,7 +156,7 @@ def ask_addons(cfg: dict) -> str:
     if app_id:
         app_key = ask("Adzuna App Key")
         if app_key:
-            save_env({"ADZUNA_APP_ID": app_id, "ADZUNA_APP_KEY": app_key})
+            save_keys(adzuna_id=app_id, adzuna_key=app_key)
             say("  Saved.")
 
     # Tracker
@@ -246,7 +175,6 @@ def ask_addons(cfg: dict) -> str:
 
 
 def setup_notion() -> bool:
-    from notion_client import create_database, page_id_from_link
     say()
     say("Three steps in Notion:")
     say("  1. Go to https://www.notion.so/profile/integrations, click 'New integration',")
@@ -256,20 +184,12 @@ def setup_notion() -> bool:
     say("  3. On that page, click Share → Copy link.")
     token = ask("Paste the Integration Secret (step 1)")
     link = ask("Paste the page link (step 3)")
-    page_id = page_id_from_link(link)
-    if not token or not page_id:
-        say("  Missing the secret or a valid page link. Using the spreadsheet for now;")
-        say("  run Set Up again any time to connect Notion.")
+    ok, message = connect_notion(token, link)
+    if not ok:
+        say(f"  {message}")
+        say("  Using the spreadsheet for now. Run setup again any time to connect Notion.")
         return False
-    try:
-        db = create_database(token, page_id)
-    except Exception as e:
-        say(f"  Notion said: {e}")
-        say("  Most often this means step 2 was skipped. Using the spreadsheet for now;")
-        say("  run Set Up again to retry.")
-        return False
-    save_env({"NOTION_TOKEN": token, "NOTION_DATABASE_ID": db["id"]})
-    say(f"  ✓ Created a 'Job applications' database: {db['url']}")
+    say(f"  ✓ Created a 'Job applications' database: {message}")
     return True
 
 
@@ -290,18 +210,11 @@ def main() -> int:
     companies = ask_companies(cfg)
     tracker = ask_addons(cfg)
 
-    text = CONFIG_PATH.read_text() if CONFIG_PATH.exists() else EXAMPLE_CONFIG.read_text()
-    for key, value in [
-        ("seniority_keywords", seniority), ("your_role", role),
-        ("locations", locations), ("search_location", search_location),
-        ("min_salary", min_salary), ("tracker", tracker), *companies.items(),
-    ]:
-        text = set_key(text, key, value)
-    yaml.safe_load(text)  # never write a file that can't be read back
-    CONFIG_PATH.write_text(text)
-
-    if not NOTES.exists():
-        shutil.copy(NOTES_EXAMPLE, NOTES)
+    save_settings({
+        "seniority_keywords": seniority, "your_role": role,
+        "locations": locations, "search_location": search_location,
+        "min_salary": min_salary, "tracker": tracker, **companies,
+    })
 
     heading("All set")
     say("Saved your settings to config.yaml.")
@@ -309,7 +222,7 @@ def main() -> int:
         say("For good drafts, add your experience to portfolio_notes.md in this")
         say("folder (right-click it → Open With → TextEdit).")
     say()
-    say("Every week: double-click 'Find Jobs', then 'Open Tracker'.")
+    say("Every week: open Job Finder and click 'Find new jobs'.")
     if ask_yes("\nRun your first search now?", True):
         say()
         python = sys.executable

@@ -1,0 +1,263 @@
+/* Job Finder, styled after the portfolio system: quiet ink on paper,
+   no accent color. Inter stands in for Apercu Pro, JetBrains Mono for
+   Apercu Mono. Both ship in fonts/ so the app works offline. */
+
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("fonts/JetBrainsMono.woff2") format("woff2");
+  font-weight: 100 800;
+  font-display: swap;
+}
+
+:root {
+  --bg: #fafafa;           /* page */
+  --surface: #ffffff;      /* cards, buttons, inputs */
+  --ink: #37383c;          /* headings, labels (11.2:1) */
+  --ink-soft: #5f6167;     /* body copy, outlines (5.9:1) */
+  --ink-faint: #6a6c72;    /* mono keys and meta (5.0:1) */
+  --rule: #d6d7da;         /* decorative hairlines only */
+  --texture-dot: #c7c8cc;
+  --neutral-fill: #eaebed;
+  --warn: #b33d00;         /* errors (5.6:1) */
+  --font-sans: "Inter", ui-sans-serif, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius-xs: 6px;
+  --radius-md: 14px;
+  --radius-pill: 999px;
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --fast: 0.16s;
+  --base: 0.25s;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #18191b;
+    --surface: #202124;
+    --ink: #e8e9eb;
+    --ink-soft: #b4b6bb;
+    --ink-faint: #9b9da3;
+    --rule: #3a3b3f;
+    --texture-dot: #333438;
+    --neutral-fill: #2c2d31;
+    --warn: #ff9a66;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 1.0625rem/1.55 var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+/* The dot field behind the header: the system's one pattern. */
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 260px;
+  background-image: radial-gradient(var(--texture-dot) 1px, transparent 1.2px);
+  background-size: 8px 8px;
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
+  mask-image: linear-gradient(to bottom, #000, transparent);
+  pointer-events: none;
+  z-index: -1;
+}
+a { color: var(--ink); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:hover { color: var(--ink-soft); }
+::selection { background: var(--neutral-fill); color: var(--ink); }
+
+.shell { max-width: 640px; margin: 0 auto; padding: 0 clamp(1.25rem, 5vw, 2rem) 96px; }
+
+/* Top bar */
+.top { display: flex; align-items: center; justify-content: space-between; min-height: 4.5rem; margin-bottom: 40px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 1.02rem; letter-spacing: -0.01em; }
+.brand img { border-radius: 8px; }
+
+/* Type */
+h1 {
+  font-size: clamp(1.75rem, 1.2rem + 2.2vw, 2.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.018em;
+  font-weight: 400;
+  margin: 0 0 24px;
+  text-wrap: balance;
+}
+.hint { color: var(--ink-soft); margin: -8px 0 20px; text-wrap: pretty; }
+small { display: block; color: var(--ink-faint); font-size: 0.875rem; margin-top: 8px; text-wrap: pretty; }
+.key {
+  font: 500 0.78rem/1.55 var(--font-mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Buttons. Primary: solid ink pill. Secondary: outlined pill with a mono
+   label that fills on hover and keyboard focus. */
+button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+button:disabled { cursor: default; opacity: .6; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.primary {
+  background: var(--ink);
+  color: var(--bg);
+  border-radius: var(--radius-pill);
+  padding: 13px 26px;
+  font-weight: 500;
+  transition: background var(--base) var(--ease);
+}
+.primary:hover:not(:disabled) { background: var(--ink-soft); }
+.primary.big { display: block; width: 100%; padding: 20px; font-size: 1.15rem; letter-spacing: -0.005em; }
+.secondary, .link {
+  font: 500 0.82rem/1.55 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.secondary {
+  background: var(--surface);
+  border: 1px solid var(--ink-soft);
+  border-radius: var(--radius-pill);
+  padding: 9px 18px;
+  transition: background var(--base) var(--ease), color var(--base) var(--ease);
+}
+.secondary:hover:not(:disabled), .secondary:focus-visible { background: var(--ink-soft); color: var(--surface); }
+.link { padding: 6px 2px; transition: color var(--base) var(--ease); }
+.link:hover { color: var(--ink); }
+.link.center { display: block; margin: 16px auto 0; }
+
+/* Fields: a mono key above, the value in Inter. */
+.field { display: block; margin: 0 0 22px; }
+.field > .key {
+  display: block;
+  margin-bottom: 10px;
+  font: 400 0.95rem/1.4 var(--font-sans);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+.field input, .field textarea, .company-add input {
+  display: block; width: 100%; padding: 12px 14px;
+  font: inherit; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-xs);
+  transition: border-color var(--base) var(--ease);
+}
+.field input:hover, .field textarea:hover, .company-add input:hover { border-color: var(--ink-faint); }
+.field input:focus-visible, .field textarea:focus-visible, .company-add input:focus-visible {
+  outline: 0; border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink);
+}
+.field textarea { font-size: 0.95rem; line-height: 1.55; resize: vertical; }
+input::placeholder, textarea::placeholder { color: var(--ink-faint); opacity: .8; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 480px) { .row { grid-template-columns: 1fr; } }
+
+/* Checkbox rows and choice cards (panels: radius-md, solid border) */
+.check, .choice {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--slow, .35s) var(--ease);
+}
+.check:hover, .choice:hover { border-color: var(--ink-faint); }
+.check input, .choice input { width: 18px; height: 18px; margin: 2px 0 0; flex: none; accent-color: var(--ink); }
+.check small { margin-top: 2px; }
+.choice b { display: block; font-weight: 500; }
+.choice span { color: var(--ink-soft); font-size: 0.95rem; }
+.choice:has(input:checked), .check:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.choice:has(:focus-visible), .check:has(:focus-visible) { outline: 2px solid var(--ink); outline-offset: 3px; }
+.choice input:focus-visible, .check input:focus-visible { outline: 0; }
+.choices { display: grid; gap: 10px; margin-bottom: 22px; }
+
+/* Setup flow */
+.step-count { margin: 0 0 12px; }
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
+.nav .primary { margin-left: auto; }
+.error { color: var(--warn); margin: 14px 0 0; }
+.saved { font: 500 0.78rem/1.55 var(--font-mono); letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-soft); margin-left: 12px; }
+
+/* Companies: names stay in Inter; the status is a mono note. */
+.company-add { display: flex; gap: 10px; align-items: center; }
+.company-add button { flex: none; }
+.chips { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.chips li {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 6px 5px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  font-size: 0.95rem;
+}
+.chips li.missing, .chips li.error { border-style: dashed; color: var(--ink-soft); }
+.chips .note { font: 400 0.6875rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+.chips button { color: var(--ink-faint); width: 24px; height: 24px; border-radius: 50%; line-height: 1; font-size: 16px; transition: background var(--fast) var(--ease); }
+.chips button:hover { background: var(--neutral-fill); color: var(--ink); }
+.chip-help { color: var(--ink-soft); font-size: 0.95rem; margin: 12px 0 0; }
+
+/* Notion */
+.notion-connect { margin-top: 4px; padding: 20px; border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--surface); }
+.notion-steps { margin: 0 0 20px; padding-left: 20px; color: var(--ink-soft); }
+.notion-steps li { margin-bottom: 8px; }
+.notion-steps b { color: var(--ink); font-weight: 500; }
+.n-msg { margin: 14px 0 0; }
+.n-msg.bad { color: var(--warn); }
+
+/* Home */
+.last-run { color: var(--ink-soft); text-align: center; margin: 0 0 20px; }
+.tip { text-align: center; color: var(--ink-faint); font-size: 0.9rem; margin: 12px 0 0; }
+.run { margin-top: 40px; padding-top: 32px; border-top: 1px dotted var(--rule); }
+.progress { display: flex; align-items: center; justify-content: center; gap: 12px; color: var(--ink-soft); padding: 8px 0 18px; }
+.spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--rule); border-top-color: var(--ink); animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+.result { font-size: 1.6rem; line-height: 1.22; letter-spacing: -0.012em; text-align: center; margin: 0 0 24px; text-wrap: balance; }
+.result.bad { color: var(--warn); font-size: 1.15rem; }
+.suggest { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-md); padding: 18px 20px; margin-bottom: 24px; }
+.suggest p { margin: 0 0 14px; color: var(--ink-soft); }
+.jobs { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.jobs li {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  transition: border-color .35s var(--ease);
+}
+.jobs li:hover { border-color: var(--ink-faint); }
+.jobs a { display: block; padding: 16px 18px; text-decoration: none; color: inherit; border-radius: var(--radius-md); }
+.jobs a:hover { color: inherit; }
+.jobs .company { display: block; margin-bottom: 2px; font-size: 0.9rem; color: var(--ink-faint); }
+.jobs .title { display: block; font-weight: 500; color: var(--ink); }
+.jobs .title::after { content: " ↗"; color: var(--ink-faint); font-weight: 400; transition: color var(--base) var(--ease); }
+.jobs a:hover .title::after { color: var(--ink); }
+.jobs .meta { display: block; font-size: 0.92rem; color: var(--ink-soft); margin-top: 4px; }
+.schedule { margin-top: 48px; }
+.schedule b { display: block; font-weight: 500; }
+
+/* Settings: each section opens with a section label over a dotted rule. */
+fieldset { border: 0; padding: 0; margin: 0 0 48px; min-width: 0; }
+legend {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0 0 10px; margin-bottom: 22px;
+  border-bottom: 1px dotted var(--rule);
+}
+legend::before { content: "●"; font-size: 0.6rem; }
+.optional { color: var(--ink-faint); text-transform: none; letter-spacing: 0; margin-left: 2px; }
+.status { font: 500 0.6875rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin-left: 8px; }
+#view-settings > .nav { margin: -16px 0 56px; }
+
+.banner {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-md);
+  padding: 14px 18px; margin: 0 0 28px;
+}

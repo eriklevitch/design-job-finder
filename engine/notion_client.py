@@ -1,7 +1,7 @@
 """Optional Notion tracker: dedup check, row creation, and building the
 database itself.
 
-You don't need to build the database by hand. Setup (Set Up.command)
+You don't need to build the database by hand. Setup (Job Finder → Settings)
 asks for an integration token and a Notion page, then calls
 create_database() below, which adds a database with every column this
 tool uses (see DATABASE_PROPERTIES).
@@ -102,7 +102,7 @@ class NotionTracker:
         if not self.token or not self.database_id:
             raise NotionNotConfigured(
                 "Notion is selected as your tracker, but its keys aren't set. "
-                "Run Set Up.command again and choose Notion.")
+                "Open Job Finder → Settings and connect Notion.")
         self.headers = _headers(self.token)
 
     def describe(self) -> str:

@@ -1,5 +1,5 @@
 """Opens your tracker: the spreadsheet, or Notion in your browser.
-Double-click "Open Tracker.command" to run it."""
+The Job Finder app's "Open my spreadsheet" button runs this."""
 import subprocess
 import sys
 import webbrowser
@@ -17,23 +17,27 @@ def open_file(path) -> None:
         subprocess.run(["xdg-open", str(path)], check=False)
 
 
-def main() -> int:
+def open_tracker() -> tuple[bool, str]:
+    """Opens the tracker. Returns (opened, message)."""
     load_env()
     config = load_config()
     if (config.get("tracker") or "spreadsheet").lower() == "notion":
         db = env((config.get("notion") or {}).get("database_id_env", "NOTION_DATABASE_ID"))
         if db:
             webbrowser.open(f"https://www.notion.so/{db.replace('-', '')}")
-            print("Opened your Notion tracker in the browser.")
-            return 0
+            return True, "Opened your Notion tracker in the browser."
         print("Notion isn't set up yet, so opening the spreadsheet instead.")
     path = resolve_path(config.get("spreadsheet_path", "applications.csv"))
     if not path.exists():
-        print("No jobs saved yet. Double-click 'Find Jobs.command' first.")
-        return 1
+        return False, "No jobs saved yet. Click 'Find new jobs' first."
     open_file(path)
-    print(f"Opened {path.name}.")
-    return 0
+    return True, f"Opened {path.name}."
+
+
+def main() -> int:
+    opened, message = open_tracker()
+    print(message)
+    return 0 if opened else 1
 
 
 if __name__ == "__main__":

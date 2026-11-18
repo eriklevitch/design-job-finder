@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Finder</title>
+<link rel="icon" href="/static/icon.svg">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<main class="shell">
+  <header class="top">
+    <span class="brand"><img src="/static/icon.svg" alt="" width="30" height="30"> Job Finder</span>
+    <button class="link" id="to-settings" hidden>Settings</button>
+    <button class="link" id="to-home" hidden>← Back</button>
+  </header>
+
+  <p id="banner" class="banner" hidden></p>
+
+  <!-- ── First-run questions ─────────────────────────────── -->
+  <section id="view-setup" hidden>
+    <p class="step-count key" id="step-count"></p>
+    <div class="step" data-step="1">
+      <h1>What level of role are you looking for?</h1>
+      <div class="choices" id="setup-level"></div>
+    </div>
+    <div class="step" data-step="2">
+      <h1>Where can you work?</h1>
+      <label class="field"><span class="key">Cities or areas</span>
+        <input id="setup-cities" placeholder="e.g. New York, Brooklyn" autocomplete="off">
+        <small>Separate them with commas. Leave it empty if only remote works for you.</small>
+      </label>
+      <label class="check"><input type="checkbox" id="setup-remote"> <span>Remote jobs in the US</span></label>
+    </div>
+    <div class="step" data-step="3">
+      <h1>What’s the lowest yearly pay you’d consider?</h1>
+      <label class="field"><span class="key">Minimum pay, in US dollars</span>
+        <input id="setup-pay" inputmode="numeric" placeholder="e.g. 150k" autocomplete="off">
+        <small>Jobs that don’t list pay are always kept, so you can check them yourself. Type 0 for no minimum.</small>
+      </label>
+    </div>
+    <div class="step" data-step="4">
+      <h1>Any companies you’d love to work at?</h1>
+      <p class="hint">Their careers pages are checked every time. Indeed is searched either way, so you can skip this.</p>
+      <div class="company-add" data-for="setup">
+        <input placeholder="Company name, e.g. Figma" autocomplete="off">
+        <button class="secondary">Add</button>
+      </div>
+      <ul class="chips" id="setup-companies"></ul>
+    </div>
+    <div class="step" data-step="5">
+      <h1>Where should new jobs go?</h1>
+      <div class="choices" id="setup-tracker"></div>
+      <div class="notion-connect" data-for="setup" hidden></div>
+    </div>
+    <p class="error" id="setup-error" hidden></p>
+    <div class="nav">
+      <button class="link" id="setup-back">Back</button>
+      <button class="primary" id="setup-next">Next</button>
+    </div>
+  </section>
+
+  <!-- ── Home ────────────────────────────────────────────── -->
+  <section id="view-home" hidden>
+    <p class="last-run" id="last-run"></p>
+    <button class="primary big" id="find">Find new jobs</button>
+    <p class="tip" id="close-sheet" hidden>Close your spreadsheet first, so your edits aren’t overwritten.</p>
+    <button class="link center" id="open-tracker">Open my spreadsheet</button>
+
+    <div class="run" id="run" hidden>
+      <div class="progress" id="run-progress"><span class="spinner"></span><span id="run-step"></span></div>
+      <div id="run-result" hidden>
+        <p class="result" id="run-message"></p>
+        <div class="suggest" id="run-suggest" hidden>
+          <p id="suggest-text"></p>
+          <button class="secondary" id="suggest-go"></button>
+        </div>
+        <ul class="jobs" id="run-jobs"></ul>
+      </div>
+    </div>
+
+    <label class="check schedule"><input type="checkbox" id="schedule">
+      <span><b>Check for me every Monday morning</b>
+      <small>Your Mac looks for new jobs on its own and lets you know what it found. If it’s asleep then, it checks when it wakes.</small></span>
+    </label>
+  </section>
+
+  <!-- ── Settings ────────────────────────────────────────── -->
+  <section id="view-settings" hidden>
+    <h1>Settings</h1>
+
+    <fieldset id="sec-level"><legend>Level</legend>
+      <div class="choices" id="set-level"></div>
+      <label class="field"><span class="key">How drafts describe you</span>
+        <input id="set-role" autocomplete="off">
+      </label>
+    </fieldset>
+
+    <fieldset id="sec-location"><legend>Location</legend>
+      <label class="field"><span class="key">Cities or areas</span>
+        <input id="set-cities" placeholder="e.g. New York, Brooklyn" autocomplete="off">
+        <small>Separate them with commas, written as they appear in job listings.</small>
+      </label>
+      <label class="check"><input type="checkbox" id="set-remote"> <span>Remote jobs in the US</span></label>
+    </fieldset>
+
+    <fieldset id="sec-pay"><legend>Pay</legend>
+      <label class="field"><span class="key">Minimum yearly pay, in US dollars</span>
+        <input id="set-pay" inputmode="numeric" autocomplete="off">
+        <small>Type 0 for no minimum.</small>
+      </label>
+    </fieldset>
+
+    <fieldset id="sec-companies"><legend>Companies</legend>
+      <div class="company-add" data-for="settings">
+        <input placeholder="Company name, e.g. Figma" autocomplete="off">
+        <button class="secondary">Add</button>
+      </div>
+      <ul class="chips" id="set-companies"></ul>
+    </fieldset>
+
+    <fieldset id="sec-tracker"><legend>Where new jobs go</legend>
+      <div class="choices" id="set-tracker"></div>
+      <div class="notion-connect" data-for="settings" hidden></div>
+    </fieldset>
+
+    <div class="nav">
+      <span class="saved" id="settings-saved" hidden>Saved</span>
+      <p class="error" id="settings-error" hidden></p>
+      <button class="primary" id="settings-save">Save settings</button>
+    </div>
+
+    <fieldset id="sec-drafts"><legend>Drafts <span class="optional">optional</span></legend>
+      <p class="hint">For every new job, write 3 resume bullets and a cover letter opening, using only your notes below. Costs about 1–2 cents per job, paid to Anthropic.</p>
+      <label class="field"><span class="key">Anthropic key <span class="status" id="anthropic-status"></span></span>
+        <input id="anthropic-key" type="password" placeholder="sk-ant-…" autocomplete="off">
+        <small>Get one at <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> → API Keys → Create Key.</small>
+      </label>
+      <label class="field"><span class="key">Your experience</span>
+        <textarea id="notes" rows="10"></textarea>
+        <small>Companies, what you led, and results with numbers. Drafts can only be as specific as these notes.</small>
+      </label>
+      <button class="secondary" id="drafts-save">Save drafts settings</button>
+      <span class="saved" id="drafts-saved" hidden>Saved</span>
+    </fieldset>
+
+    <fieldset id="sec-adzuna"><legend>More listings from Adzuna <span class="optional">optional, free</span></legend>
+      <p class="hint">Adds listings from many other job sites. Sign up at <a href="https://developer.adzuna.com" target="_blank" rel="noopener">developer.adzuna.com</a>. <span class="status" id="adzuna-status"></span></p>
+      <div class="row">
+        <label class="field"><span class="key">App ID</span> <input id="adzuna-id" autocomplete="off"></label>
+        <label class="field"><span class="key">App Key</span> <input id="adzuna-key" type="password" autocomplete="off"></label>
+      </div>
+      <button class="secondary" id="adzuna-save">Save</button>
+      <span class="saved" id="adzuna-saved" hidden>Saved</span>
+    </fieldset>
+  </section>
+
+  <template id="notion-template">
+    <ol class="notion-steps">
+      <li>Go to <a href="https://www.notion.so/profile/integrations" target="_blank" rel="noopener">notion.so/profile/integrations</a>, click <b>New integration</b>, name it “Job search”, save, and copy the <b>Internal Integration Secret</b>.</li>
+      <li>Open (or create) the Notion page the tracker should live in. Click <b>•••</b> (top right) → <b>Connections</b> and add “Job search”.</li>
+      <li>On that page, click <b>Share → Copy link</b>.</li>
+    </ol>
+    <label class="field"><span class="key">Secret from step 1</span> <input class="n-token" type="password" autocomplete="off"></label>
+    <label class="field"><span class="key">Page link from step 3</span> <input class="n-link" autocomplete="off"></label>
+    <button class="secondary n-go">Connect Notion</button>
+    <p class="n-msg" hidden></p>
+  </template>
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>
