@@ -24,14 +24,41 @@ LEVEL_CHOICES = [
     ("Senior and leadership (Both of the above)", IC_LEVELS + LEAD_LEVELS),
     ("Any level (Leaves out junior and intern roles)", []),
 ]
-ROLE_DEFAULTS = {1: "senior product designer", 2: "design leader",
-                 3: "senior product designer", 4: "product designer"}
+LEAD_TITLES = ["design manager", "manager, design", "head of design", "director of design",
+               "director, design", "design director", "design lead", "vp of design",
+               "vp, design", "vp design"]
+PRODUCT_TITLES = ["product design", "ux", "ui designer", "experience designer",
+                  "interaction designer"]
+BRAND_TITLES = ["brand design", "visual designer", "graphic designer", "marketing designer",
+                "communication designer", "identity designer", "art director",
+                "creative director"]
+# (label, job titles, Indeed/Adzuna searches, word drafts use for you)
+FIELD_CHOICES = [
+    ("Product design (Product, UX, UI, interaction)", PRODUCT_TITLES + LEAD_TITLES,
+     ["product designer"], "product designer"),
+    ("Brand design (Brand, visual, graphic, art and creative direction)",
+     BRAND_TITLES + LEAD_TITLES, ["brand designer"], "brand designer"),
+    ("Both (Product and brand)", PRODUCT_TITLES + BRAND_TITLES + LEAD_TITLES,
+     ["product designer", "brand designer"], "designer"),
+]
+
+
+def role_default(level: int, field: int | None) -> str:
+    """How drafts describe you unless you type your own title."""
+    if level == 2:
+        return "design leader"
+    noun = FIELD_CHOICES[(field or 1) - 1][3]
+    return noun if level == 4 else f"senior {noun}"
+
+
+ROLE_DEFAULTS = {role_default(level, field) for level in range(1, 5)
+                 for field in range(1, len(FIELD_CHOICES) + 1)}
 COMPANY_KEYS = {"greenhouse": "greenhouse_companies", "lever": "lever_companies",
                 "ashby": "ashby_companies"}
 
 # Settings the app is allowed to change. Everything else in config.yaml
 # is left exactly as it is.
-EDITABLE = ("seniority_keywords", "your_role", "locations", "search_location",
+EDITABLE = ("title_keywords", "search_terms", "seniority_keywords", "your_role", "locations", "search_location",
             "min_salary", "tracker", *COMPANY_KEYS.values())
 
 
@@ -81,6 +108,16 @@ def level_choice(cfg: dict) -> int:
         if current is not None and sorted(current) == sorted(levels):
             return i
     return 3
+
+
+def field_choice(cfg: dict) -> int | None:
+    """Which FIELD_CHOICES entry (1-3) matches the job titles in the
+    settings, or None if someone wrote their own list."""
+    current = cfg.get("title_keywords")
+    for i, (_, titles, _, _) in enumerate(FIELD_CHOICES, 1):
+        if current is not None and sorted(current) == sorted(titles):
+            return i
+    return None
 
 
 def save_settings(updates: dict) -> None:

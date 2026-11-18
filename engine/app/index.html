@@ -16,9 +16,12 @@
     <div class="segs" id="setup-segs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
     <p class="step-of" id="step-count"></p>
     <div class="step" data-step="1">
-      <h1>What level are you looking for?</h1>
-      <p class="lede">Job Finder looks for product design jobs. Your answers here narrow them down.</p>
-      <div class="options" id="setup-level"></div>
+      <h1>What are you looking for?</h1>
+      <p class="lede">Your answers here narrow down the jobs Job Finder finds.</p>
+      <div class="stack">
+        <div class="field"><span>Type of design</span><div class="options" id="setup-field"></div></div>
+        <div class="field"><span>Level</span><div class="options" id="setup-level"></div></div>
+      </div>
     </div>
     <div class="step" data-step="2">
       <h1>Where can you work?</h1>
@@ -170,13 +173,21 @@
           <h1>Your search</h1>
           <p class="lede">What Job Finder looks for on every check.</p>
 
+          <section class="sec" id="sec-field">
+            <div class="about"><h2>Type of design</h2><p>Which job titles count.</p></div>
+            <div class="stack">
+              <div class="options" id="set-field"></div>
+              <small id="set-field-custom" hidden>You wrote your own list of job titles in config.yaml. Pick one of these to replace it.</small>
+            </div>
+          </section>
+
           <section class="sec" id="sec-level">
-            <div class="about"><h2>Level</h2><p>Job Finder looks for product design jobs at this level.</p></div>
+            <div class="about"><h2>Level</h2><p>Job Finder looks for jobs at this level.</p></div>
             <div class="stack">
               <div class="options" id="set-level"></div>
               <label class="field"><span>Your title in drafts</span>
                 <input class="input" id="set-role" autocomplete="off">
-                <small>Only used in drafts (see Extras). Leave it empty to use the title for your level.</small>
+                <small>Only used in drafts (see Extras). Leave it empty to use the title for your level and type of design.</small>
               </label>
             </div>
           </section>

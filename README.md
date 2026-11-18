@@ -1,6 +1,6 @@
 # Product Design Job Finder
 
-Finds product design jobs that match your level, location and pay, and adds them to a spreadsheet or Notion. Run it once a week. If you want, it also drafts resume bullets and a cover letter opening for each job, based only on notes you write about your own experience.
+Finds product design or brand design jobs (or both) that match your level, location and pay, and adds them to a spreadsheet or Notion. Run it once a week. If you want, it also drafts resume bullets and a cover letter opening for each job, based only on notes you write about your own experience.
 
 ```
 Status            Company   Title                            Location     Salary              Link
@@ -14,7 +14,7 @@ Applied           Initech   Design Manager, Platform         Remote - US  $200,0
 
 ## Who it's for
 
-Product, UX and UI designers who do not want to check job sites every week. You don't need to know how to code: you paste one line into Terminal to install it, and after that you use the **Job Finder** app.
+Product, UX, UI and brand designers who do not want to check job sites every week. You don't need to know how to code: you paste one line into Terminal to install it, and after that you use the **Job Finder** app.
 
 ## What it does
 
@@ -91,11 +91,12 @@ Then go through the new rows in your tracker. When you apply, or decide not to, 
 
 In Job Finder, open **Settings**, change what you like, and click **Save**. To add or remove companies, use the **Companies** page.
 
-For finer changes, right-click `config.yaml` in your job-search folder, choose **Open With → TextEdit**, and edit the **YOUR SEARCH** section at the top. Saving in Settings or Companies rewrites the level, location, pay and company lines, so make hand edits to those after you've used the app.
+For finer changes, right-click `config.yaml` in your job-search folder, choose **Open With → TextEdit**, and edit the **YOUR SEARCH** section at the top. Saving in Settings or Companies rewrites the type of design, level, location, pay and company lines, so make hand edits to those after you've used the app.
 
 | Setting | What it means |
 |---|---|
-| `title_keywords` | A job title has to include one of these, e.g. `"product design"`, `"ux"`. |
+| `title_keywords` | A job title has to include one of these, e.g. `"product design"`, `"ux"`. Settings → Type of design fills this in. |
+| `search_terms` | What to search for on Indeed (and Adzuna), e.g. `"brand designer"`. Each one is a separate search. |
 | `seniority_keywords` | A title also has to include one of these level words, e.g. `"senior"`, `"staff"`. `[]` means any level. |
 | `locations` | Places that count. Add `"remote"` to include US-remote jobs. `[]` means anywhere. |
 | `search_location` | The city (or "United States") used when searching Indeed. |

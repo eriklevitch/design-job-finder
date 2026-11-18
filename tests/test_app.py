@@ -71,8 +71,36 @@ def test_typed_role_is_kept_but_default_role_follows_level():
     base = {"cities": [], "remote": True, "min_salary": 0}
     assert app_server.settings_from_page({**base, "level": 4, "role": "senior product designer"}
                                          )["your_role"] == "product designer"
-    assert app_server.settings_from_page({**base, "level": 4, "role": "brand designer"}
-                                         )["your_role"] == "brand designer"
+    assert app_server.settings_from_page({**base, "level": 4, "role": "illustrator"}
+                                         )["your_role"] == "illustrator"
+    assert app_server.settings_from_page({**base, "field": 2, "level": 1, "role": "product designer"}
+                                         )["your_role"] == "senior brand designer"
+    assert app_server.settings_from_page({**base, "field": 3, "level": 2}
+                                         )["your_role"] == "design leader"
+
+
+@pytest.mark.parametrize("field", [1, 2, 3])
+def test_type_of_design_saves_titles_and_searches(tmp_config, field):
+    form = {"field": field, "level": 1, "cities": [], "remote": True, "min_salary": 0}
+    config_store.save_settings(app_server.settings_from_page(form))
+    data = yaml.safe_load((tmp_config / "config.yaml").read_text())
+    _, titles, searches, _ = config_store.FIELD_CHOICES[field - 1]
+    assert data["title_keywords"] == titles and data["search_terms"] == searches
+    assert app_server.settings_for_page()["field"] == field
+
+
+def test_example_config_is_product_design():
+    cfg = yaml.safe_load(config_store.EXAMPLE_CONFIG.read_text())
+    assert config_store.field_choice(cfg) == 1
+
+
+def test_hand_written_titles_are_left_alone(tmp_config):
+    config_store.save_settings({"title_keywords": ["illustrator"]})
+    assert app_server.settings_for_page()["field"] is None
+    form = {"level": 1, "cities": [], "remote": True, "min_salary": 0}
+    config_store.save_settings(app_server.settings_from_page(form))
+    data = yaml.safe_load((tmp_config / "config.yaml").read_text())
+    assert data["title_keywords"] == ["illustrator"]
 
 
 def test_bad_pay_is_explained():

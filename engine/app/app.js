@@ -208,8 +208,10 @@ function choiceList(container, name, options, selected) {
 }
 const chosen = (name) => (document.querySelector(`input[name="${name}"]:checked`) || {}).value;
 
-function levelOptions() {
-  return state.levels.map((label, i) => {
+const fieldOptions = () => labelOptions(state.fields);
+const levelOptions = () => labelOptions(state.levels);
+function labelOptions(labels) {
+  return labels.map((label, i) => {
     const [title, rest] = label.split(" (");
     return [i + 1, title, rest ? rest.replace(/\)$/, "") : ""];
   });
@@ -326,7 +328,7 @@ async function saveCompanies() {
   const s = state.settings;
   try {
     Object.assign(state, await api("/api/settings", {
-      level: s.level, role: s.role, cities: s.cities, remote: s.remote,
+      field: s.field, level: s.level, role: s.role, cities: s.cities, remote: s.remote,
       min_salary: String(s.min_salary || 0), tracker: s.tracker,
       companies: companiesForSave("companies"),
     }));
@@ -387,6 +389,7 @@ const STEPS = 5;
 
 function startSetup() {
   const s = state.settings;
+  choiceList($("setup-field"), "setup-field", fieldOptions(), s.field || 1);
   choiceList($("setup-level"), "setup-level", levelOptions(), s.level);
   $("setup-cities").value = s.cities.map(titleCase).join(", ");
   $("setup-remote").checked = s.remote;
@@ -436,6 +439,7 @@ $("setup-next").onclick = async () => {
   $("setup-next").disabled = true;
   try {
     state = await api("/api/settings", {
+      field: chosen("setup-field"),
       level: chosen("setup-level"),
       cities: splitCities($("setup-cities").value),
       remote: $("setup-remote").checked,
@@ -860,6 +864,8 @@ function markClean(text = "No changes") {
 function openSettings(section) {
   if (section === "sec-companies") return openCompanies();
   const s = state.settings;
+  choiceList($("set-field"), "set-field", fieldOptions(), s.field);
+  $("set-field-custom").hidden = Boolean(s.field);
   choiceList($("set-level"), "set-level", levelOptions(), s.level);
   $("set-role").value = s.role;
   $("set-cities").value = s.cities.map(titleCase).join(", ");
@@ -903,6 +909,7 @@ $("save-all").onclick = async () => {
   saveStatus("Saving…");
   try {
     const saved = await api("/api/settings", {
+      field: chosen("set-field"),
       level: chosen("set-level"),
       role: $("set-role").value,
       cities: splitCities($("set-cities").value),

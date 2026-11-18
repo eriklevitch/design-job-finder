@@ -557,3 +557,30 @@ def test_broken_progress_display_never_stops_a_search():
             assert fetch_greenhouse({"greenhouse_companies": ["acme"]}) == []
     finally:
         sources.progress = None
+
+
+# ── Brand design ────────────────────────────────────────────────────
+
+def test_brand_titles_match_and_other_designers_dont():
+    import config_store
+    cfg = {**CONFIG, "title_keywords": config_store.FIELD_CHOICES[1][1],
+           "seniority_keywords": config_store.IC_LEVELS + config_store.LEAD_LEVELS,
+           "title_excludes": CONFIG["title_excludes"] + ["fashion", "textile"]}
+    titles = ["Senior Brand Designer", "Art Director", "Associate Creative Director",
+              "Lead Visual Designer", "Senior Fashion Designer", "Associate Brand Designer",
+              "Senior Product Designer"]
+    kept, _ = filter_jobs([_job(title=t, url=t) for t in titles], cfg)
+    assert {j["title"] for j in kept} == {"Senior Brand Designer", "Art Director",
+                                          "Associate Creative Director", "Lead Visual Designer"}
+
+
+def test_job_sites_search_once_per_term():
+    cfg = {**CONFIG, "jobspy": {"sites": ["indeed"]},
+           "search_terms": ["product designer", "brand designer"]}
+    import pandas as pd
+    fake = MagicMock(return_value=pd.DataFrame([]))
+    with patch.dict(sys.modules, {"jobspy": MagicMock(scrape_jobs=fake)}):
+        sources.fetch_jobspy(cfg)
+    assert [c.kwargs["search_term"] for c in fake.call_args_list] == ["product designer",
+                                                                     "brand designer"]
+    assert sources.search_terms({}, None) == ["product designer"]

@@ -57,6 +57,7 @@ def settings_for_page() -> dict:
     cfg = store.current_settings()
     locations = cfg.get("locations") or []
     return {
+        "field": store.field_choice(cfg),
         "level": store.level_choice(cfg),
         "role": cfg.get("your_role") or "",
         "cities": [l for l in locations if l != "remote"],
@@ -72,9 +73,12 @@ def settings_from_page(form: dict) -> dict:
     level = int(form.get("level") or 3)
     if level not in range(1, len(store.LEVEL_CHOICES) + 1):
         raise ValueError("Pick a level.")
+    field = int(form.get("field") or 0) or None
+    if field is not None and field not in range(1, len(store.FIELD_CHOICES) + 1):
+        raise ValueError("Pick a type of design.")
     role = (form.get("role") or "").strip()
-    if not role or role in store.ROLE_DEFAULTS.values():
-        role = store.ROLE_DEFAULTS[level]  # follow the level unless they typed their own
+    if not role or role in store.ROLE_DEFAULTS:
+        role = store.role_default(level, field)  # follow the choices unless they typed their own
     cities = [c.strip() for c in form.get("cities") or [] if c.strip()]
     pay = store.parse_money(form.get("min_salary") or 0)
     if pay is None:
@@ -84,7 +88,11 @@ def settings_from_page(form: dict) -> dict:
         if c.get("key") in lists and c.get("slug") and c["slug"] not in lists[c["key"]]:
             lists[c["key"]].append(c["slug"])
     tracker = "notion" if form.get("tracker") == "notion" else "spreadsheet"
+    # No type picked means a hand-written title list, which is left alone.
+    titles = {} if field is None else {"title_keywords": store.FIELD_CHOICES[field - 1][1],
+                                       "search_terms": store.FIELD_CHOICES[field - 1][2]}
     return {
+        **titles,
         "seniority_keywords": store.LEVEL_CHOICES[level - 1][1],
         "your_role": role,
         "locations": [c.lower() for c in cities] + (["remote"] if form.get("remote") else []),
@@ -207,6 +215,7 @@ class App:
             "set_up": CONFIG_PATH.exists(),
             "settings": settings_for_page(),
             "levels": [label for label, _ in store.LEVEL_CHOICES],
+            "fields": [label for label, *_ in store.FIELD_CHOICES],
             "connected": store.connected(),
             **home_data(),
             "schedule_on": schedule.is_on(),

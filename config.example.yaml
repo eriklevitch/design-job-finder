@@ -8,8 +8,13 @@
 
 # ════ YOUR SEARCH ═════════════════════════════════════════════════
 
-# A job title has to include at least one of these.
+# A job title has to include at least one of these. Job Finder → Settings
+# → Type of design fills this in for product design, brand design or both.
 title_keywords: ["product design", "ux", "ui designer", "experience designer", "interaction designer", "design manager", "manager, design", "head of design", "director of design", "director, design", "design director", "design lead", "vp of design", "vp, design", "vp design"]
+
+# What to search for on the big job sites (Indeed, and Adzuna if you add
+# it). Each one is a separate search.
+search_terms: ["product designer"]
 
 # A title also has to include one of these level words.
 # [] means any level.
@@ -78,6 +83,11 @@ title_excludes:
   - "asic"
   - "physical design"
   - "interior"
+  # Other kinds of "designer" that brand titles like "graphic designer" catch
+  - "fashion"
+  - "textile"
+  - "landscape"
+  - "instructional"
 
 # Some companies leave the level out of titles ("Product Designer").
 # Such a job still counts if the top of its posted pay reaches this

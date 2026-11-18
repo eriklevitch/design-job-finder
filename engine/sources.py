@@ -154,6 +154,13 @@ def extract_salary(text: str) -> str:
 
 # ── Fetchers ─────────────────────────────────────────────────────
 
+def search_terms(config: dict, site_term) -> list[str]:
+    """What to type into the big job sites' search box. "Both" (product
+    and brand design) means two searches. Older settings files without
+    search_terms keep the site's own term."""
+    return config.get("search_terms") or [site_term or "product designer"]
+
+
 def fetch_adzuna(config) -> list[dict]:
     cfg = config.get("adzuna") or {}
     app_id = os.environ.get(cfg.get("app_id_env", "ADZUNA_APP_ID"), "").strip()
@@ -164,19 +171,21 @@ def fetch_adzuna(config) -> list[dict]:
 
     _progress("Adzuna", "checking")
     url = f"https://api.adzuna.com/v1/api/jobs/{cfg.get('country', 'us')}/search/1"
-    params = {
-        "app_id": app_id,
-        "app_key": app_key,
-        "what": cfg.get("what") or "product designer",
-        "where": cfg.get("where") or config.get("search_location") or "",
-        "results_per_page": 50,
-        "max_days_old": config.get("max_posting_age_days", 30),
-        "content-type": "application/json",
-    }
-    resp = requests.get(url, params=params, headers=UA, timeout=30)
-    resp.raise_for_status()
+    raw = []
+    for term in search_terms(config, cfg.get("what")):
+        params = {
+            "app_id": app_id,
+            "app_key": app_key,
+            "what": term,
+            "where": cfg.get("where") or config.get("search_location") or "",
+            "results_per_page": 50,
+            "max_days_old": config.get("max_posting_age_days", 30),
+            "content-type": "application/json",
+        }
+        resp = requests.get(url, params=params, headers=UA, timeout=30)
+        resp.raise_for_status()
+        raw += resp.json().get("results", [])
     reach["ok"] += 1
-    raw = resp.json().get("results", [])
 
     jobs = []
     for r in raw:
@@ -369,15 +378,15 @@ def fetch_jobspy(config) -> list[dict]:
 
     _progress(_jobspy_name(cfg), "checking")
     try:
-        df = scrape_jobs(
+        frames = [scrape_jobs(
             site_name=cfg.get("sites", ["indeed"]),
-            search_term=cfg.get("search_term", "product designer"),
+            search_term=term,
             location=cfg.get("location") or config.get("search_location") or "United States",
             results_wanted=cfg.get("results_wanted", 40),
             hours_old=config.get("max_posting_age_days", 30) * 24,
             is_remote=False,  # location string above already covers "remote"
             country_indeed="USA",
-        )
+        ) for term in search_terms(config, cfg.get("search_term"))]
     except Exception as e:
         print(f"  [jobspy] error — {e}")
         reach["failed"].append(_jobspy_name(cfg))
@@ -386,7 +395,7 @@ def fetch_jobspy(config) -> list[dict]:
     reach["ok"] += 1
 
     jobs = []
-    for _, r in df.iterrows():
+    for _, r in (row for df in frames for row in df.iterrows()):
         raw_desc = r.get("description")
         job_url = str(r.get("job_url") or "")
         raw_id = r.get("id")
@@ -464,7 +473,9 @@ def filter_jobs(jobs: list[dict], config: dict) -> tuple[list[dict], dict]:
         if not _has_any(title_l, config.get("title_keywords") or []):
             stats["no_title_match"] += 1
             continue
-        if _has_any(title_l, config.get("title_excludes") or [], whole_word=True):
+        # "Associate" usually means junior, but an Associate Creative
+        # Director is a senior brand role.
+        if _has_any(_ACD_RE.sub("", title_l), config.get("title_excludes") or [], whole_word=True):
             stats["excluded_title"] += 1
             continue
         # Some companies post senior roles as plain "Product Designer".
@@ -513,6 +524,9 @@ def filter_jobs(jobs: list[dict], config: dict) -> tuple[list[dict], dict]:
         matches.append(job)
 
     return matches, stats
+
+
+_ACD_RE = re.compile(r"\bassociate (?=(?:creative|art) director)")
 
 
 def _has_any(text: str, keywords, whole_word: bool = False) -> bool:

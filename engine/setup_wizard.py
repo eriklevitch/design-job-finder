@@ -8,8 +8,8 @@ answers are shown as defaults, so pressing Return keeps them.
 import subprocess
 import sys
 
-from config_store import (LEVEL_CHOICES, ROLE_DEFAULTS, connect_notion, current_settings,
-                          level_choice, lookup_company, parse_money, save_keys,
+from config_store import (FIELD_CHOICES, LEVEL_CHOICES, connect_notion, current_settings,
+                          field_choice, level_choice, role_default, lookup_company, parse_money, save_keys,
                           save_settings, set_key, split_list)  # noqa: F401 (set_key re-exported)
 from settings import CONFIG_PATH, ROOT, env, load_env
 
@@ -60,13 +60,21 @@ def heading(text: str) -> None:
 
 # ── Questions ───────────────────────────────────────────────────────
 
-def ask_level(cfg: dict) -> tuple[list[str], str]:
-    heading("1 of 5 · Level")
-    n = ask_choice("Which roles should it look for?", [c[0] for c in LEVEL_CHOICES],
-                   level_choice(cfg))
-    role_default = (CONFIG_PATH.exists() and cfg.get("your_role")) or ROLE_DEFAULTS[n]
-    role = ask("In a few words, how should drafts describe you?", role_default)
-    return LEVEL_CHOICES[n - 1][1], role
+def ask_level(cfg: dict) -> tuple[dict, list[str], str]:
+    heading("1 of 5 · Type of design and level")
+    titles, field = {}, field_choice(cfg)
+    if CONFIG_PATH.exists() and field is None:
+        say("Using the job titles you wrote in config.yaml.")
+    else:
+        field = ask_choice("Which kind of design jobs?", [c[0] for c in FIELD_CHOICES],
+                           field or 1)
+        titles = {"title_keywords": FIELD_CHOICES[field - 1][1],
+                  "search_terms": FIELD_CHOICES[field - 1][2]}
+    say()
+    n = ask_choice("Which level?", [c[0] for c in LEVEL_CHOICES], level_choice(cfg))
+    default = (CONFIG_PATH.exists() and cfg.get("your_role")) or role_default(n, field)
+    role = ask("In a few words, how should drafts describe you?", default)
+    return titles, LEVEL_CHOICES[n - 1][1], role
 
 
 def ask_location(cfg: dict) -> tuple[list[str], str]:
@@ -204,14 +212,14 @@ def main() -> int:
         say("Your current settings are shown as the defaults.")
 
     cfg = current_settings()
-    seniority, role = ask_level(cfg)
+    titles, seniority, role = ask_level(cfg)
     locations, search_location = ask_location(cfg)
     min_salary = ask_salary(cfg)
     companies = ask_companies(cfg)
     tracker = ask_addons(cfg)
 
     save_settings({
-        "seniority_keywords": seniority, "your_role": role,
+        **titles, "seniority_keywords": seniority, "your_role": role,
         "locations": locations, "search_location": search_location,
         "min_salary": min_salary, "tracker": tracker, **companies,
     })
