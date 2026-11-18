@@ -407,7 +407,7 @@ function showStep() {
   document.querySelectorAll("#setup-segs i").forEach((seg, i) => seg.classList.toggle("on", i < step));
   $("step-count").textContent = `Step ${step} of ${STEPS}`;
   $("setup-back").style.visibility = step > 1 ? "visible" : "hidden";
-  $("setup-next").textContent = step === STEPS ? "Find my jobs" : "Next";
+  $("setup-next").textContent = step === STEPS ? "Find my first jobs" : "Next";
   $("setup-error").hidden = true;
   const first = document.querySelector(`#view-setup .step[data-step="${step}"] input`);
   if (first && first.type !== "radio" && first.type !== "checkbox") first.focus();

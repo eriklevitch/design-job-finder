@@ -55,7 +55,7 @@ Product, UX and UI designers who do not want to check job sites every week. You 
    4. **Companies:** ones you want to work at. Type their names and it looks up their job pages.
    5. **Tracker:** a spreadsheet, or Notion.
 
-4. Click **Find my jobs**. Your first jobs appear in Job Finder and in your tracker.
+4. Click **Find my first jobs**. They appear in Job Finder and in your tracker.
 
 Job Finder is now in your Dock. To find it later, you can also press **⌘ Command + Space** and type `Job Finder`. It opens where you left it, at the size you left it. Links to job postings and other sites open in your usual browser.
 
