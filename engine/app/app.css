@@ -252,7 +252,6 @@ textarea.input { height: auto; padding: var(--space-2) 10px; line-height: 1.55; 
   display: flex; align-items: center; gap: 10px; height: var(--bar-h); padding: 0 14px;
   border-bottom: 1px solid var(--line); font-size: 0.9375rem; font-weight: 600; letter-spacing: var(--tracking-tight);
 }
-.side-head img, .setup-top img { border-radius: 6px; }
 .nav { display: grid; gap: 2px; padding: var(--space-3) var(--space-2); }
 .nav button {
   display: flex; align-items: center; gap: 10px; width: 100%; height: var(--control-h); padding: 0 var(--space-2);
