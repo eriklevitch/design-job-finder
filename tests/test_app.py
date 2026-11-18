@@ -676,3 +676,12 @@ def test_window_place_ignores_tiny_or_broken_sizes(tmp_path):
     assert app_server.window_place(path, SCREEN) == {"width": 900, "height": 600}
     path.write_text("not json")
     assert app_server.window_place(path, SCREEN) == app_server.DEFAULT_WINDOW
+
+
+def test_page_names_the_job_sites_a_check_searches(tmp_config):
+    assert app_server.settings_for_page()["job_sites"] == ["Indeed"]  # the starter settings
+    (tmp_config / "config.yaml").write_text(
+        "jobspy:\n  sites: [\"indeed\", \"zip_recruiter\"]\n")
+    assert app_server.settings_for_page()["job_sites"] == ["Indeed", "Zip Recruiter"]
+    (tmp_config / "config.yaml").write_text("tracker: spreadsheet\n")
+    assert app_server.settings_for_page()["job_sites"] == []

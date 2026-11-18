@@ -66,6 +66,11 @@ def settings_for_page() -> dict:
         "companies": [{"key": key, "slug": slug} for key in store.COMPANY_KEYS.values()
                       for slug in cfg.get(key) or []],
         "tracker": (cfg.get("tracker") or "spreadsheet").lower(),
+        # Job sites searched on every check, apart from Adzuna (the page
+        # adds that one when it's connected).
+        "job_sites": [str(s).replace("_", " ").title()
+                      for s in (cfg.get("jobspy") or {}).get("sites", ["indeed"])]
+                     if cfg.get("jobspy") else [],
     }
 
 

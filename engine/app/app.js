@@ -242,9 +242,16 @@ const STATUS = {
   missing: () => el("span", "status", el("span", "dot bad"), "Not found"),
   error: () => el("span", "status", el("span", "dot warn"), "Couldn’t look up"),
 };
+// The job sites every check searches besides company careers pages,
+// e.g. "Indeed and Adzuna", or "" when there are none.
+function jobSites() {
+  const names = [...(state.settings.job_sites || []), ...(state.connected.adzuna ? ["Adzuna"] : [])];
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names.join("");
+}
 const HELP = {
-  missing: "“Not found” means Job Finder can’t read that company’s careers page. Try another spelling, like the one in their careers page address, or remove it. Indeed often lists their jobs anyway.",
-  error: "“Couldn’t look up” means the lookup didn’t finish. Remove the company and add it again to retry.",
+  missing: () => "“Not found” means Job Finder can’t read that company’s careers page. Try another spelling, like the one in their careers page address, or remove it."
+    + (jobSites() ? ` ${jobSites()} often list${jobSites().includes(" and ") ? "" : "s"} their jobs anyway.` : ""),
+  error: () => "“Couldn’t look up” means the lookup didn’t finish. Remove the company and add it again to retry.",
 };
 
 function removeCompany(where, c) {
@@ -274,6 +281,11 @@ function renderCompanies(where) {
     : found === list.length ? plural(list.length, "company") : `${found} of ${list.length} companies found`;
   $("co-wrap").hidden = !list.length;
   $("co-empty").hidden = !!list.length;
+  const sites = jobSites();
+  $("co-sub").textContent = sites ? `Each check includes these careers pages, along with ${sites}.`
+    : "Each check includes these careers pages.";
+  $("co-empty-text").textContent = "Add companies you’d love to work at, and each check will include their careers pages."
+    + (sites ? ` Without any, Job Finder still searches ${sites}.` : "");
   $("companies").replaceChildren(...list.map((c) => {
     const x = button("btn btn-icon", () => removeCompany(where, c), icon("x", "sm"));
     x.setAttribute("aria-label", `Remove ${companyName(c)}`);
@@ -287,7 +299,7 @@ function renderCompanies(where) {
   $("co-notices").replaceChildren(...["missing", "error"]
     .filter((s) => list.some((c) => c.status === s))
     .map((s) => notice("notice", "co:" + s + ":" + list.filter((c) => c.status === s).map((c) => c.key).join(","),
-      el("p", "", HELP[s])))
+      el("p", "", HELP[s]())))
     .filter(Boolean));
   renderSide();
 }
@@ -394,6 +406,9 @@ function startSetup() {
   $("setup-cities").value = s.cities.map(titleCase).join(", ");
   $("setup-remote").checked = s.remote;
   $("setup-pay").value = s.min_salary ? money(s.min_salary) : "";
+  $("setup-companies-lede").textContent = jobSites()
+    ? `Optional. Each check includes these companies’ careers pages. Job Finder also searches ${jobSites()}, so you’ll still find jobs if you skip this.`
+    : "Each check includes these companies’ careers pages.";
   companies.setup = fromSettings();
   renderCompanies("setup");
   choiceList($("setup-tracker"), "setup-tracker", TRACKERS, s.tracker);
@@ -691,7 +706,7 @@ function renderJobs() {
     title = "Let’s find your first jobs";
     sub = state.last_run && state.last_run.finished_at
       ? `Job Finder now keeps each week’s jobs on this page. Your earlier ones are in ${where}.`
-      : `Job Finder checks Indeed and the careers pages of your companies, then adds the jobs that match to ${where}.`;
+      : `Job Finder checks ${jobSites() ? jobSites() + " and " : ""}the careers pages of your companies, then adds the jobs that match to ${where}.`;
     if (!running) actions.push(button("btn btn-primary", findJobs, icon("rotateCw"), "Find my first jobs"));
   } else if (!week.checked) {
     title = week.this_week ? "Not checked yet this week" : `Not checked the week of ${longDate(week.start)}`;

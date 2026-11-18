@@ -45,7 +45,7 @@
     </div>
     <div class="step" data-step="4">
       <h1>Any companies you’d love to work at?</h1>
-      <p class="lede">Optional. Each check includes these companies’ careers pages. Job Finder also searches Indeed, so you’ll still find jobs if you skip this.</p>
+      <p class="lede" id="setup-companies-lede"></p>
       <div class="stack">
         <div class="company-add" data-for="setup">
           <input class="input" placeholder="Company name, e.g. Figma" autocomplete="off" aria-label="Company name">
@@ -140,7 +140,7 @@
       </div>
     </div>
     <div class="scroll">
-      <div class="summary"><b id="co-title"></b><span>Each check includes these careers pages, along with Indeed.</span></div>
+      <div class="summary"><b id="co-title"></b><span id="co-sub"></span></div>
       <div id="co-notices"></div>
       <div class="table-wrap" id="co-wrap">
         <table class="companies">
@@ -156,7 +156,7 @@
       </div>
       <div class="empty" id="co-empty" hidden>
         <h2>No companies yet</h2>
-        <p>Add companies you’d love to work at, and each check will include their careers pages. Without any, Job Finder still searches Indeed.</p>
+        <p id="co-empty-text"></p>
       </div>
     </div>
   </main>
