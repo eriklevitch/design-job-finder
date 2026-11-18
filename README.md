@@ -27,11 +27,6 @@ Applied           Initech   Design Manager, Platform         Remote - US  $200,0
 - [License](#license)
 
 ## Installation
-
-- A Mac. Windows works too, with a few manual steps (see [For developers](#for-developers)).
-- About 10 minutes to set up.
-- No money, unless you turn on drafts. Those cost about 1–2 cents per job, paid to Anthropic. The other extras (Adzuna and Notion) are free.
-
 1. Open **Terminal**: press **⌘ Command + Space**, type `Terminal`, press **Return**.
 2. Copy this line, paste it into Terminal, and press **Return**:
 
