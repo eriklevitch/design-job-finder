@@ -90,9 +90,12 @@ def next_check() -> str | None:
 
 
 def home_data() -> dict:
-    """What the home page shows: the latest week's jobs and the latest search."""
+    """What the home page shows: the last few weeks of jobs, when the
+    latest search finished, and when the next one runs."""
+    runs = history.load()
     return {
-        "week": history.latest_week(history.load()),
+        "weeks": history.weeks(runs),
+        "last_checked": runs[-1]["finished_at"] if runs else None,
         "last_run": read_json(LAST_RUN),
         "next_check": next_check(),
     }

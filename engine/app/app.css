@@ -222,6 +222,34 @@ input::placeholder, textarea::placeholder { color: var(--ink-faint); opacity: .8
 .n-msg.bad { color: var(--warn); }
 
 /* Home: this week's jobs lead the page. */
+
+/* The week strip: past weeks, then the next check. Scrolls sideways on
+   narrow windows; the padding keeps focus rings from being cut off. */
+.weeks {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(104px, 1fr); gap: 8px;
+  overflow-x: auto; padding: 4px; margin: -4px -4px 32px;
+}
+.week {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  padding: 10px 14px; text-align: left; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-md);
+  transition: border-color var(--base) var(--ease);
+}
+button.week:hover { border-color: var(--ink-faint); }
+.week .date { display: flex; align-items: center; gap: 6px; font-size: 0.92rem; white-space: nowrap; }
+.week .alert { display: inline-flex; color: var(--warn); }
+.week .count { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--ink-soft); white-space: nowrap; }
+.week.selected { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.week.selected .date { font-weight: 500; }
+.week.selected .count { color: var(--ink); }
+.week.empty .count { color: var(--ink-faint); }
+.week.unchecked, .week.next { background: none; border-style: dashed; }
+.week.unchecked .date { color: var(--ink-soft); }
+.week.next { border-color: var(--ink-faint); }
+.week.next .count, .week.next .link { color: var(--ink-soft); }
+.week .link { padding: 0; font: inherit; font-size: 0.85rem; letter-spacing: 0; text-transform: none; text-decoration: underline; text-underline-offset: 3px; }
+.icon.spin { animation: spin 1.6s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .icon.spin { animation: none; } }
 #view-home h1 { margin-bottom: 14px; }
 #view-home .hint { margin: 0 0 28px; }
 .problem { display: flex; align-items: flex-start; gap: 10px; color: var(--warn); margin: -12px 0 24px; }

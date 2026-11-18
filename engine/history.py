@@ -56,25 +56,38 @@ def week_start(when: datetime) -> date:
     return (when - timedelta(days=when.weekday())).date()
 
 
-def latest_week(runs: list[dict], now: datetime | None = None) -> dict | None:
-    """The most recent week with a search: every job it added (newest
-    first, no repeats) and its latest search. None before the first one."""
-    if not runs:
-        return None
-    last = runs[-1]
-    start = week_start(_when(last))
+SHOWN_WEEKS = 4
+
+
+def _week(runs: list[dict], start: date, current: date) -> dict:
+    """One week: every job its searches added (newest first, no repeats),
+    its latest search, and whether any search that week hit a problem."""
+    in_week = [r for r in runs if week_start(_when(r)) == start]
     jobs, seen = [], set()
-    for run in reversed(runs):
-        if week_start(_when(run)) != start:
-            continue
+    for run in reversed(in_week):
         for job in run.get("added") or []:
             key = job.get("url") or (job.get("company"), job.get("title"))
             if key not in seen:
                 seen.add(key)
                 jobs.append(job)
+    last = in_week[-1] if in_week else None
     return {
         "start": start.isoformat(),
-        "this_week": start == week_start(now or datetime.now()),
+        "this_week": start == current,
+        "checked": bool(in_week),
         "jobs": jobs,
-        "last": {k: v for k, v in last.items() if k != "added"},
+        "last": {k: v for k, v in last.items() if k != "added"} if last else None,
+        "problem": any(r.get("source_problem") or r.get("state") == "error" for r in in_week),
     }
+
+
+def weeks(runs: list[dict], now: datetime | None = None, count: int = SHOWN_WEEKS) -> list[dict]:
+    """The last `count` weeks up to and including this one, oldest first.
+    Weeks with no search are kept (so a gap never looks like a week with
+    no matches), except weeks before the very first search."""
+    if not runs:
+        return []
+    current = week_start(now or datetime.now())
+    first = week_start(_when(runs[0]))
+    starts = [current - timedelta(weeks=i) for i in range(count - 1, -1, -1)]
+    return [_week(runs, s, current) for s in starts if s >= first]

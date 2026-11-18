@@ -61,7 +61,7 @@ Job Finder is now in your Dock. To find it later, you can also press **⌘ Comma
 
 ## Run every week (or as often as you'd like)
 
-Click **Job Finder** in your Dock. It opens on this week's new jobs, each with how old the posting is and why it matched. To look again now, click **Find new jobs** (top right). It takes 1–3 minutes. **Open my spreadsheet** (or **Open Notion**) opens your tracker.
+Click **Job Finder** in your Dock. It opens on this week's new jobs, each with how old the posting is and why it matched. The row of weeks at the top shows the last four weeks; click one to see its jobs. To look again now, click **Find new jobs** (top right). It takes 1–3 minutes. **Open my spreadsheet** (or **Open Notion**) opens your tracker.
 
 **Let it run on its own:** tick **Check for me every Monday morning**. Your Mac then searches every Monday at 9am and sends a notification with the number of new jobs. If your Mac is asleep at that time, it searches when it wakes. Untick the box to stop.
 

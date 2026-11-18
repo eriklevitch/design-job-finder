@@ -260,17 +260,36 @@ def test_damaged_history_reads_as_empty(tmp_path):
     assert history.load(path) == []
 
 
-def test_latest_week_gathers_every_search_that_week():
+def test_weeks_gather_every_search_that_week():
     monday = datetime(2026, 11, 16, 9, 0)
     runs = [_run(monday - timedelta(days=7), "Last week"),
             _run(monday, "A", "B"),
             _run(monday + timedelta(days=2), "C", "A")]  # A again: shown once
-    week = history.latest_week(runs, now=monday + timedelta(days=3))
-    assert week["start"] == "2026-11-16" and week["this_week"]
-    assert [j["title"] for j in week["jobs"]] == ["C", "A", "B"]
-    assert "added" not in week["last"]
-    assert not history.latest_week(runs, now=monday + timedelta(days=8))["this_week"]
-    assert history.latest_week([]) is None
+    weeks = history.weeks(runs, now=monday + timedelta(days=3))
+    assert [w["start"] for w in weeks] == ["2026-11-09", "2026-11-16"]  # nothing before the first search
+    this = weeks[-1]
+    assert this["this_week"] and this["checked"]
+    assert [j["title"] for j in this["jobs"]] == ["C", "A", "B"]
+    assert "added" not in this["last"]
+    assert history.weeks([]) == []
+
+
+def test_weeks_keep_gaps_and_show_four():
+    monday = datetime(2026, 11, 16, 9, 0)
+    runs = [_run(monday - timedelta(weeks=6), "Long ago"),
+            _run(monday - timedelta(weeks=2), "Two weeks ago")]
+    weeks = history.weeks(runs, now=monday + timedelta(days=1))
+    assert [w["start"] for w in weeks] == ["2026-10-26", "2026-11-02", "2026-11-09", "2026-11-16"]
+    assert [w["checked"] for w in weeks] == [False, True, False, False]
+    assert weeks[-1]["last"] is None and weeks[-1]["jobs"] == []
+
+
+def test_week_with_a_problem_is_flagged():
+    monday = datetime(2026, 11, 16, 9, 0)
+    runs = [_run(monday, "A", source_problem="Indeed didn't respond, so this list may be incomplete.")]
+    assert history.weeks(runs, now=monday)[-1]["problem"]
+    runs = [_run(monday, "A")]
+    assert not history.weeks(runs, now=monday)[-1]["problem"]
 
 
 def test_next_check_is_the_coming_monday_morning():
@@ -283,8 +302,10 @@ def test_next_check_is_the_coming_monday_morning():
 
 def test_state_includes_this_weeks_jobs(server, tmp_config):
     history.add(_run(datetime.now(), "Senior Product Designer"))
-    week = json.loads(call(server, "/api/state")[1])["week"]
+    state = json.loads(call(server, "/api/state")[1])
+    week = state["weeks"][-1]
     assert week["this_week"] and week["jobs"][0]["title"] == "Senior Product Designer"
+    assert state["last_checked"]
 
 
 def test_job_card_carries_what_the_page_shows():

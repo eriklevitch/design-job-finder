@@ -18,6 +18,7 @@ const token = (() => {
 
 let state = null;          // what the server last told us
 let polling = null;
+let pickedWeek = null;     // a week tile the person clicked (its start date)
 
 async function api(path, body = {}) {
   let res;
@@ -51,8 +52,10 @@ function show(view) {
 // Icons are Lucide (lucide.dev), drawn inline so the app works offline.
 const ICONS = {
   arrowUpRight: '<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
+  calendarClock: '<path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h5"/><path d="M17.5 17.5 16 16.3V14"/><circle cx="16" cy="16" r="6"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   circleAlert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+  rotateCw: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
   fileText: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
 };
@@ -358,16 +361,68 @@ function suggestion(last) {
   return [`${text} (${top[1]} of ${last.scanned})`, button, section];
 }
 
+const shortDate = (ymd) => localDate(ymd).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+const longDate = (ymd) => localDate(ymd).toLocaleDateString(undefined, { month: "long", day: "numeric" });
+
+// The week shown: the one clicked, else the latest week that was checked.
+function selectedWeek(weeks) {
+  const picked = weeks.find((w) => w.start === pickedWeek);
+  if (picked) return picked;
+  return [...weeks].reverse().find((w) => w.checked) || weeks[weeks.length - 1] || null;
+}
+
+// The strip: one tile per week, then the next check. Hidden until
+// there are two checked weeks to compare.
+function renderWeeks(weeks, shown, running) {
+  const nav = $("weeks");
+  nav.hidden = weeks.filter((w) => w.checked).length < 2;
+  if (nav.hidden) return nav.replaceChildren();
+  const tiles = weeks.map((w) => {
+    const n = w.jobs.length;
+    const checking = running && w.this_week;
+    const count = checking ? [icon("rotateCw", 12), "Checking…"]
+      : !w.checked ? [w.this_week ? "Not checked yet" : "Not checked"]
+      : [w.this_week || !n ? `${n} new` : plural(n, "job")];
+    const tile = el("button", "week" + (w.checked ? "" : " unchecked") + (w.checked && !n ? " empty" : "")
+        + (w === shown ? " selected" : ""),
+      el("span", "date", shortDate(w.start), w.problem && el("span", "alert", icon("circleAlert", 12))),
+      el("span", "count", ...count));
+    if (checking) tile.querySelector(".icon").classList.add("spin");
+    if (w === shown) tile.setAttribute("aria-current", "true");
+    if (w.problem) tile.title = "Some sites didn’t respond that week";
+    tile.onclick = () => { pickedWeek = w.start; renderHome(); };
+    return tile;
+  });
+  if (state.can_schedule) {
+    if (state.schedule_on && state.next_check) {
+      const next = new Date(state.next_check);
+      tiles.push(el("div", "week next",
+        el("span", "date", icon("calendarClock", 13), next.toLocaleDateString(undefined, { month: "short", day: "numeric" })),
+        el("span", "count", "Next check")));
+    } else {
+      const on = el("button", "link", "Turn on");
+      on.onclick = () => setSchedule(true);
+      tiles.push(el("div", "week next", el("span", "date", "Not scheduled"), on));
+    }
+  }
+  nav.replaceChildren(...tiles);
+}
+
 function renderHome() {
   const notion = state.settings.tracker === "notion" && state.connected.notion;
   const where = notion ? "Notion" : "your spreadsheet";
-  const week = state.week;
+  const weeks = state.weeks || [];
+  const week = selectedWeek(weeks);
+  const latest = [...weeks].reverse().find((w) => w.checked);
   const last = week ? week.last : null;
   const run = state.run;
   const running = !!run && run.state === "running";
-  // A search that stopped (this one, or the last one saved) leads the page.
-  const problem = run && run.state === "error" ? run : last && last.state === "error" ? last : null;
+  // A search that stopped leads the page, but only on the latest week.
+  const isLatest = !latest || week === latest;
+  const problem = !isLatest ? null
+    : run && run.state === "error" ? run : last && last.state === "error" ? last : null;
 
+  renderWeeks(weeks, week, running);
   $("open-tracker").textContent = notion ? "Open Notion" : "Open my spreadsheet";
   $("close-sheet").hidden = notion;
   const title = $("home-title"), sub = $("home-sub");
@@ -377,7 +432,7 @@ function renderHome() {
   if (problem && !running) {
     title.textContent = "The last check didn’t finish";
     sub.textContent = week && week.jobs.length
-      ? `Jobs it found before that are below. Last checked ${whenText(last.finished_at)}.` : "";
+      ? `Jobs it found before that are below. Last checked ${whenText(state.last_checked)}.` : "";
     $("home-problem").replaceChildren(icon("circleAlert", 16), problem.message || "Something went wrong.");
     $("find-big").textContent = "Try again";
     $("find-big").hidden = false;
@@ -388,15 +443,19 @@ function renderHome() {
       : `Job Finder checks Indeed and the careers pages of your companies, then adds the jobs that match to ${where}.`;
     $("find-big").textContent = "Find my first jobs";
     $("find-big").hidden = running;
+  } else if (!week.checked) {
+    title.textContent = week.this_week ? "Not checked yet this week" : `Not checked the week of ${longDate(week.start)}`;
+    sub.textContent = week.this_week
+      ? `${state.last_checked ? `Last checked ${whenText(state.last_checked)}. ` : ""}Click Find new jobs to look now.`
+      : "Your Mac was off or asleep all that week, or Monday checks were turned off.";
   } else {
     const n = week.jobs.length;
-    const start = localDate(week.start).toLocaleDateString(undefined, { month: "long", day: "numeric" });
-    const when = `Last checked ${whenText(last.finished_at)}.`;
+    const when = `${week.this_week ? "Last checked" : "Checked"} ${whenText(last.finished_at)}.`;
     if (n) {
-      title.textContent = `${plural(n, "new job")} ${week.this_week ? "this week" : `from the week of ${start}`}`;
+      title.textContent = `${plural(n, "new job")} ${week.this_week ? "this week" : `from the week of ${longDate(week.start)}`}`;
       sub.textContent = `${when} ${n === 1 ? "It matches" : "Each one matches"} your level, location and pay. Open the ones that look good, then mark what you decide in ${where}.`;
     } else {
-      title.textContent = week.this_week ? "Nothing new this week" : `Nothing new the week of ${start}`;
+      title.textContent = week.this_week ? "Nothing new this week" : `Nothing new the week of ${longDate(week.start)}`;
       sub.textContent = last.matches && last.already >= last.matches
         ? `${when} You’re up to date: the ${plural(last.matches, "job")} that matched ${last.matches === 1 ? "is" : "are"} already in ${where}.`
         : `${when} Job Finder looked at ${plural(last.scanned || 0, "listing")} and none matched your settings.`;
@@ -406,14 +465,14 @@ function renderHome() {
   // Problems that didn't stop the search: one quiet line each.
   const notes = [];
   if (last && last.source_problem) notes.push(el("p", "note", icon("circleAlert", 14), last.source_problem));
-  if (last && last.draft_problem) {
+  if (last && last.draft_problem && isLatest) {
     const go = el("button", "link", "Open drafts settings");
     go.onclick = () => openSettings("sec-drafts");
     notes.push(el("p", "note", icon("circleAlert", 14), last.draft_problem, " ", go));
   }
   $("home-notes").replaceChildren(...notes);
 
-  const tip = problem ? null : suggestion(last);
+  const tip = problem || !isLatest ? null : suggestion(last);
   $("run-suggest").hidden = !tip;
   if (tip) {
     $("suggest-text").textContent = tip[0];
@@ -426,9 +485,9 @@ function renderHome() {
   $("run-progress").hidden = !running;
   if (running) $("run-step").textContent = run.step || "Starting…";
   $("find").disabled = $("find-big").disabled = running;
+  $("find-label").textContent = running ? "Looking…" : "Find new jobs";
   // The big button, when it shows, is the one way to search: no twin in the top bar.
   if (!$("view-home").hidden) $("find").hidden = !$("find-big").hidden;
-  $("find-label").textContent = running ? "Looking…" : "Find new jobs";
 
   $("schedule").checked = state.schedule_on;
   $("schedule").closest("label").hidden = !state.can_schedule;
@@ -437,8 +496,16 @@ function renderHome() {
     : "Your Mac looks for new jobs on its own and lets you know what it found. If it’s asleep then, it checks when it wakes.";
 }
 
+async function setSchedule(on) {
+  try {
+    Object.assign(state, await api("/api/schedule", { on }));
+  } catch (err) { banner(err.message); }
+  renderHome();
+}
+
 async function findJobs() {
   banner("");
+  pickedWeek = null;  // show the new results
   try {
     state.run = await api("/api/run");
     renderHome();
@@ -470,12 +537,7 @@ $("open-tracker").onclick = async () => {
     banner(r.ok ? "" : r.message);
   } catch (e) { banner(e.message); }
 };
-$("schedule").onchange = async (e) => {
-  try {
-    Object.assign(state, await api("/api/schedule", { on: e.target.checked }));
-  } catch (err) { banner(err.message); }
-  renderHome();
-};
+$("schedule").onchange = (e) => setSchedule(e.target.checked);
 
 // ── Settings ───────────────────────────────────────────────────────
 
