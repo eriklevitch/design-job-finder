@@ -104,3 +104,39 @@ def test_empty_seniority_means_any_level():
            "locations": [], "min_salary": 0}
     matches, _ = filter_jobs([dict(_job(title="Product Designer"), posted_date="")], cfg)
     assert len(matches) == 1
+
+
+def test_csv_tracker_lines_up_with_columns_you_added(tmp_path):
+    path = tmp_path / "applications.csv"
+    t = CsvTracker(path)
+    t.add_job(_job("k1"))
+    # Insert a "Priority" column after Status, as someone might in Excel.
+    with open(path, newline="", encoding="utf-8-sig") as f:
+        rows = list(csv.reader(f))
+    rows = [[r[0], "Priority" if i == 0 else "High", *r[1:]] for i, r in enumerate(rows)]
+    with open(path, "w", newline="", encoding="utf-8-sig") as f:
+        csv.writer(f).writerows(rows)
+    t.add_job(_job("k2", title="Staff Designer"))
+    with open(path, encoding="utf-8-sig") as f:
+        rows = list(csv.DictReader(f))
+    assert [r["ID"] for r in rows] == ["k1", "k2"]
+    assert rows[1]["Title"] == "Staff Designer" and rows[1]["Company"] == "acme"
+    assert rows[1]["Priority"] == ""
+    assert t.existing_job_keys() == {"k1", "k2"}
+
+
+def test_csv_tracker_reads_a_file_saved_by_excel(tmp_path):
+    # Excel's usual "CSV" format isn't UTF-8, so "ü" and "–" are single bytes.
+    path = tmp_path / "applications.csv"
+    t = CsvTracker(path)
+    t.add_job({**_job("k1"), "company": "Zürich AG", "title": "Senior Designer – UX"})
+    text = path.read_text(encoding="utf-8-sig")
+    for old in ("cp1252", "mac_roman"):
+        path.write_bytes(text.encode(old))
+        assert t.existing_job_keys() == {"k1"}
+        t.add_job({**_job("k2"), "company": "Café Co"})
+        with open(path, newline="", encoding=old) as f:
+            rows = list(csv.DictReader(f))
+        assert [r["ID"] for r in rows] == ["k1", "k2"]
+        assert rows[0]["Company"] == "Zürich AG"
+        assert rows[1]["Company"] == "Café Co"  # written in the file's own format
