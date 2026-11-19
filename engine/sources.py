@@ -216,71 +216,72 @@ def _adzuna_salary(r) -> str:
     return ""
 
 
-def fetch_greenhouse(config) -> list[dict]:
+def _fetch_boards(config: dict, key: str, label: str, url_for, rows_in, to_job) -> list[dict]:
+    """Checks each company on one job board (Greenhouse, Lever or Ashby).
+    A company that doesn't answer is noted and skipped; the rest carry on."""
     jobs = []
-    for company in config.get("greenhouse_companies", []):
-        _progress(_display_name(company), "checking")
-        before = len(jobs)
+    for company in config.get(key, []):
+        name = _display_name(company)
+        _progress(name, "checking")
         try:
-            # content=true includes the full job description in the list
-            # response, so we don't need a second request per posting.
-            url = f"https://boards-api.greenhouse.io/v1/boards/{company}/jobs?content=true"
-            resp = requests.get(url, headers=UA, timeout=20)
+            resp = requests.get(url_for(company), headers=UA, timeout=20)
             resp.raise_for_status()
             reach["ok"] += 1
-            for r in resp.json().get("jobs", []):
-                full_text = _html_to_text(r.get("content", ""))
-                jobs.append({
-                    "title": r.get("title", ""),
-                    "company": company,
-                    "location": (r.get("location") or {}).get("name", ""),
-                    "url": r.get("absolute_url", ""),
-                    "salary": _safe_salary(full_text),
-                    "posted_date": (r.get("updated_at") or "")[:10],
-                    "source": "Greenhouse",
-                    "description": full_text[:DESCRIPTION_MAX_CHARS],
-                    "job_key": f"greenhouse:{company}:{r.get('id', '')}",
-                })
+            found = [to_job(r, company) for r in rows_in(resp.json())]
         except requests.RequestException as e:
-            print(f"  [greenhouse:{company}] error — {e}")
-            reach["failed"].append(_display_name(company))
-            _progress(_display_name(company), "failed")
+            print(f"  [{label}:{company}] error — {e}")
+            reach["failed"].append(name)
+            _progress(name, "failed")
             continue
-        _progress(_display_name(company), "done", len(jobs) - before)
-    print(f"  [greenhouse] fetched {len(jobs)}")
+        jobs += found
+        _progress(name, "done", len(found))
+    print(f"  [{label}] fetched {len(jobs)}")
     return jobs
+
+
+def fetch_greenhouse(config) -> list[dict]:
+    # content=true includes the full job description in the list
+    # response, so we don't need a second request per posting.
+    return _fetch_boards(
+        config, "greenhouse_companies", "greenhouse",
+        lambda company: f"https://boards-api.greenhouse.io/v1/boards/{company}/jobs?content=true",
+        lambda data: data.get("jobs", []), _greenhouse_job)
+
+
+def _greenhouse_job(r, company: str) -> dict:
+    full_text = _html_to_text(r.get("content", ""))
+    return {
+        "title": r.get("title", ""),
+        "company": company,
+        "location": (r.get("location") or {}).get("name", ""),
+        "url": r.get("absolute_url", ""),
+        "salary": _safe_salary(full_text),
+        "posted_date": (r.get("updated_at") or "")[:10],
+        "source": "Greenhouse",
+        "description": full_text[:DESCRIPTION_MAX_CHARS],
+        "job_key": f"greenhouse:{company}:{r.get('id', '')}",
+    }
 
 
 def fetch_lever(config) -> list[dict]:
-    jobs = []
-    for company in config.get("lever_companies", []):
-        _progress(_display_name(company), "checking")
-        before = len(jobs)
-        try:
-            url = f"https://api.lever.co/v0/postings/{company}?mode=json"
-            resp = requests.get(url, headers=UA, timeout=20)
-            resp.raise_for_status()
-            reach["ok"] += 1
-            for r in resp.json():
-                jobs.append({
-                    "title": r.get("text", ""),
-                    "company": company,
-                    "location": (r.get("categories") or {}).get("location", ""),
-                    "url": r.get("hostedUrl", ""),
-                    "salary": _lever_salary(r),
-                    "posted_date": _lever_date(r.get("createdAt")),
-                    "source": "Lever",
-                    "description": _strip_html(r.get("descriptionPlain") or r.get("description", "")),
-                    "job_key": f"lever:{company}:{r.get('id', '')}",
-                })
-        except requests.RequestException as e:
-            print(f"  [lever:{company}] error — {e}")
-            reach["failed"].append(_display_name(company))
-            _progress(_display_name(company), "failed")
-            continue
-        _progress(_display_name(company), "done", len(jobs) - before)
-    print(f"  [lever] fetched {len(jobs)}")
-    return jobs
+    return _fetch_boards(
+        config, "lever_companies", "lever",
+        lambda company: f"https://api.lever.co/v0/postings/{company}?mode=json",
+        lambda data: data, _lever_job)
+
+
+def _lever_job(r, company: str) -> dict:
+    return {
+        "title": r.get("text", ""),
+        "company": company,
+        "location": (r.get("categories") or {}).get("location", ""),
+        "url": r.get("hostedUrl", ""),
+        "salary": _lever_salary(r),
+        "posted_date": _lever_date(r.get("createdAt")),
+        "source": "Lever",
+        "description": _strip_html(r.get("descriptionPlain") or r.get("description", "")),
+        "job_key": f"lever:{company}:{r.get('id', '')}",
+    }
 
 
 def _lever_salary(r) -> str:
@@ -319,38 +320,27 @@ def _lever_date(ms) -> str:
 
 
 def fetch_ashby(config) -> list[dict]:
-    jobs = []
-    for company in config.get("ashby_companies", []):
-        _progress(_display_name(company), "checking")
-        before = len(jobs)
-        try:
-            # includeCompensation=true adds a structured pay summary
-            # ("$204K – $264K • Offers Equity") when the company sets one.
-            url = f"https://api.ashbyhq.com/posting-api/job-board/{company}?includeCompensation=true"
-            resp = requests.get(url, headers=UA, timeout=20)
-            resp.raise_for_status()
-            reach["ok"] += 1
-            for r in resp.json().get("jobs", []):
-                full_text = _html_to_text(r.get("descriptionHtml") or r.get("descriptionPlain", ""))
-                jobs.append({
-                    "title": r.get("title", ""),
-                    "company": company,
-                    "location": r.get("location", ""),
-                    "url": r.get("jobUrl", ""),
-                    "salary": _ashby_salary(r, full_text),
-                    "posted_date": (r.get("publishedAt") or "")[:10],
-                    "source": "Ashby",
-                    "description": full_text[:DESCRIPTION_MAX_CHARS],
-                    "job_key": f"ashby:{company}:{r.get('id', '')}",
-                })
-        except requests.RequestException as e:
-            print(f"  [ashby:{company}] error — {e}")
-            reach["failed"].append(_display_name(company))
-            _progress(_display_name(company), "failed")
-            continue
-        _progress(_display_name(company), "done", len(jobs) - before)
-    print(f"  [ashby] fetched {len(jobs)}")
-    return jobs
+    # includeCompensation=true adds a structured pay summary
+    # ("$204K – $264K • Offers Equity") when the company sets one.
+    return _fetch_boards(
+        config, "ashby_companies", "ashby",
+        lambda company: f"https://api.ashbyhq.com/posting-api/job-board/{company}?includeCompensation=true",
+        lambda data: data.get("jobs", []), _ashby_job)
+
+
+def _ashby_job(r, company: str) -> dict:
+    full_text = _html_to_text(r.get("descriptionHtml") or r.get("descriptionPlain", ""))
+    return {
+        "title": r.get("title", ""),
+        "company": company,
+        "location": r.get("location", ""),
+        "url": r.get("jobUrl", ""),
+        "salary": _ashby_salary(r, full_text),
+        "posted_date": (r.get("publishedAt") or "")[:10],
+        "source": "Ashby",
+        "description": full_text[:DESCRIPTION_MAX_CHARS],
+        "job_key": f"ashby:{company}:{r.get('id', '')}",
+    }
 
 
 def _ashby_salary(r, full_text: str) -> str:
