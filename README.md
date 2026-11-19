@@ -2,6 +2,8 @@
 
 For product, UX, UI and brand designers who are tired of checking job sites. Once a week it finds design jobs that match your level, location and pay, and adds them to a spreadsheet or Notion. You don't need to know how to code.
 
+![Design Job Finder showing this week's new jobs, with company, role, location, pay, how long ago each was posted, and why it matched](assets/app-screenshot.png)
+
 ```
 Status            Company   Title                            Location     Salary              Link
 Ready for Review  Acme      Senior Product Designer, Growth  Remote - US  $185,000–$230,000   https://…
