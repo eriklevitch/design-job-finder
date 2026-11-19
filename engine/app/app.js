@@ -436,8 +436,10 @@ function wireTrackerChoice(container, panel) {
 
 // ── First-run questions ────────────────────────────────────────────
 
+// Only what the first search needs. Where jobs go (spreadsheet or Notion)
+// is left at the spreadsheet; Settings can switch it to Notion.
 let step = 1;
-const STEPS = 5;
+const STEPS = 4;
 
 function startSetup() {
   const s = state.settings;
@@ -451,18 +453,50 @@ function startSetup() {
     : "Each check includes these companies’ careers pages.";
   companies.setup = fromSettings();
   renderCompanies("setup");
-  choiceList($("setup-tracker"), "setup-tracker", TRACKERS, s.tracker);
-  wireTrackerChoice($("setup-tracker"), document.querySelector('.notion-connect[data-for="setup"]'));
+  drawLook();
   step = 1;
   showStep();
   show("setup");
 }
 
+// The picture beside the questions: a still Jobs page whose chips follow
+// the answers (level, place, pay), like the reasons each real job shows.
+const LOOK_BARS = [40, 30, 46, 36, 28, 42, 38, 32, 44, 30, 40, 34, 42, 30];
+const LOOK_NO_PAY = new Set([2, 5, 10]);   // rows whose job doesn't list pay
+const LOOK_LEVELS = [                      // one list per level choice
+  ["Senior", "Staff", "Senior", "Principal", "Lead", "Senior", "Staff"],
+  ["Manager", "Director", "Head of", "Manager", "VP", "Director", "Manager"],
+  ["Senior", "Manager", "Staff", "Director", "Lead", "Head of", "Senior"],
+  ["", "Senior", "", "Staff", "", "Senior", ""],
+];
+// Like config_store.parse_money: "150k", "$150,000" and "150000" are 150000.
+function parseMoney(text) {
+  const m = text.toLowerCase().replace(/[$,\s]/g, "").match(/^(\d+(?:\.\d+)?)(k?)$/);
+  return m ? Math.round(parseFloat(m[1]) * (m[2] ? 1000 : 1)) : null;
+}
+function drawLook() {
+  const levels = LOOK_LEVELS[(Number(chosen("setup-level")) || 3) - 1] || LOOK_LEVELS[2];
+  const places = [...splitCities($("setup-cities").value).map(titleCase), ...($("setup-remote").checked ? ["Remote"] : [])];
+  const min = parseMoney($("setup-pay").value) || 0;
+  const pay = min ? `Pay ${min >= 1000 ? `$${min / 1000}k` : `$${min}`}+` : "";
+  $("setup-look-rows").replaceChildren(...LOOK_BARS.map((width, i) => {
+    // Two chips at most, so they fit: the level, then the place, or on
+    // every third row the pay.
+    const second = LOOK_NO_PAY.has(i) ? "Check pay" : i % 3 === 1 && pay ? pay : places[i % places.length];
+    const bar = el("i", "bar");
+    bar.style.width = `${width}px`;
+    return el("div", "look-row", el("span", "avatar"), bar,
+      el("span", "chips", ...[levels[i % levels.length], second].filter(Boolean).map((text) => el("span", "chip", text))));
+  }));
+}
+$("setup-level").addEventListener("change", drawLook);
+for (const id of ["setup-cities", "setup-remote", "setup-pay"]) $(id).addEventListener("input", drawLook);
+
 function showStep() {
   document.querySelectorAll("#view-setup .step").forEach((node) => {
     node.hidden = Number(node.dataset.step) !== step;
   });
-  document.querySelectorAll("#setup-segs i").forEach((seg, i) => seg.classList.toggle("on", i < step));
+  $("setup-scroll").scrollTop = 0;
   $("step-count").textContent = `Step ${step} of ${STEPS}`;
   $("setup-back").style.visibility = step > 1 ? "visible" : "hidden";
   $("setup-next").textContent = step === STEPS ? "Find my first jobs" : "Next";
@@ -498,9 +532,6 @@ $("setup-next").onclick = async () => {
     return setupError("Still looking up companies. One moment…");
   }
   if (step < STEPS) { step++; return showStep(); }
-  if (chosen("setup-tracker") === "notion" && !state.connected.notion) {
-    return setupError("Connect Notion first, or pick the spreadsheet. You can switch any time.");
-  }
   $("setup-next").disabled = true;
   try {
     state = await api("/api/settings", {
@@ -510,7 +541,7 @@ $("setup-next").onclick = async () => {
       remote: $("setup-remote").checked,
       min_salary: $("setup-pay").value.trim() || "0",
       companies: companiesForSave("setup"),
-      tracker: chosen("setup-tracker"),
+      tracker: state.settings.tracker,
     });
     renderJobs();
     show("jobs");
@@ -522,7 +553,7 @@ $("setup-next").onclick = async () => {
 };
 document.querySelectorAll("#view-setup input:not([type=radio]):not([type=checkbox])").forEach((input) =>
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !input.closest(".company-add, .notion-connect")) $("setup-next").click();
+    if (e.key === "Enter" && !input.closest(".company-add")) $("setup-next").click();
   }));
 
 // ── Dates ──────────────────────────────────────────────────────────

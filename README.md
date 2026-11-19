@@ -21,8 +21,8 @@ You need a Mac. (On Windows or Linux, see [For developers](#for-developers).)
    curl -fsSL https://raw.githubusercontent.com/eriklevitch/design-job-finder/main/install.sh | bash
    ```
 
-3. Design Job Finder opens and asks five questions: your **level**, **locations**, **minimum pay**, **companies** you'd like to work at, and whether to use a **spreadsheet or Notion**.
-4. Click **Find my first jobs**.
+3. Design Job Finder opens and asks four short questions: the **type of design** and **level** you're after, your **locations**, your **minimum pay**, and any **companies** you'd like to work at.
+4. Click **Find my first jobs**. New jobs go to a spreadsheet; you can switch to Notion in Settings.
 
 That's the last time you need Terminal. Design Job Finder is now in your Dock.
 

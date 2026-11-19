@@ -26,6 +26,9 @@
   --primary: #ededef;      /* the solid button */
   --primary-hover: #d4d5d9;
   --on-primary: #111214;
+  --dot: #2a2b31;          /* the dot grid behind blank states, close to the page color */
+  --dot-gap: 8px;          /* its spacing */
+  --bar: #202127;          /* placeholder bars in the setup picture */
   --ok: #3fb27f;           /* status dots only */
   --warn: #e5a23c;
   --bad: #ec5a55;
@@ -360,13 +363,13 @@ td.old { color: var(--text-3); }
   position: relative; isolation: isolate; overflow: hidden;
   display: grid; justify-items: center; align-content: center; gap: 6px;
   min-height: 100%; padding: var(--space-24) var(--space-6); text-align: center;
-  /* Dots that rise from the bottom and fade out before the text. */
-  --dot: #2a2b31;          /* the dots, kept close to the page color */
-  --dot-gap: 8px;          /* grid spacing */
 }
-.empty::before {
+/* Dots that rise from the bottom: behind blank states and the setup picture. */
+.empty::before, .setup-look::before {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: radial-gradient(circle, var(--dot) 0.85px, transparent 1.15px) center bottom / var(--dot-gap) var(--dot-gap);
+}
+.empty::before {
   /* Strongest along the bottom edge, gone by the middle of the area. */
   -webkit-mask-image: linear-gradient(to top, #000, rgb(0 0 0 / 0.45) 18%, rgb(0 0 0 / 0.12) 34%, transparent 46%);
           mask-image: linear-gradient(to top, #000, rgb(0 0 0 / 0.45) 18%, rgb(0 0 0 / 0.12) 34%, transparent 46%);
@@ -414,15 +417,49 @@ td.old { color: var(--text-3); }
 .savebar p.ok { color: var(--text); }
 
 /* ── First-run setup: the whole window ───────────────────────────── */
-.setup { min-height: 100%; padding: 0 var(--space-6); }
-.setup-top { display: flex; align-items: center; gap: 10px; height: 56px; font-size: 0.9375rem; font-weight: 600; letter-spacing: var(--tracking-tight); }
-.setup-body { width: 100%; max-width: 520px; margin: 8vh auto var(--space-12); }
-.step-of { margin: var(--space-2) 0 var(--space-8); color: var(--text-3); font-size: var(--text-sm); }
+/* Questions get 70%, centered in their column; a picture of the Jobs
+   page gets 30%. The questions scroll; Back and Next stay put. */
+.setup { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); height: 100%; }
+.setup-ask { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.setup-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--space-6); }
+.setup-top {
+  display: flex; align-items: center; justify-content: center; gap: 10px; margin: var(--space-12) 0;
+  font-size: 0.9375rem; font-weight: 600; letter-spacing: var(--tracking-tight);
+}
+.setup-body { max-width: 520px; margin: 0 auto var(--space-8); }
 .setup-body h1 { margin: 0 0 var(--space-2); font-size: var(--text-2xl); font-weight: 600; letter-spacing: var(--tracking-tight); line-height: 1.25; text-wrap: balance; }
 .setup-body .lede { margin: 0 0 var(--space-6); color: var(--text-2); text-wrap: pretty; }
-.setup-body .step .stack + .notion-connect, .setup-body .cards2 + .notion-connect { margin-top: var(--space-4); }
-.setup-nav { display: flex; justify-content: space-between; margin-top: var(--space-8); }
-.error { margin: var(--space-4) 0 0; color: var(--bad); }
+.setup-foot { flex: none; padding: 14px var(--space-6); border-top: 1px solid var(--line); }
+.setup-foot > * { max-width: 520px; margin-inline: auto; }
+.setup-nav { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.setup-nav-end { display: flex; align-items: center; gap: var(--space-3); }
+.step-of { color: var(--text-3); font-size: var(--text-sm); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.error { margin-block: 0 var(--space-3); color: var(--bad); }
+
+/* The picture: the app window, solid on the dot grid, running off the
+   right and bottom edges. Bars stand in for text. */
+.setup-look { position: relative; isolation: isolate; overflow: hidden; background: var(--bg-side); border-left: 1px solid var(--line); }
+.setup-look::before {
+  -webkit-mask-image: linear-gradient(to top, #000, rgb(0 0 0 / .6) 45%, rgb(0 0 0 / .25) 80%, rgb(0 0 0 / .15));
+          mask-image: linear-gradient(to top, #000, rgb(0 0 0 / .6) 45%, rgb(0 0 0 / .25) 80%, rgb(0 0 0 / .15));
+}
+.look-window {
+  position: absolute; z-index: 1; top: 14vh; bottom: -40px; left: var(--space-8); width: calc(100% + 60px);
+  display: grid; grid-template-columns: 48px minmax(0, 1fr); overflow: hidden;
+  background: var(--bg); border: 1px solid var(--line-2); border-radius: var(--radius-lg); box-shadow: 0 24px 64px rgba(0, 0, 0, .55);
+}
+.look-side { background: var(--bg-side); border-right: 1px solid var(--line); }
+.look-head { height: 46px; border-bottom: 1px solid var(--line); }
+.look-nav { display: grid; gap: 2px; padding: 10px 7px; color: var(--text-3); }
+.look-nav span { display: grid; place-items: center; height: var(--control-h); border-radius: var(--radius-md); }
+.look-nav .on { background: var(--surface-2); color: var(--text-2); }
+.look-top { display: flex; align-items: center; gap: var(--space-2); height: 46px; padding: 0 var(--space-4); border-bottom: 1px solid var(--line); font-weight: 500; }
+.look-top .icon { color: var(--text-2); }
+.look-tools { display: flex; gap: var(--space-2); padding: 10px var(--space-4); border-bottom: 1px solid var(--line); }
+.look-pill { display: inline-flex; align-items: center; gap: var(--space-2); height: 28px; padding: 0 10px; border: 1px dashed var(--line-2); border-radius: var(--radius-md); color: var(--text-3); }
+.look-sum { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--line); font-weight: 600; }
+.look-row { display: flex; align-items: center; gap: var(--space-3); height: 48px; padding: 0 var(--space-4); border-bottom: 1px solid var(--line); }
+.bar { display: block; flex: none; height: 7px; border-radius: 4px; background: var(--bar); }
 
 /* ── Messages that apply anywhere ────────────────────────────────── */
 .toast {
@@ -431,6 +468,12 @@ td.old { color: var(--text-3); }
   padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
   background: var(--surface-2); border: 1px solid var(--line-3); border-radius: var(--radius-lg);
   box-shadow: 0 12px 32px rgba(0, 0, 0, .45); text-wrap: pretty;
+}
+
+/* Setup without room for the picture's chips: just the questions. */
+@media (max-width: 1100px) {
+  .setup { grid-template-columns: 1fr; }
+  .setup-look { display: none; }
 }
 
 /* ── Narrow windows: the sidebar becomes a strip across the top ──── */
