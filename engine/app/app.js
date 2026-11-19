@@ -460,7 +460,7 @@ function startSetup() {
 }
 
 // The picture beside the questions: a still Jobs page whose chips follow
-// the answers (level, place, pay), like the reasons each real job shows.
+// the answers (level and place), like the reasons each real job shows.
 const LOOK_BARS = [40, 30, 46, 36, 28, 42, 38, 32, 44, 30, 40, 34, 42, 30];
 const LOOK_NO_PAY = new Set([2, 5, 10]);   // rows whose job doesn't list pay
 const LOOK_LEVELS = [                      // one list per level choice
@@ -469,28 +469,58 @@ const LOOK_LEVELS = [                      // one list per level choice
   ["Senior", "Manager", "Staff", "Director", "Lead", "Head of", "Senior"],
   ["", "Senior", "", "Staff", "", "Senior", ""],
 ];
+// Each row's pay in $k, [low, high], on a $100k–$250k scale; null rows
+// don't list pay (LOOK_NO_PAY).
+const LOOK_PAY = [[140, 175], [165, 210], null, [125, 150], [180, 230], null, [150, 150],
+  [135, 190], [200, 240], [155, 185], null, [120, 160], [170, 170], [145, 200]];
+const LOOK_SCALE = [100, 250];
+const lookPct = (k) => ((k - LOOK_SCALE[0]) / (LOOK_SCALE[1] - LOOK_SCALE[0])) * 100;
+
 // Like config_store.parse_money: "150k", "$150,000" and "150000" are 150000.
 function parseMoney(text) {
   const m = text.toLowerCase().replace(/[$,\s]/g, "").match(/^(\d+(?:\.\d+)?)(k?)$/);
   return m ? Math.round(parseFloat(m[1]) * (m[2] ? 1000 : 1)) : null;
 }
+
 function drawLook() {
   const levels = LOOK_LEVELS[(Number(chosen("setup-level")) || 3) - 1] || LOOK_LEVELS[2];
   const places = [...splitCities($("setup-cities").value).map(titleCase), ...($("setup-remote").checked ? ["Remote"] : [])];
-  const min = parseMoney($("setup-pay").value) || 0;
-  const pay = min ? `Pay ${min >= 1000 ? `$${min / 1000}k` : `$${min}`}+` : "";
   $("setup-look-rows").replaceChildren(...LOOK_BARS.map((width, i) => {
-    // Two chips at most, so they fit: the level, then the place, or on
-    // every third row the pay.
-    const second = LOOK_NO_PAY.has(i) ? "Check pay" : i % 3 === 1 && pay ? pay : places[i % places.length];
+    // Two chips at most, so they fit: the level, then the place, or
+    // "Check pay" for a job that doesn't list it. Pay that clears the
+    // minimum has no chip; the Jobs page shows it in the pay bar.
+    const second = LOOK_NO_PAY.has(i) ? "Check pay" : places[i % places.length];
     const bar = el("i", "bar");
     bar.style.width = `${width}px`;
-    return el("div", "look-row", el("span", "avatar"), bar,
+    return el("div", "look-row", el("span", "avatar"), el("span", "look-text", bar), lookPay(LOOK_PAY[i]),
       el("span", "chips", ...[levels[i % levels.length], second].filter(Boolean).map((text) => el("span", "chip", text))));
   }));
+  drawLookLine();
+}
+
+// A still pay bar; only its minimum line moves, with the pay answer.
+function lookPay(pay) {
+  if (!pay) return el("span", "look-pay none", el("span", "dot"));
+  const fill = el("i", "look-fill");
+  fill.style.left = lookPct(pay[0]) + "%";
+  fill.style.width = `max(4px, ${lookPct(pay[1]) - lookPct(pay[0])}%)`;
+  return el("span", "look-pay", fill, el("i", "look-line"));
+}
+
+// The line sits at the minimum typed in the pay question. With no answer,
+// or one off the picture's scale, there's no line, as on the Jobs page.
+function drawLookLine() {
+  const min = parseMoney($("setup-pay").value.trim()) || 0;
+  const k = min / 1000;
+  const show = k >= LOOK_SCALE[0] && k <= LOOK_SCALE[1];
+  document.querySelectorAll("#setup-look-rows .look-line").forEach((line) => {
+    line.hidden = !show;
+    if (show) line.style.left = lookPct(k) + "%";
+  });
 }
 $("setup-level").addEventListener("change", drawLook);
-for (const id of ["setup-cities", "setup-remote", "setup-pay"]) $(id).addEventListener("input", drawLook);
+for (const id of ["setup-cities", "setup-remote"]) $(id).addEventListener("input", drawLook);
+$("setup-pay").addEventListener("input", drawLookLine);
 
 function showStep() {
   document.querySelectorAll("#view-setup .step").forEach((node) => {
@@ -613,15 +643,17 @@ function setSort(key, dir = 1) {
 }
 
 const unlisted = (salary) => !salary || salary.startsWith("unlisted");
-// The top of a pay range: "$150,000 – $190,000" and "$150k-190k" give 190000.
-function payTop(salary) {
+// The ends of a pay range: "$150,000 – $190,000" and "$150k-190k" give
+// [150000, 190000]; a single figure gives the same number twice.
+function payRange(salary) {
   if (unlisted(salary)) return null;
   const nums = (salary.match(/\d[\d,.]*\s*k?/gi) || []).map((n) => {
     const v = parseFloat(n.replace(/[,\s]/g, ""));
     return /k$/i.test(n.trim()) ? v * 1000 : v;
   }).filter((v) => v >= 1000);
-  return nums.length ? Math.max(...nums) : null;
+  return nums.length ? [Math.min(...nums), Math.max(...nums)] : null;
 }
+const payTop = (salary) => { const r = payRange(salary); return r && r[1]; };
 
 // A match reason, in a word or two (the sentences come from sources.py _why).
 function shortWhy(reason) {
@@ -640,6 +672,201 @@ function payText(salary) {
   const parts = salary.split(/\s*[–—-]\s*/);
   return parts.length === 2 && parts[0] === parts[1] ? parts[0] : salary;
 }
+
+// ── Jobs: the pay bar ──────────────────────────────────────────────
+// Each listed pay is a bar on one scale shared by the week's jobs, with a
+// line at the minimum from Settings. Pointing at a bar opens a pop-up with
+// the exact pay and how it compares.
+
+// $131k, $1.2M
+function shortMoney(v) {
+  return v >= 999500 ? `$${+(v / 1e6).toFixed(1)}M` : `$${Math.round(v / 1000)}k`;  // $999,600 is $1M, not $1000k
+}
+// "$131–177k" (one $ and one k keep the column narrow), or one figure
+// when both ends round the same.
+function shortPay([lo, hi]) {
+  const a = shortMoney(lo), b = shortMoney(hi);
+  if (a === b) return a;
+  if (a.slice(-1) === b.slice(-1)) return `${a.slice(0, -1)}–${b.slice(1)}`;
+  return `${a}–${b}`;  // "$950k–$1.2M"
+}
+
+// The week's scale: every listed pay and the minimum, rounded out to $25k.
+function payScale(jobs) {
+  const min = Number(state.settings.min_salary) || 0;
+  const ranges = jobs.map((j) => payRange(j.salary)).filter(Boolean);
+  if (!ranges.length) return null;
+  const vals = ranges.flat();
+  // The minimum joins the scale when it's near the jobs. Far off, it would
+  // squeeze every bar to one side, so it gets no line; the pop-up still
+  // says how each job compares.
+  const line = min > 0 && min >= Math.min(...vals) - 25000 && min <= Math.max(...vals) + 25000;
+  if (line) vals.push(min);
+  let lo = Math.floor(Math.min(...vals) / 25000) * 25000;
+  let hi = Math.ceil(Math.max(...vals) / 25000) * 25000;
+  if (hi - lo < 50000) { lo = Math.max(0, lo - 25000); hi += 25000; }  // room for a lone figure
+  return { lo, hi, min, line, tops: ranges.map((r) => r[1]).sort((a, b) => b - a) };
+}
+
+const pct = (v, scale) => ((v - scale.lo) / (scale.hi - scale.lo)) * 100;
+
+function payBar([lo, hi], scale) {
+  const bar = el("span", "paybar");
+  if (scale.line) {
+    const line = el("span", "paybar-min");
+    line.style.left = pct(scale.min, scale) + "%";
+    bar.append(line);
+  }
+  const fill = el("span", lo === hi ? "paybar-fill point" : "paybar-fill");
+  if (lo === hi) {
+    // A short mark, kept inside the bar at either end.
+    fill.style.left = `clamp(0px, calc(${pct(lo, scale)}% - var(--point) / 2), calc(100% - var(--point)))`;
+  } else {
+    fill.style.left = pct(lo, scale) + "%";
+    fill.style.width = pct(hi, scale) - pct(lo, scale) + "%";
+    if (scale.min > lo) {
+      // The part of the range under the minimum, dimmed.
+      const under = el("span", "under");
+      under.style.width = (Math.min(scale.min, hi) - lo) / (hi - lo) * 100 + "%";
+      fill.append(under);
+    }
+  }
+  bar.append(fill);
+  return bar;
+}
+
+const ordinal = (n) => {
+  const s = ["th", "st", "nd", "rd"], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+};
+
+// One or two sentences: against the minimum, then against the week.
+function payContext([lo, hi], scale) {
+  const out = [];
+  const min = scale.min ? shortMoney(scale.min) : "";
+  if (scale.min) {
+    if (lo === hi) {
+      const gap = Math.abs(lo - scale.min);
+      out.push(gap < 500 ? `Right at your ${min} minimum.`
+        : `${shortMoney(gap)} ${lo > scale.min ? "above" : "below"} your ${min} minimum.`);
+    } else if (lo >= scale.min) out.push(`All of the range is above your ${min} minimum.`);
+    else if (hi <= scale.min) out.push(`None of the range reaches your ${min} minimum.`);
+    else out.push(`About ${Math.round((hi - scale.min) / (hi - lo) * 100)}% of the range is above your ${min} minimum.`);
+  }
+  // Ranked by the top of each range, like the Pay sort.
+  const n = scale.tops.length;
+  if (n > 1) {
+    const rank = scale.tops.indexOf(hi) + 1;
+    const tied = scale.tops.filter((t) => t === hi).length > 1;
+    const last = rank + (tied ? scale.tops.filter((t) => t === hi).length - 1 : 0) === n;
+    const place = rank === 1 ? "highest" : last ? "lowest" : `${ordinal(rank)} highest`;
+    const text = `${place} of the ${n} jobs with listed pay.`;
+    out.push(tied ? `Tied for ${text}` : text[0].toUpperCase() + text.slice(1));
+  }
+  return out.join(" ");
+}
+
+const jobKey = (job) => [job.url, job.company, job.title].join("|");
+
+function payCell(job, scale) {
+  const range = payRange(job.salary);
+  if (!range || !scale) {
+    return el("td", "", unlisted(job.salary)
+      ? el("span", "status faint", el("span", "dot warn"), "Not listed") : payText(job.salary));
+  }
+  const bar = payBar(range, scale);
+  bar.tabIndex = 0;
+  bar.setAttribute("role", "img");
+  bar.setAttribute("aria-label", `${payText(job.salary)}. ${payContext(range, scale)}`);
+  bar.dataset.job = jobKey(job);
+  bar.payOpen = (how) => payTip.show(bar, job, range, scale, how);
+  bar.addEventListener("pointerenter", () => bar.payOpen("hover"));
+  bar.addEventListener("pointerleave", () => payTip.hide());
+  bar.addEventListener("focus", () => bar.payOpen("focus"));
+  bar.addEventListener("blur", () => payTip.hide(true));
+  return el("td", "", el("span", "pay", el("span", "pay-num", shortPay(range)), bar));
+}
+
+// The pop-up: one for the page, moved to whichever bar is pointed at.
+const payTip = (() => {
+  const tip = el("div", "paytip");
+  tip.id = "paytip";
+  tip.setAttribute("role", "tooltip");
+  tip.hidden = true;
+  document.body.append(tip);
+  let openTimer = null, closeTimer = null, owner = null, byHover = false;
+
+  function place(bar) {
+    const r = bar.getBoundingClientRect();
+    const w = tip.offsetWidth, h = tip.offsetHeight, gap = 10, edge = 8;
+    let top = r.bottom + gap;
+    if (top + h > innerHeight - edge) top = r.top - gap - h;  // no room below: open above
+    tip.style.top = Math.max(edge, top) + "px";
+    tip.style.left = Math.min(Math.max(edge, r.left + r.width / 2 - w / 2), innerWidth - w - edge) + "px";
+  }
+
+  function open(bar, job, range, scale) {
+    if (owner) owner.removeAttribute("aria-describedby");
+    owner = bar;
+    const context = payContext(range, scale);
+    tip.replaceChildren(
+      el("div", "paytip-amt", payText(job.salary)),
+      el("div", "paytip-co", job.company || ""),
+      payBar(range, scale),
+      el("div", "paytip-ends", el("span", "", shortMoney(scale.lo)), el("span", "", shortMoney(scale.hi))),
+      context && el("p", "", context));
+    tip.hidden = false;
+    place(bar);
+    bar.setAttribute("aria-describedby", tip.id);
+  }
+
+  return {
+    // how: "hover", "focus" or "again" (the same bar after a redraw).
+    // The first pop-up on hover waits a moment so passing over a bar
+    // doesn't flash one; once one is open, the next bar switches at once.
+    show(bar, job, range, scale, how) {
+      clearTimeout(openTimer); clearTimeout(closeTimer);
+      const go = () => { open(bar, job, range, scale); byHover = how !== "focus"; };
+      if (how !== "hover" || !tip.hidden) go();
+      else openTimer = setTimeout(go, 150);
+    },
+    // The table redraws every second during a search. Before a redraw,
+    // note which job's pop-up is open or which bar has focus; after it,
+    // put them back on that job's new bar.
+    remember() {
+      const focused = document.activeElement && document.activeElement.dataset
+        ? document.activeElement.dataset.job : undefined;
+      if (focused !== undefined) return { job: focused, focus: true };
+      return owner && !tip.hidden ? { job: owner.dataset.job, focus: false } : null;
+    },
+    restore(was) {
+      if (!was) return;
+      const bar = [...$("jobs").querySelectorAll(".paybar")].find((b) => b.dataset.job === was.job);
+      if (!bar) return;
+      if (was.focus) bar.focus();
+      else bar.payOpen("again");
+    },
+    // A redraw can swap the bar out from under the pointer, and then no
+    // "pointer left" ever comes; this closes the pop-up anyway.
+    pointerMoved(target) {
+      if (byHover && owner && !tip.hidden && !owner.contains(target)) this.hide();
+    },
+    hide(now = false) {
+      clearTimeout(openTimer); clearTimeout(closeTimer);
+      const close = () => {
+        tip.hidden = true;
+        if (owner) owner.removeAttribute("aria-describedby");
+        owner = null;
+      };
+      if (now) close(); else closeTimer = setTimeout(close, 80);
+    },
+  };
+})();
+addEventListener("keydown", (e) => { if (e.key === "Escape") payTip.hide(true); });
+addEventListener("scroll", () => payTip.hide(true), true);
+addEventListener("blur", () => payTip.hide(true));
+addEventListener("resize", () => payTip.hide(true));
+addEventListener("pointermove", (e) => payTip.pointerMoved(e.target));
 
 function sortedJobs(jobs) {
   const value = SORTS[sort.key][2];
@@ -690,15 +917,16 @@ $("week-btn").onclick = () => toggleMenu($("week-btn"), () => {
 
 // ── Jobs: the page ─────────────────────────────────────────────────
 
-function jobRow(job) {
+function jobRow(job, scale) {
   const age = postedAgo(job.posted_date);
   const link = el("a", "role", el("span", "t", job.title), icon("arrowUpRight", "sm"));
   link.href = /^https?:/.test(job.url) ? job.url : "#";
   link.target = "_blank";
   link.rel = "noopener";
   link.title = job.title;
-  const why = job.why || [];
-  // Short chips; the full reasons show on hover.
+  // Short chips; the full reasons show on hover. "Pay reaches your $150k"
+  // gets no chip: the pay bar's minimum line already shows it.
+  const why = (job.why || []).filter((w) => !w.startsWith("Pay reaches your"));
   const whyCell = el("td", "", why.length
     ? el("span", "chips", ...why.map((w) => el("span", "chip", shortWhy(w)))) : el("span", "faint", "—"));
   if (why.length) whyCell.title = why.join("\n");
@@ -709,7 +937,7 @@ function jobRow(job) {
     el("td", "trunc wide", el("span", "cell", link,
       job.draft && el("span", "chip", icon("fileText", "xs"), "Draft"))),
     place,
-    el("td", "", unlisted(job.salary) ? el("span", "status faint", el("span", "dot warn"), "Not listed") : payText(job.salary)),
+    payCell(job, scale),
     el("td", age && age.old ? "old" : "soft", age ? age.text : "—"),
     whyCell);
 }
@@ -850,7 +1078,11 @@ function renderJobs() {
     else th.removeAttribute("aria-sort");
     th.querySelector(".arrow").replaceChildren(...(on ? [icon(sort.dir === 1 ? "arrowDown" : "arrowUp", "xs")] : []));
   });
-  $("jobs").replaceChildren(...sortedJobs(jobs).map(jobRow));
+  const tipWas = payTip.remember();
+  payTip.hide(true);
+  const scale = payScale(jobs);
+  $("jobs").replaceChildren(...sortedJobs(jobs).map((j) => jobRow(j, scale)));
+  payTip.restore(tipWas);
   const drafts = jobs.filter((j) => j.draft).length;
   const noPay = jobs.filter((j) => unlisted(j.salary)).length;
   $("jobs-foot").replaceChildren(el("b", "", String(jobs.length)), ` ${jobs.length === 1 ? "job" : "jobs"}`,

@@ -29,6 +29,7 @@
   --dot: #2a2b31;          /* the dot grid behind blank states, close to the page color */
   --dot-gap: 8px;          /* its spacing */
   --bar: #202127;          /* placeholder bars in the setup picture */
+  --bar-under: #4b4d56;    /* the part of a pay range below your minimum */
   --ok: #3fb27f;           /* status dots only */
   --warn: #e5a23c;
   --bad: #ec5a55;
@@ -358,6 +359,52 @@ td.trunc .cell, td.trunc .role { max-width: 100%; }
 tr:hover .role .icon, .role:focus-visible .icon { opacity: 1; }
 td.old { color: var(--text-3); }
 
+/* Pay: a short figure, then a bar on a scale shared by the week's jobs.
+   The thin line is the minimum from Settings; the part of a range under
+   it is dimmed. Pointing at the row wakes the bar; pointing at the bar
+   opens the pop-up below. */
+.pay { display: inline-flex; align-items: center; gap: var(--space-2); vertical-align: middle; }
+.pay-num { min-width: 80px; }  /* fits "$131–177k" so the bars line up */
+.paybar {
+  --point: 6px;            /* a single figure's mark */
+  position: relative; display: block; flex: none; width: 60px; height: 4px;
+  border-radius: 2px; background: var(--surface-3);
+  transition: height var(--fast) var(--ease), border-radius var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+td .paybar { cursor: default; }
+td .paybar::after { content: ""; position: absolute; inset: -14px -6px; }  /* easier to point at */
+.paybar-fill {
+  position: absolute; top: 0; bottom: 0; min-width: 3px; overflow: hidden;
+  border-radius: inherit; background: var(--text-2);
+  transition: background var(--fast) var(--ease);
+}
+.paybar-fill.point { width: var(--point); background: var(--text); }
+.paybar-fill .under { position: absolute; top: 0; bottom: 0; left: 0; background: var(--bar-under); transition: background var(--fast) var(--ease); }
+.paybar-min {
+  position: absolute; z-index: 1; top: -4px; bottom: -4px; width: 1px; margin-left: -0.5px;
+  background: var(--text-3); box-shadow: 0 0 0 1px var(--bg);
+  transition: box-shadow var(--fast) var(--ease);
+}
+tr:hover .paybar, .paybar:focus-visible { height: 6px; border-radius: 3px; background: var(--line-3); }
+tr:hover .paybar-fill, .paybar:focus-visible .paybar-fill { background: var(--text); }
+tr:hover .paybar-fill .under, .paybar:focus-visible .paybar-fill .under { background: var(--text-3); }
+tr:hover .paybar-min { box-shadow: 0 0 0 1px var(--surface); }
+
+.paytip {
+  position: fixed; z-index: 30; width: 264px; padding: var(--space-3);
+  background: var(--surface-2); border: 1px solid var(--line-3); border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .45); pointer-events: none;
+  animation: pop var(--base) var(--ease);
+}
+.paytip-amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+.paytip-co { color: var(--text-3); font-size: var(--text-xs); }
+.paytip .paybar { --point: 8px; width: auto; height: 6px; margin: 14px 0 6px; border-radius: 3px; }
+.paytip .paybar-fill { background: var(--text); }
+.paytip .paybar-fill .under { background: var(--text-3); }
+.paytip .paybar-min { top: -5px; bottom: -5px; background: var(--text-2); box-shadow: 0 0 0 1px var(--surface-2); }
+.paytip-ends { display: flex; justify-content: space-between; color: var(--text-3); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+.paytip p { margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--line-2); color: var(--text-2); font-size: var(--text-sm); text-wrap: pretty; }
+
 /* Empty states: a title, one sentence, then actions. */
 .empty {
   position: relative; isolation: isolate; overflow: hidden;
@@ -438,7 +485,7 @@ td.old { color: var(--text-3); }
 
 /* The picture: the app window, solid on the dot grid, running off the
    right and bottom edges. Bars stand in for text. */
-.setup-look { position: relative; isolation: isolate; overflow: hidden; background: var(--bg-side); border-left: 1px solid var(--line); }
+.setup-look { position: relative; isolation: isolate; overflow: hidden; background: var(--bg-side); border-left: 1px solid var(--line); container-type: inline-size; }
 .setup-look::before {
   -webkit-mask-image: linear-gradient(to top, #000, rgb(0 0 0 / .6) 45%, rgb(0 0 0 / .25) 80%, rgb(0 0 0 / .15));
           mask-image: linear-gradient(to top, #000, rgb(0 0 0 / .6) 45%, rgb(0 0 0 / .25) 80%, rgb(0 0 0 / .15));
@@ -460,6 +507,23 @@ td.old { color: var(--text-3); }
 .look-sum { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--line); font-weight: 600; }
 .look-row { display: flex; align-items: center; gap: var(--space-3); height: 48px; padding: 0 var(--space-4); border-bottom: 1px solid var(--line); }
 .bar { display: block; flex: none; height: 7px; border-radius: 4px; background: var(--bar); }
+.look-text { width: 46px; flex: none; }  /* keeps the pay bars in a column */
+/* The pay bar, drawn still; only the line moves with the pay answer. */
+.look-pay { position: relative; width: 36px; height: 4px; flex: none; border-radius: 2px; background: var(--bar); }
+.look-pay.none { display: flex; align-items: center; background: none; }
+.look-pay.none .dot { width: 6px; height: 6px; background: var(--line-3); }
+.look-fill { position: absolute; top: 0; bottom: 0; border-radius: inherit; background: var(--text-3); }
+.look-line {
+  position: absolute; top: -4px; bottom: -4px; width: 1px; margin-left: -0.5px;
+  background: var(--text); box-shadow: 0 0 0 1px var(--bg);
+  transition: left var(--base) var(--ease);
+}
+/* Too narrow for the pay bars and both chips: drop the bars so the chips,
+   which follow the answers, stay in view (the picture as it was before). */
+@container (max-width: 410px) {
+  .look-pay, .look-pay.none { display: none; }
+  .look-text { width: auto; }
+}
 
 /* ── Messages that apply anywhere ────────────────────────────────── */
 .toast {
