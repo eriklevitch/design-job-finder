@@ -1,7 +1,8 @@
 
 # Design Job Finder
-![Design Job Finder showing this week's new jobs, with company, role, location, pay (with a bar showing how it compares to your minimum), how long ago each was posted, and why it matched](assets/app-mockup.png)
 For product, UX, UI and brand designers who are tired of checking job sites. Once a week it finds design jobs that match your level, location and pay, and adds them to a spreadsheet or Notion. You don't need to know how to code.
+
+![Design Job Finder showing this week's new jobs, with company, role, location, pay (with a bar showing how it compares to your minimum), how long ago each was posted, and why it matched](assets/app-mockup.png)
 
 ```
 ## Install
