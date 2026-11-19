@@ -223,7 +223,9 @@ const TRACKERS = [
 
 const splitCities = (text) => text.split(",").map((s) => s.trim()).filter(Boolean);
 const titleCase = (s) => s.replace(/\b\w/g, (c) => c.toUpperCase());
-const money = (n) => (n ? `${Math.round(n / 1000)}k` : "0");
+// 150000 shows as "150k"; an amount that isn't whole thousands shows in full
+// ("152,500"), so saving it again doesn't round it.
+const money = (n) => (!n ? "0" : n % 1000 ? n.toLocaleString("en-US") : `${n / 1000}k`);
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 // ── Companies (setup's list and the Companies page) ────────────────
@@ -250,8 +252,9 @@ function jobSites() {
 }
 const HELP = {
   missing: () => "“Not found” means Design Job Finder can’t read that company’s careers page. Try another spelling, like the one in their careers page address, or remove it."
+    + " Companies that aren’t found won’t be saved."
     + (jobSites() ? ` ${jobSites()} often list${jobSites().includes(" and ") ? "" : "s"} their jobs anyway.` : ""),
-  error: () => "“Couldn’t look up” means the lookup didn’t finish. Click Retry to try again.",
+  error: () => "“Couldn’t look up” means the lookup didn’t finish. Click Retry to try again. It won’t be saved until it’s found.",
 };
 // A company someone added that was already on the list, under any spelling.
 const already = { setup: "", companies: "" };
@@ -326,6 +329,7 @@ async function addCompanies(where, text) {
   renderCompanies(where);
   await Promise.all(entries.map((entry) => lookUp(where, entry, false)));
   if (where === "companies" && entries.some((e) => e.status === "found")) saveCompanies();
+  return entries;
 }
 
 // Look a company up (again, after "Couldn't look up"), then show the result.
@@ -388,7 +392,12 @@ function openCompanies() {
 document.querySelectorAll(".notion-connect").forEach((box) => {
   box.append($("notion-template").content.cloneNode(true));
   const msg = box.querySelector(".n-msg");
-  box.querySelector(".n-go").onclick = async (e) => {
+  const go = box.querySelector(".n-go");
+  // Enter in either box connects, like clicking the button.
+  box.querySelectorAll("input").forEach((input) => input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); if (!go.disabled) go.click(); }
+  }));
+  go.onclick = async (e) => {
     e.target.disabled = true;
     msg.hidden = false;
     msg.className = "n-msg";
@@ -399,9 +408,16 @@ document.querySelectorAll(".notion-connect").forEach((box) => {
         link: box.querySelector(".n-link").value,
       });
       msg.className = "n-msg " + (r.ok ? "ok" : "bad");
-      if (r.ok) msg.replaceChildren(icon("circleCheck", "sm"), "Connected. A “Job applications” database was added to that page.");
-      else msg.textContent = r.message;
-      if (r.ok) state.connected = r.connected;
+      if (r.ok) {
+        msg.replaceChildren(icon("circleCheck", "sm"), "Connected. A “Job applications” database was added to that page.");
+        // Done: leave only the message, so a second click can't add a second database.
+        for (const part of box.querySelectorAll(".notion-steps, .stack > :not(.n-msg)")) part.hidden = true;
+        state.connected = r.connected;
+        state.settings.tracker = "notion";  // the server switched to Notion already
+        renderSide();
+      } else {
+        msg.textContent = r.message;
+      }
     } catch (err) {
       msg.className = "n-msg bad";
       msg.textContent = err.message;
@@ -468,6 +484,16 @@ $("setup-next").onclick = async () => {
   if (step === 3 && $("setup-pay").value.trim() && !/^\$?[\d,.]+k?$/i.test($("setup-pay").value.trim())) {
     return setupError("Type a number like 150k, or 0 for no minimum.");
   }
+  // Companies typed but not added yet: add them, and stay if any weren't found.
+  const typed = document.querySelector('.company-add[data-for="setup"] input');
+  if (step === 4 && typed.value.trim()) {
+    const text = typed.value;
+    typed.value = "";
+    $("setup-next").disabled = true;
+    const added = await addCompanies("setup", text);
+    $("setup-next").disabled = false;
+    if (added.some((c) => c.status !== "found")) return;
+  }
   if (step === 4 && stillChecking("setup")) {
     return setupError("Still looking up companies. One moment…");
   }
@@ -496,7 +522,7 @@ $("setup-next").onclick = async () => {
 };
 document.querySelectorAll("#view-setup input:not([type=radio]):not([type=checkbox])").forEach((input) =>
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !input.closest(".company-add")) $("setup-next").click();
+    if (e.key === "Enter" && !input.closest(".company-add, .notion-connect")) $("setup-next").click();
   }));
 
 // ── Dates ──────────────────────────────────────────────────────────
@@ -907,6 +933,7 @@ function openSettings(section) {
   $("set-field-custom").hidden = Boolean(s.field);
   choiceList($("set-level"), "set-level", levelOptions(), s.level);
   $("set-role").value = s.role;
+  showRoleDefault();
   $("set-cities").value = s.cities.map(titleCase).join(", ");
   $("set-remote").checked = s.remote;
   $("set-pay").value = money(s.min_salary);
@@ -930,8 +957,19 @@ function openSettings(section) {
   if (!e.target.closest(".notion-connect")) markDirty();
 }));
 
+// "Your title in drafts" shows the title for the level and type picked as a
+// hint, and follows them until someone types their own.
+function showRoleDefault() {
+  const key = `${chosen("set-level") || state.settings.level}-${chosen("set-field") || state.settings.field || 1}`;
+  $("set-role").placeholder = (state.role_defaults || {})[key] || "";
+}
+$("set-level").addEventListener("change", showRoleDefault);
+$("set-field").addEventListener("change", showRoleDefault);
+
 // Checks that need no server, so nothing is half-saved.
 function settingsProblem() {
+  if (!splitCities($("set-cities").value).length && !$("set-remote").checked)
+    return "Add a city, or turn on “Include remote jobs”.";
   if (chosen("set-tracker") === "notion" && !state.connected.notion)
     return "Connect Notion first, or pick the spreadsheet. You can switch any time.";
   const key = $("anthropic-key").value.trim();

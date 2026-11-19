@@ -103,6 +103,19 @@ def test_hand_written_titles_are_left_alone(tmp_config):
     assert data["title_keywords"] == ["illustrator"]
 
 
+def test_no_cities_and_no_remote_is_refused():
+    # Saving nothing would mean "anywhere", the opposite of what was picked.
+    with pytest.raises(ValueError, match="remote"):
+        app_server.settings_from_page({"level": 1, "cities": [" "], "remote": False})
+
+
+def test_default_role_is_sent_empty(tmp_config):
+    config_store.save_settings({"your_role": "senior product designer"})
+    assert app_server.settings_for_page()["role"] == ""
+    config_store.save_settings({"your_role": "illustrator"})
+    assert app_server.settings_for_page()["role"] == "illustrator"
+
+
 def test_bad_pay_is_explained():
     with pytest.raises(ValueError, match="number"):
         app_server.settings_from_page({"level": 1, "min_salary": "lots"})
