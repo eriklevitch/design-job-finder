@@ -4,13 +4,6 @@
 For product, UX, UI and brand designers who are tired of checking job sites. Once a week it finds design jobs that match your level, location and pay, and adds them to a spreadsheet or Notion. You don't need to know how to code.
 
 ```
-Status            Company   Title                            Location     Salary              Link
-Ready for Review  Acme      Senior Product Designer, Growth  Remote - US  $185,000–$230,000   https://…
-New               Globex    Staff Product Designer           Chicago, IL  unlisted (check …)  https://…
-Applied           Initech   Design Manager, Platform         Remote - US  $200,000–$250,000   https://…
-```
-<sub>Each row also says why the job matched. If you turn on drafts, it holds tailored resume bullets and a cover letter opening too.</sub>
-
 ## Install
 
 You need a Mac. (On Windows or Linux, see [For developers](#for-developers).)
