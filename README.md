@@ -1,4 +1,4 @@
-![Design Job Finder showing this week's new jobs, with company, role, location, pay, how long ago each was posted, and why it matched](assets/app-screenshot.png)
+![Design Job Finder showing this week's new jobs, with company, role, location, pay (with a bar showing how it compares to your minimum), how long ago each was posted, and why it matched](assets/app-screenshot.png)
 
 # Design Job Finder
 
