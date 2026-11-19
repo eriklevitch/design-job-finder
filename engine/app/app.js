@@ -705,7 +705,7 @@ function payScale(jobs) {
   let lo = Math.floor(Math.min(...vals) / 25000) * 25000;
   let hi = Math.ceil(Math.max(...vals) / 25000) * 25000;
   if (hi - lo < 50000) { lo = Math.max(0, lo - 25000); hi += 25000; }  // room for a lone figure
-  return { lo, hi, min, line, tops: ranges.map((r) => r[1]).sort((a, b) => b - a) };
+  return { lo, hi, min, line };
 }
 
 const pct = (v, scale) => ((v - scale.lo) / (scale.hi - scale.lo)) * 100;
@@ -735,12 +735,7 @@ function payBar([lo, hi], scale) {
   return bar;
 }
 
-const ordinal = (n) => {
-  const s = ["th", "st", "nd", "rd"], v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
-};
-
-// One or two sentences: against the minimum, then against the week.
+// One sentence: how the pay compares with your minimum.
 function payContext([lo, hi], scale) {
   const out = [];
   const min = scale.min ? shortMoney(scale.min) : "";
@@ -752,16 +747,6 @@ function payContext([lo, hi], scale) {
     } else if (lo >= scale.min) out.push(`All of the range is above your ${min} minimum.`);
     else if (hi <= scale.min) out.push(`None of the range reaches your ${min} minimum.`);
     else out.push(`About ${Math.round((hi - scale.min) / (hi - lo) * 100)}% of the range is above your ${min} minimum.`);
-  }
-  // Ranked by the top of each range, like the Pay sort.
-  const n = scale.tops.length;
-  if (n > 1) {
-    const rank = scale.tops.indexOf(hi) + 1;
-    const tied = scale.tops.filter((t) => t === hi).length > 1;
-    const last = rank + (tied ? scale.tops.filter((t) => t === hi).length - 1 : 0) === n;
-    const place = rank === 1 ? "highest" : last ? "lowest" : `${ordinal(rank)} highest`;
-    const text = `${place} of the ${n} jobs with listed pay.`;
-    out.push(tied ? `Tied for ${text}` : text[0].toUpperCase() + text.slice(1));
   }
   return out.join(" ");
 }
@@ -777,7 +762,7 @@ function payCell(job, scale) {
   const bar = payBar(range, scale);
   bar.tabIndex = 0;
   bar.setAttribute("role", "img");
-  bar.setAttribute("aria-label", `${payText(job.salary)}. ${payContext(range, scale)}`);
+  bar.setAttribute("aria-label", [payText(job.salary), payContext(range, scale)].filter(Boolean).join(". "));
   bar.dataset.job = jobKey(job);
   bar.payOpen = (how) => payTip.show(bar, job, range, scale, how);
   bar.addEventListener("pointerenter", () => bar.payOpen("hover"));
