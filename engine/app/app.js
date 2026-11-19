@@ -251,8 +251,10 @@ function jobSites() {
 const HELP = {
   missing: () => "“Not found” means Design Job Finder can’t read that company’s careers page. Try another spelling, like the one in their careers page address, or remove it."
     + (jobSites() ? ` ${jobSites()} often list${jobSites().includes(" and ") ? "" : "s"} their jobs anyway.` : ""),
-  error: () => "“Couldn’t look up” means the lookup didn’t finish. Remove the company and add it again to retry.",
+  error: () => "“Couldn’t look up” means the lookup didn’t finish. Click Retry to try again.",
 };
+// A company someone added that was already on the list, under any spelling.
+const already = { setup: "", companies: "" };
 
 function removeCompany(where, c) {
   companies[where].splice(companies[where].indexOf(c), 1);
@@ -269,8 +271,18 @@ function renderCompanies(where) {
         : el("span", "dot " + ({ found: "ok", missing: "bad", error: "warn" }[c.status] || "ok"));
       const x = button("", () => removeCompany(where, c), icon("x", "xs"));
       x.setAttribute("aria-label", `Remove ${companyName(c)}`);
-      return el("li", "chip", dot, companyName(c), note && el("span", "faint", note), x);
+      let retry = null;
+      if (c.status === "error") {
+        retry = button("", () => lookUp(where, c), icon("rotateCw", "xs"));
+        retry.setAttribute("aria-label", `Look up ${companyName(c)} again`);
+        retry.title = "Retry";
+      }
+      return el("li", "chip", dot, companyName(c), note && el("span", "faint", note), retry, x);
     }));
+    const help = [already.setup, ...["missing", "error"].filter((s) => list.some((c) => c.status === s)).map((s) => HELP[s]())]
+      .filter(Boolean).join(" ");
+    $("setup-co-help").textContent = help;
+    $("setup-co-help").hidden = !help;
     return;
   }
 
@@ -291,39 +303,51 @@ function renderCompanies(where) {
     x.setAttribute("aria-label", `Remove ${companyName(c)}`);
     return el("tr", "",
       el("td", "", el("span", "cell", el("span", "avatar", companyName(c)[0]), companyName(c))),
-      el("td", "", (STATUS[c.status] || STATUS.found)()),
+      el("td", "", el("span", "cell", (STATUS[c.status] || STATUS.found)(),
+        c.status === "error" && button("btn btn-ghost", () => lookUp(where, c), "Retry"))),
       el("td", BOARDS[c.key] ? "soft" : "faint", BOARDS[c.key] || "—"),
       el("td", c.jobs ? "" : "faint", c.jobs != null ? String(c.jobs) : "—"),
       el("td", "shrink", x));
   }));
-  $("co-notices").replaceChildren(...["missing", "error"]
-    .filter((s) => list.some((c) => c.status === s))
-    .map((s) => notice("notice", "co:" + s + ":" + list.filter((c) => c.status === s).map((c) => c.key).join(","),
-      el("p", "", HELP[s]())))
-    .filter(Boolean));
+  $("co-notices").replaceChildren(...[
+    already.companies && notice("notice", "co:already:" + already.companies, el("p", "", already.companies)),
+    ...["missing", "error"]
+      .filter((s) => list.some((c) => c.status === s))
+      .map((s) => notice("notice", "co:" + s + ":" + list.filter((c) => c.status === s).map((c) => c.key || c.name).join(","),
+        el("p", "", HELP[s]()))),
+  ].filter(Boolean));
   renderSide();
 }
 
 async function addCompanies(where, text) {
   const entries = splitCities(text).map((name) => ({ name, status: "checking" }));
+  already[where] = "";
   companies[where].push(...entries);
   renderCompanies(where);
-  await Promise.all(entries.map(async (entry) => {
-    try {
-      const r = await api("/api/company", { name: entry.name });
-      Object.assign(entry, r.status === "found"
-        ? { status: "found", key: r.key, slug: r.slug, jobs: r.jobs }
-        : { status: r.status });
-    } catch (e) {
-      entry.status = "error";
-    }
-    // Already on the list under another spelling: keep the first one.
-    if (entry.key && companies[where].some((c) => c !== entry && c.key === entry.key && c.slug === entry.slug)) {
-      companies[where].splice(companies[where].indexOf(entry), 1);
-    }
-    renderCompanies(where);
-  }));
+  await Promise.all(entries.map((entry) => lookUp(where, entry, false)));
   if (where === "companies" && entries.some((e) => e.status === "found")) saveCompanies();
+}
+
+// Look a company up (again, after "Couldn't look up"), then show the result.
+async function lookUp(where, entry, save = true) {
+  entry.status = "checking";
+  renderCompanies(where);
+  try {
+    const r = await api("/api/company", { name: entry.name });
+    Object.assign(entry, r.status === "found"
+      ? { status: "found", key: r.key, slug: r.slug, jobs: r.jobs }
+      : { status: r.status });
+  } catch (e) {
+    entry.status = "error";
+  }
+  // Already on the list under another spelling: keep the first one and say so.
+  const first = entry.key && companies[where].find((c) => c !== entry && c.key === entry.key && c.slug === entry.slug);
+  if (first) {
+    companies[where].splice(companies[where].indexOf(entry), 1);
+    already[where] = `${companyName(first)} is already on your list.`;
+  }
+  renderCompanies(where);
+  if (save && where === "companies" && entry.status === "found" && !first) saveCompanies();
 }
 
 document.querySelectorAll(".company-add").forEach((box) => {
