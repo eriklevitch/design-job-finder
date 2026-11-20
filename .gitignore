@@ -13,9 +13,12 @@ history.tmp
 .app_state.json
 .window.json
 .run.lock
+.update_check.json
 
 # Installed software and caches
 venv/
+venv.new/
+venv.old/
 .uv/
 __pycache__/
 .pytest_cache/

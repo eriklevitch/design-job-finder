@@ -55,6 +55,7 @@ const ICONS = {
   chevronDown: '<path d="m6 9 6 6 6-6"/>',
   circleAlert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
   circleCheck: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  download: '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
   fileText: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
   loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
   rotateCw: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
@@ -140,12 +141,51 @@ function renderSide() {
   $("nav-companies").hidden = !saved;
   $("nav-companies").textContent = saved;
 
+  renderUpdate();
+
   $("schedule-row").hidden = !state.can_schedule;
   $("schedule").checked = state.schedule_on;
   $("schedule-note").textContent = state.schedule_on && state.next_check
     ? `Next: ${nextCheckShort(state.next_check)}` : "Off";
   $("schedule-row").title = "Your Mac looks for new jobs on its own and lets you know what it found. If it’s asleep then, it checks when it wakes.";
 }
+
+// Updating: a row in the sidebar when there's a newer version. While it
+// installs, the row says so; then the window reopens with the new version.
+let updatePoll = null;
+function renderUpdate() {
+  const u = state.updating;
+  const running = u && (u.state === "running" || u.state === "done");
+  const failed = u && u.state === "error";
+  const row = $("update-row");
+  row.hidden = !(state.update || running || failed);
+  row.disabled = running;
+  $("update-label").textContent = running ? "Updating…" : failed ? "Update didn’t finish" : "Update available";
+  $("update-note").textContent = running
+    ? "Design Job Finder reopens when it’s done, in about a minute."
+    : failed ? "Click to try again." : `Version ${state.update}. Takes about a minute.`;
+  $("update-icon").innerHTML = ICONS[running ? "loader" : "download"];
+  $("update-icon").classList.toggle("spin", !!running);
+  if (running && !updatePoll) updatePoll = setTimeout(pollUpdate, 2000);
+}
+async function pollUpdate() {
+  updatePoll = null;
+  try {
+    state.updating = (await api("/api/update/status")).updating;
+  } catch (_) {
+    // The installer stops this copy near the end; the new one takes over.
+    return;
+  }
+  if (state.updating && state.updating.state === "error") banner(state.updating.message);
+  renderUpdate();
+}
+$("update-row").onclick = async () => {
+  banner("");
+  try {
+    state.updating = (await api("/api/update", { window: !!window.pywebview })).updating;
+  } catch (e) { banner(e.message); }
+  renderUpdate();
+};
 
 // ── Menus (the week picker and sorting) ────────────────────────────
 

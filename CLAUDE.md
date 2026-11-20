@@ -23,3 +23,10 @@ explanations plain and avoid jargon.
 - **Company lists:** `venv/bin/python engine/check_boards.py` checks every
   company in `config.yaml` and says which ones are on the wrong list or
   have the wrong name.
+- **Releasing:** installed copies offer an update when the number in
+  `VERSION` on GitHub's `main` is higher than theirs (`engine/updates.py`).
+  Raise it when a change is ready for everyone; leave it for small fixes.
+- **Library versions:** the installer uses the exact versions in
+  `constraints.txt` with its own Python 3.12. After changing
+  `requirements.txt`, refresh it with the command at the top of that file
+  and run the tests.

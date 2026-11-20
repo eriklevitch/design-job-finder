@@ -42,6 +42,13 @@ exec "$PY" {server}
 """
 
 
+def version() -> str:
+    try:
+        return (ROOT / "VERSION").read_text().strip() or "1.0"
+    except OSError:
+        return "1.0"
+
+
 def info_plist() -> dict:
     return {
         "CFBundleName": APP_NAME,
@@ -50,7 +57,7 @@ def info_plist() -> dict:
         "CFBundleExecutable": APP_NAME,
         "CFBundleIconFile": "JobFinder",
         "CFBundlePackageType": "APPL",
-        "CFBundleShortVersionString": "1.0",
+        "CFBundleShortVersionString": version(),
         "CFBundleVersion": "1",
         "LSMinimumSystemVersion": "11.0",
         "NSHighResolutionCapable": True,

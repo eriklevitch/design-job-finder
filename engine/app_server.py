@@ -33,6 +33,7 @@ except ImportError:  # Windows: searches aren't locked, so there's nothing to fo
 import config_store as store
 import history
 import schedule
+import updates
 from settings import CONFIG_PATH, CRASH_MESSAGE, ROOT, load_env, scrub
 
 STATIC = Path(__file__).resolve().parent / "app"
@@ -220,6 +221,7 @@ class App:
         self.port = port
         self.token = token
         self.runner = Runner()
+        self.updater = updates.Updater()
         self.last_seen = time.time()
 
     def state(self) -> dict:
@@ -238,6 +240,8 @@ class App:
             "can_schedule": sys.platform == "darwin",
             "run": self.runner.status(),
             "notes": store.read_notes(),
+            "update": updates.newer_version(),
+            "updating": self.updater.status(),
         }
 
     def handle(self, path: str, body: dict) -> tuple[int, dict]:
@@ -277,12 +281,21 @@ class App:
                 return 400, {"error": "Monday checks only work on a Mac."}
             schedule.turn_on() if body.get("on") else schedule.turn_off()
             return 200, {"schedule_on": schedule.is_on(), "next_check": next_check()}
+        if path == "/api/update":
+            if not updates.can_update():
+                raise ValueError("This copy of Design Job Finder can’t update itself.")
+            if self.runner.busy() or search_running(LOCK_PATH):
+                raise ValueError("Wait for the search to finish, then update.")
+            return 200, {"updating": self.updater.start(in_window=bool(body.get("window")))}
+        if path == "/api/update/status":
+            return 200, {"updating": self.updater.status()}
         if path == "/api/ping":
             return 200, {"ok": True}
         return 404, {"error": "Not found"}
 
     def idle(self) -> bool:
-        return time.time() - self.last_seen > IDLE_SECONDS and not self.runner.busy()
+        return (time.time() - self.last_seen > IDLE_SECONDS and not self.runner.busy()
+                and not self.updater.busy())
 
 
 def make_handler(app: App):
@@ -368,6 +381,7 @@ def serve() -> None:
         server.shutdown()
 
     threading.Thread(target=watch_idle, daemon=True).start()
+    updates.check_in_background()
     try:
         server.serve_forever()
     finally:
@@ -377,19 +391,26 @@ def serve() -> None:
 
 # ── Opening the app (what the Dock icon runs) ───────────────────────
 
+def alive(url: str) -> bool:
+    """True if the server at this address (http://127.0.0.1:PORT/#t=TOKEN) answers.
+    Asking also counts as activity, so it doesn't quit while a window is open."""
+    base, _, token = url.partition("/#t=")
+    req = urllib.request.Request(f"{base}/api/ping", data=b"{}", method="POST",
+                                 headers={"X-Token": token})
+    try:
+        urllib.request.urlopen(req, timeout=2).read()
+    except Exception:
+        return False
+    return True
+
+
 def running_url() -> str | None:
     """The page's address if the app is already running."""
     state = read_json(STATE_PATH)
     if not state:
         return None
-    url = f"http://127.0.0.1:{state['port']}"
-    req = urllib.request.Request(f"{url}/api/ping", data=b"{}", method="POST",
-                                 headers={"X-Token": state["token"]})
-    try:
-        urllib.request.urlopen(req, timeout=2).read()
-    except Exception:
-        return None
-    return f"{url}/#t={state['token']}"
+    url = f"http://127.0.0.1:{state['port']}/#t={state['token']}"
+    return url if alive(url) else None
 
 
 def open_app(use_browser: bool = False) -> int:
@@ -443,8 +464,22 @@ def open_window(url: str) -> bool:
 
     window.events.resized += resized
     window.events.moved += moved
+    threading.Thread(target=stay_connected, args=(url,), daemon=True).start()
     webview.start(private_mode=False)  # keeps saved sort order etc. between launches
     return True
+
+
+def stay_connected(url: str) -> None:
+    """Keeps the window's server running, and if it stops (an update
+    restarts it), starts this app over so the window shows the new version."""
+    misses = 0
+    while True:
+        time.sleep(3)
+        misses = 0 if alive(url) else misses + 1
+        if misses >= 2:
+            # Replace this process with a fresh start: new code, new server,
+            # the window back where it was.
+            os.execv(sys.executable, [sys.executable, str(Path(__file__).resolve())])
 
 
 DEFAULT_WINDOW = {"width": 1280, "height": 820}

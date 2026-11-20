@@ -271,7 +271,7 @@ textarea.input { height: auto; padding: var(--space-2) 10px; line-height: 1.55; 
 }
 .side-row > .icon { margin-top: 1px; color: var(--text-2); }
 .side-row > .icon.faint { color: var(--text-3); }
-.side-row:hover { background: var(--surface); }
+.side-row:hover:not(:disabled) { background: var(--surface); }
 .side-row small { display: block; margin-top: 1px; color: var(--text-3); font-size: var(--text-xs); line-height: 1.4; }
 .side-row .switch { margin-top: 2px; }
 

@@ -24,7 +24,7 @@ That's the last time you need Terminal. Design Job Finder is now in your Dock.
 
 It searches Indeed and the careers pages of the companies you pick (any company on Greenhouse, Lever or Ashby, which covers most tech companies). It keeps jobs whose title, level, location, pay and posting date match, skips ones already in your tracker, and adds the rest.
 
-It won't apply for you or contact anyone. It doesn't collect data: your settings, notes and tracker stay on your Mac. It doesn't search LinkedIn, which blocks automated searches, and for now it only finds jobs in the US.
+It won't apply for you or contact anyone. It doesn't collect data: your settings, notes and tracker stay on your Mac. (Once a day it checks GitHub for a newer version; nothing about you is sent.) It doesn't search LinkedIn, which blocks automated searches, and for now it only finds jobs in the US.
 
 ## Each week
 
@@ -140,7 +140,7 @@ The **Why it matched** column shows which settings it matched. To block a word i
 
 One of the job sources may have failed. Open the `logs` folder in your job-search folder and open `app_run.log` (or `scheduled.log` for the Monday check) in TextEdit.
 
-- **`[jobspy] error`** means the Indeed search failed. This happens when Indeed changes its site or limits how often it can be searched. The other sources still run. To fix it, update by pasting the install line into Terminal again. Your settings, notes and tracker are kept.
+- **`[jobspy] error`** means the Indeed search failed. This happens when Indeed changes its site or limits how often it can be searched. The other sources still run. To fix it, update (click **Update available** in the sidebar if it's there, or paste the install line into Terminal again). Your settings, notes and tracker are kept.
 - **`404 Not Found` next to a company** means that company's name is wrong or it moved to a different careers system. Remove it on the **Companies** page and add it again, or see "Adding a company Design Job Finder couldn't find" above.
 </details>
 
@@ -153,9 +153,9 @@ Design Job Finder can't read that company's careers page. It may use a system De
 <details>
 <summary><b>How do I update to the newest version?</b></summary>
 
-Paste the install line into Terminal again. Your settings, notes, keys and tracker are kept.
+When there's a new version, **Update available** shows at the bottom of the sidebar. Click it; Design Job Finder reopens with the new version in about a minute. Your settings, notes, keys and tracker are kept.
 
-If Design Job Finder still opens in your browser after updating, quit it (⌘ Q, or close the browser tab) and click it in your Dock again.
+You can also update by pasting the install line into Terminal again.
 </details>
 
 <details>
