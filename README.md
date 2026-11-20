@@ -126,7 +126,7 @@ Paste the secret and the link, then click **Connect Notion**. Drafts appear insi
 <details>
 <summary><b>It found 0 matches</b></summary>
 
-Your settings may be too narrow. When most jobs were skipped because of location, level or pay, Design Job Finder says so and has a button that takes you to that setting. Otherwise, try "Any level", more cities, remote included, a lower minimum pay, or more companies.
+Your settings may be too narrow. When most jobs were skipped because of location, level or pay, Design Job Finder says so and has a button that takes you to that setting. Otherwise, try "Mid-level and up", more cities, remote included, a lower minimum pay, or more companies.
 </details>
 
 <details>

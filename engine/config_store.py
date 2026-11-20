@@ -19,10 +19,10 @@ NOTES_EXAMPLE = ROOT / "portfolio_notes.example.md"
 IC_LEVELS = ["senior", "sr.", "sr ", "staff", "principal", "lead", "founding"]
 LEAD_LEVELS = ["manager", "director", "head of", "vp"]
 LEVEL_CHOICES = [
-    ("Senior and above (Senior, Staff, Principal, Lead)", IC_LEVELS),
+    ("Senior (Senior, Staff, Principal, Lead)", IC_LEVELS),
     ("Leadership (Manager, Director, Head of Design, VP)", LEAD_LEVELS),
-    ("Senior and leadership (Both of the above)", IC_LEVELS + LEAD_LEVELS),
-    ("Any level (Leaves out junior and intern roles)", []),
+    ("Both (Senior and leadership)", IC_LEVELS + LEAD_LEVELS),
+    ("Mid-level and up (Leaves out junior and intern roles)", []),
 ]
 LEAD_TITLES = ["design manager", "manager, design", "head of design", "director of design",
                "director, design", "design director", "design lead", "vp of design",
@@ -34,9 +34,9 @@ BRAND_TITLES = ["brand design", "visual designer", "graphic designer", "marketin
                 "creative director"]
 # (label, job titles, Indeed/Adzuna searches, word drafts use for you)
 FIELD_CHOICES = [
-    ("Product design (Product, UX, UI, interaction)", PRODUCT_TITLES + LEAD_TITLES,
+    ("Product design (UX, UI and interaction design)", PRODUCT_TITLES + LEAD_TITLES,
      ["product designer"], "product designer"),
-    ("Brand design (Brand, visual, graphic, art and creative direction)",
+    ("Brand design (Visual, graphic, art direction, creative direction)",
      BRAND_TITLES + LEAD_TITLES, ["brand designer"], "brand designer"),
     ("Both (Product and brand)", PRODUCT_TITLES + BRAND_TITLES + LEAD_TITLES,
      ["product designer", "brand designer"], "designer"),

@@ -135,6 +135,16 @@ a:hover { text-decoration-color: var(--text-2); }
   font-size: var(--text-xs); font-weight: 500; line-height: 1; color: var(--text-2);
   font-variant-numeric: tabular-nums;
 }
+/* A small label beside a heading, like "Optional". */
+.badge {
+  display: inline-flex; align-items: center; height: 20px; padding: 0 var(--space-2);
+  border: 1px solid var(--line-2); border-radius: var(--radius-sm);
+  font-size: var(--text-xs); font-weight: 500; letter-spacing: 0; line-height: 1; color: var(--text-2);
+  vertical-align: middle; position: relative; top: -2px;
+}
+.badge[hidden] { display: none; }
+.badge.pill { border-radius: 999px; }
+.setup-body h1 .badge { margin-left: var(--space-2); white-space: nowrap; }
 .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--text-3); }
 .dot.ok { background: var(--ok); }
 .dot.warn { background: var(--warn); }

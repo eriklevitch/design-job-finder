@@ -286,15 +286,16 @@ const STATUS = {
 };
 // The job sites every check searches besides company careers pages,
 // e.g. "Indeed and Adzuna", or "" when there are none.
-function jobSites() {
-  const names = [...(state.settings.job_sites || []), ...(state.connected.adzuna ? ["Adzuna"] : [])];
-  return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names.join("");
-}
+const jobSiteNames = () => [...(state.settings.job_sites || []), ...(state.connected.adzuna ? ["Adzuna"] : [])];
+const jobSites = () => listAnd(jobSiteNames());
+// ["a", "b", "c"] reads "a, b and c".
+const listAnd = (items) => items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items.at(-1)}` : items.join("");
 const HELP = {
-  missing: () => "“Not found” means Design Job Finder can’t read that company’s careers page. Try another spelling, like the one in their careers page address, or remove it."
-    + " Companies that aren’t found won’t be saved."
-    + (jobSites() ? ` ${jobSites()} often list${jobSites().includes(" and ") ? "" : "s"} their jobs anyway.` : ""),
-  error: () => "“Couldn’t look up” means the lookup didn’t finish. Click Retry to try again. It won’t be saved until it’s found.",
+  missing: () => "“Not found” means that company’s careers page couldn’t be found. Try the name as it’s spelled in their careers page link, or remove the company."
+    + (jobSites() ? ` Companies that aren’t found won’t be saved, but their jobs often show up on ${jobSites()} anyway.`
+      : " Companies that aren’t found won’t be saved."),
+  // Setup's retry button is an arrow icon; the Companies page's says "Retry".
+  error: (where) => `“Couldn’t look up” means the lookup didn’t finish. Click ${where === "setup" ? "the arrow" : "Retry"} to try again. The company is saved once it’s found.`,
 };
 // A company someone added that was already on the list, under any spelling.
 const already = { setup: "", companies: "" };
@@ -322,7 +323,7 @@ function renderCompanies(where) {
       }
       return el("li", "chip", dot, companyName(c), note && el("span", "faint", note), retry, x);
     }));
-    const help = [already.setup, ...["missing", "error"].filter((s) => list.some((c) => c.status === s)).map((s) => HELP[s]())]
+    const help = [already.setup, ...["missing", "error"].filter((s) => list.some((c) => c.status === s)).map((s) => HELP[s](where))]
       .filter(Boolean).join(" ");
     $("setup-co-help").textContent = help;
     $("setup-co-help").hidden = !help;
@@ -340,7 +341,7 @@ function renderCompanies(where) {
   $("co-sub").textContent = sites ? `Each check includes these careers pages, along with ${sites}.`
     : "Each check includes these careers pages.";
   $("co-empty-text").textContent = "Add companies you’d love to work at, and each check will include their careers pages."
-    + (sites ? ` Without any, Design Job Finder still searches ${sites}.` : "");
+    + (sites ? ` Without any, each check still searches ${sites}.` : "");
   $("companies").replaceChildren(...list.map((c) => {
     const x = button("btn btn-icon", () => removeCompany(where, c), icon("x", "sm"));
     x.setAttribute("aria-label", `Remove ${companyName(c)}`);
@@ -357,7 +358,7 @@ function renderCompanies(where) {
     ...["missing", "error"]
       .filter((s) => list.some((c) => c.status === s))
       .map((s) => notice("notice", "co:" + s + ":" + list.filter((c) => c.status === s).map((c) => c.key || c.name).join(","),
-        el("p", "", HELP[s]()))),
+        el("p", "", HELP[s](where)))),
   ].filter(Boolean));
   renderSide();
 }
@@ -488,9 +489,11 @@ function startSetup() {
   $("setup-cities").value = s.cities.map(titleCase).join(", ");
   $("setup-remote").checked = s.remote;
   $("setup-pay").value = s.min_salary ? money(s.min_salary) : "";
+  // Companies are optional only when job sites are searched too.
+  $("setup-companies-optional").hidden = !jobSites();
   $("setup-companies-lede").textContent = jobSites()
-    ? `Optional. Each check includes these companies’ careers pages. Design Job Finder also searches ${jobSites()}, so you’ll still find jobs if you skip this.`
-    : "Each check includes these companies’ careers pages.";
+    ? `Their careers pages are checked directly. ${jobSites()} ${jobSiteNames().length > 1 ? "are" : "is"} searched too, so you’ll still get jobs if you skip this.`
+    : "Jobs come from these companies’ careers pages, so add at least one.";
   companies.setup = fromSettings();
   renderCompanies("setup");
   drawLook();
@@ -1039,8 +1042,8 @@ function renderJobs() {
   } else if (!week) {
     title = "Let’s find your first jobs";
     sub = state.last_run && state.last_run.finished_at
-      ? `Design Job Finder now keeps each week’s jobs on this page. Your earlier ones are in ${where}.`
-      : `Design Job Finder checks ${jobSites() ? jobSites() + " and " : ""}the careers pages of your companies, then adds the jobs that match to ${where}.`;
+      ? `Each week’s jobs now stay on this page. Your earlier ones are in ${where}.`
+      : `Each check searches ${listAnd([...jobSiteNames(), "your companies’ careers pages"])}, then adds matching jobs to ${where}.`;
     if (!running) actions.push(button("btn btn-primary", findJobs, icon("rotateCw"), "Find my first jobs"));
   } else if (!week.checked) {
     title = week.this_week ? "Not checked yet this week" : `Not checked the week of ${longDate(week.start)}`;
@@ -1057,7 +1060,8 @@ function renderJobs() {
       title = week.this_week ? "Nothing new this week" : `Nothing new the week of ${longDate(week.start)}`;
       sub = last.matches && last.already >= last.matches
         ? `${when} You’re up to date: the ${plural(last.matches, "job")} that matched ${last.matches === 1 ? "is" : "are"} already in ${where}.`
-        : `${when} Design Job Finder looked at ${plural(last.scanned || 0, "listing")} and none matched your search.`;
+        : last.scanned === 1 ? `${when} The 1 listing checked didn’t match your search.`
+        : `${when} None of the ${(last.scanned || 0).toLocaleString("en-US")} listings checked matched your search.`;
       const tip = isLatest ? suggestion(last) : null;
       if (tip) {
         sub += " " + tip[0];
