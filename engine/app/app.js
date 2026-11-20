@@ -784,7 +784,7 @@ function payContext([lo, hi], scale) {
       const gap = Math.abs(lo - scale.min);
       out.push(gap < 500 ? `Right at your ${min} minimum.`
         : `${shortMoney(gap)} ${lo > scale.min ? "above" : "below"} your ${min} minimum.`);
-    } else if (lo >= scale.min) out.push(`All of the range is above your ${min} minimum.`);
+    } else if (lo >= scale.min) out.push(`The range is above your ${min} minimum.`);
     else if (hi <= scale.min) out.push(`None of the range reaches your ${min} minimum.`);
     else out.push(`About ${Math.round((hi - scale.min) / (hi - lo) * 100)}% of the range is above your ${min} minimum.`);
   }
