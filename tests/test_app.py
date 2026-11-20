@@ -710,3 +710,71 @@ def test_page_names_the_job_sites_a_check_searches(tmp_config):
     assert app_server.settings_for_page()["job_sites"] == ["Indeed", "Zip Recruiter"]
     (tmp_config / "config.yaml").write_text("tracker: spreadsheet\n")
     assert app_server.settings_for_page()["job_sites"] == []
+
+
+class _ListTracker:
+    def __init__(self):
+        self.rows = []
+
+    def describe(self):
+        return "a test list"
+
+    def add_job(self, job, draft_text=None):
+        self.rows.append((job["company"], draft_text))
+
+
+def _jobs(n):
+    return [{"company": f"Co{i}", "title": "Product Designer", "url": f"https://x/{i}"}
+            for i in range(n)]
+
+
+@pytest.mark.parametrize("error, words", [
+    ("Error code: 401 - invalid x-api-key", "didn't accept your key"),
+    ("Your credit balance is too low", "out of credit"),
+])
+def test_drafts_stop_after_first_key_error(monkeypatch, error, words):
+    calls = []
+
+    def failing_draft(job, notes, config):
+        calls.append(job["company"])
+        raise RuntimeError(error)
+
+    monkeypatch.setattr(main_module, "drafting_key", lambda config: "sk-ant-test")
+    monkeypatch.setattr(main_module, "load_portfolio_notes", lambda config: "")
+    monkeypatch.setattr(main_module, "generate_draft", failing_draft)
+    tracker = _ListTracker()
+    finish = main_module.add_jobs(main_module.Report(None, False), tracker, _jobs(5), {})
+    assert calls == ["Co0"]                      # asked Anthropic once, not five times
+    assert [d for _, d in tracker.rows] == [None] * 5  # every job still added
+    assert finish.fields["draft_problem"].startswith("No drafts were written")
+    assert words in finish.fields["draft_problem"]
+
+
+def test_credit_running_out_partway_says_how_many_drafts(monkeypatch):
+    def draft(job, notes, config):
+        if job["company"] == "Co2":
+            raise RuntimeError("Your credit balance is too low")
+        return "draft"
+
+    monkeypatch.setattr(main_module, "drafting_key", lambda config: "sk-ant-test")
+    monkeypatch.setattr(main_module, "load_portfolio_notes", lambda config: "")
+    monkeypatch.setattr(main_module, "generate_draft", draft)
+    tracker = _ListTracker()
+    finish = main_module.add_jobs(main_module.Report(None, False), tracker, _jobs(5), {})
+    assert [d for _, d in tracker.rows] == ["draft", "draft", None, None, None]
+    assert finish.fields["draft_problem"].startswith("Drafts stopped after 2 jobs")
+
+
+def test_other_draft_errors_dont_stop_drafting(monkeypatch):
+    calls = []
+
+    def flaky(job, notes, config):
+        calls.append(job["company"])
+        raise RuntimeError("Connection reset")
+
+    monkeypatch.setattr(main_module, "drafting_key", lambda config: "sk-ant-test")
+    monkeypatch.setattr(main_module, "load_portfolio_notes", lambda config: "")
+    monkeypatch.setattr(main_module, "generate_draft", flaky)
+    finish = main_module.add_jobs(main_module.Report(None, False), _ListTracker(), _jobs(3), {})
+    assert len(calls) == 3
+    assert finish.fields["draft_problem"] == "3 of 3 drafts couldn't be written. The jobs were still added."

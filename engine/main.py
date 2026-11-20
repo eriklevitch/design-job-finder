@@ -330,7 +330,8 @@ def skip_tracked(report: Report, tracker, matches: list[dict]) -> list[dict]:
 def add_jobs(report: Report, tracker, new_jobs: list[dict], config: dict) -> Finish:
     """Step 4: write a draft for each job (if there's an Anthropic key)
     and add it to the tracker."""
-    drafting = drafting_key(config) is not None
+    has_key = drafting_key(config) is not None
+    drafting = has_key  # turned off if the key turns out not to work
     notes = load_portfolio_notes(config) if drafting else ""
     print(f"\n=== Adding to {tracker.describe()} ===")
     added = []
@@ -347,6 +348,11 @@ def add_jobs(report: Report, tracker, new_jobs: list[dict], config: dict) -> Fin
                 # The job is still added, just without a draft.
                 note = f"  (draft failed: {e})"
                 draft_errors.append(str(e))
+                if key_problem(str(e)):
+                    # A bad key or no credit will fail for every job, so
+                    # stop asking and just add the rest.
+                    drafting = False
+                    note += "\n  Skipping drafts for the rest of this search."
         try:
             tracker_call(tracker, tracker.add_job, job, draft_text)
         except TrackerProblem as p:
@@ -367,12 +373,13 @@ def add_jobs(report: Report, tracker, new_jobs: list[dict], config: dict) -> Fin
         print(f"  + {job['company']}: {job['title']}{note}")
 
     print(f"\nDone. Added {len(added)} new job(s) to {tracker.describe()}.")
-    if not drafting:
+    if not has_key:
         print("Tip: add an Anthropic key (Design Job Finder → Settings) to get tailored resume")
         print("bullets and a cover letter opening with every job.")
     return Finish(f"Added {len(added)} new job{'s' if len(added) != 1 else ''} to "
                   f"{friendly_name(tracker)}.", added=[job_card(j) for j in added],
-                  draft_problem=draft_problem(draft_errors, len(added)))
+                  draft_problem=draft_problem(draft_errors, len(added),
+                                              sum(1 for j in added if j["has_draft"])))
 
 
 def jobs_text(n: int) -> str:
@@ -384,15 +391,29 @@ def friendly_name(tracker) -> str:
     return "Notion" if type(tracker).__name__ == "NotionTracker" else "your spreadsheet"
 
 
-def draft_problem(errors: list[str], total: int) -> str:
+def key_problem(error: str) -> str:
+    """"key" if Anthropic didn't accept the key, "credit" if the account
+    is out of credit, or "" for any other error. Both of these will fail
+    the same way for every job."""
+    if "401" in error or "authentication" in error or "x-api-key" in error:
+        return "key"
+    if "credit" in error.lower() or "billing" in error.lower():
+        return "credit"
+    return ""
+
+
+def draft_problem(errors: list[str], total: int, written: int = 0) -> str:
     """One plain sentence about drafts that couldn't be written."""
     if not errors:
         return ""
-    if any("401" in e or "authentication" in e or "x-api-key" in e for e in errors):
-        return ("No drafts were written because Anthropic didn't accept your key. "
+    problems = {key_problem(e) for e in errors}
+    start = (f"Drafts stopped after {jobs_text(written)}" if written
+             else "No drafts were written")
+    if "key" in problems:
+        return (f"{start} because Anthropic didn't accept your key. "
                 "Check it in Settings → Extras.")
-    if any("credit" in e.lower() or "billing" in e.lower() for e in errors):
-        return ("No drafts were written because your Anthropic account is out of credit. "
+    if "credit" in problems:
+        return (f"{start} because your Anthropic account is out of credit. "
                 "Add credit at console.anthropic.com. The jobs were still added.")
     return f"{len(errors)} of {total} drafts couldn't be written. The jobs were still added."
 

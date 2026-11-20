@@ -63,13 +63,18 @@ if [ ! -x "$UV" ]; then
     env UV_INSTALL_DIR="$UV_DIR" UV_NO_MODIFY_PATH=1 INSTALLER_NO_MODIFY_PATH=1 sh >/dev/null
 fi
 # Keep the existing setup if it works and already uses that private Python.
-# Older installs used the Mac's Python; those get rebuilt once.
+# Older installs used the Mac's Python, or were built without
+# --relocatable (so venv/bin/pip still pointed at venv.new after the
+# rename below); those get rebuilt once.
 VENV="$DEST/venv"
 if ! { grep -qF "home = $UV_DIR/python/" "$DEST/venv/pyvenv.cfg" 2>/dev/null &&
+       grep -qx "relocatable = true" "$DEST/venv/pyvenv.cfg" 2>/dev/null &&
        "$DEST/venv/bin/python" -c '' 2>/dev/null; }; then
   VENV="$DEST/venv.new"
   rm -rf "$VENV"
-  "$UV" venv --quiet --seed --python "$PYTHON_VERSION" --managed-python "$VENV"
+  # --relocatable: it's built as venv.new and renamed to venv, so its
+  # scripts (pip and others) must find Python by their own location.
+  "$UV" venv --quiet --seed --relocatable --python "$PYTHON_VERSION" --managed-python "$VENV"
 fi
 
 # 3. Libraries ------------------------------------------------------
