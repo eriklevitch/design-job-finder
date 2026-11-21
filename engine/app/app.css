@@ -530,7 +530,7 @@ tr:hover .paybar-min { box-shadow: 0 0 0 1px var(--surface); }
 }
 /* Too narrow for the pay bars and both chips: drop the bars so the chips,
    which follow the answers, stay in view (the picture as it was before). */
-@container (max-width: 410px) {
+@container (max-width: 360px) {  /* the default 1280 window gives 384px */
   .look-pay, .look-pay.none { display: none; }
   .look-text { width: auto; }
 }
