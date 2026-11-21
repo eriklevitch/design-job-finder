@@ -409,7 +409,7 @@ async function saveCompanies() {
   const s = state.settings;
   try {
     Object.assign(state, await api("/api/settings", {
-      field: s.field, level: s.level, role: s.role, cities: s.cities, remote: s.remote,
+      field: s.field, level: s.level, cities: s.cities, remote: s.remote,
       min_salary: String(s.min_salary || 0), tracker: s.tracker,
       companies: companiesForSave("companies"),
     }));
@@ -1223,8 +1223,6 @@ function openSettings(section) {
   choiceList($("set-field"), "set-field", fieldOptions(), s.field);
   $("set-field-custom").hidden = Boolean(s.field);
   choiceList($("set-level"), "set-level", levelOptions(), s.level);
-  $("set-role").value = s.role;
-  showRoleDefault();
   $("set-cities").value = s.cities.map(titleCase).join(", ");
   $("set-remote").checked = s.remote;
   $("set-pay").value = money(s.min_salary);
@@ -1248,15 +1246,6 @@ function openSettings(section) {
   if (!e.target.closest(".notion-connect")) markDirty();
 }));
 
-// "Your title in drafts" shows the title for the level and type picked as a
-// hint, and follows them until someone types their own.
-function showRoleDefault() {
-  const key = `${chosen("set-level") || state.settings.level}-${chosen("set-field") || state.settings.field || 1}`;
-  $("set-role").placeholder = (state.role_defaults || {})[key] || "";
-}
-$("set-level").addEventListener("change", showRoleDefault);
-$("set-field").addEventListener("change", showRoleDefault);
-
 // Checks that need no server, so nothing is half-saved.
 function settingsProblem() {
   if (!splitCities($("set-cities").value).length && !$("set-remote").checked)
@@ -1279,7 +1268,6 @@ $("save-all").onclick = async () => {
     const saved = await api("/api/settings", {
       field: chosen("set-field"),
       level: chosen("set-level"),
-      role: $("set-role").value,
       cities: splitCities($("set-cities").value),
       remote: $("set-remote").checked,
       min_salary: $("set-pay").value.trim() || "0",
@@ -1287,7 +1275,6 @@ $("save-all").onclick = async () => {
       tracker: chosen("set-tracker"),
     });
     Object.assign(state, saved);
-    $("set-role").value = state.settings.role;
     if ($("notes").value !== state.notes) {
       await api("/api/notes", { text: $("notes").value });
       state.notes = $("notes").value;

@@ -57,13 +57,9 @@ CONTENT_TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset
 def settings_for_page() -> dict:
     cfg = store.current_settings()
     locations = cfg.get("locations") or []
-    role = cfg.get("your_role") or ""
     return {
         "field": store.field_choice(cfg),
         "level": store.level_choice(cfg),
-        # A title that just follows the level is left out, so the page can
-        # show it as a hint and keep it in step with the level picked.
-        "role": "" if role in store.ROLE_DEFAULTS else role,
         "cities": [l for l in locations if l != "remote"],
         "remote": "remote" in locations or not locations,
         "min_salary": cfg.get("min_salary") or 0,
@@ -85,9 +81,7 @@ def settings_from_page(form: dict) -> dict:
     field = int(form.get("field") or 0) or None
     if field is not None and field not in range(1, len(store.FIELD_CHOICES) + 1):
         raise ValueError("Pick a type of design.")
-    role = (form.get("role") or "").strip()
-    if not role or role in store.ROLE_DEFAULTS:
-        role = store.role_default(level, field)  # follow the choices unless they typed their own
+    role = store.drafts_role(store.current_settings().get("your_role"), level, field)
     cities = [c.strip() for c in form.get("cities") or [] if c.strip()]
     pay = store.parse_money(form.get("min_salary") or 0)
     if pay is None:
@@ -230,10 +224,6 @@ class App:
             "settings": settings_for_page(),
             "levels": [label for label, _ in store.LEVEL_CHOICES],
             "fields": [label for label, *_ in store.FIELD_CHOICES],
-            # The drafts title for each level and type of design, as "level-field".
-            "role_defaults": {f"{level}-{field}": store.role_default(level, field)
-                              for level in range(1, len(store.LEVEL_CHOICES) + 1)
-                              for field in range(1, len(store.FIELD_CHOICES) + 1)},
             "connected": store.connected(),
             **home_data(),
             "schedule_on": schedule.is_on(),

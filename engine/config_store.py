@@ -49,6 +49,12 @@ def role_default(level: int, field: int | None) -> str:
     return f"senior {FIELD_CHOICES[(field or 1) - 1][3]}"
 
 
+def drafts_role(current: str | None, level: int, field: int | None) -> str:
+    """Keeps a title someone wrote into config.yaml; otherwise follows the level."""
+    current = (current or "").strip()
+    return current if current and current not in ROLE_DEFAULTS else role_default(level, field)
+
+
 # Plain nouns too: the default of a level choice that's gone ("Any level").
 ROLE_DEFAULTS = {role_default(level, field) for level in range(1, len(LEVEL_CHOICES) + 1)
                  for field in range(1, len(FIELD_CHOICES) + 1)} | {c[3] for c in FIELD_CHOICES}

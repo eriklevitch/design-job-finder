@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 from config_store import (FIELD_CHOICES, LEVEL_CHOICES, connect_notion, current_settings,
-                          field_choice, level_choice, role_default, lookup_company, parse_money, save_keys,
+                          field_choice, level_choice, drafts_role, lookup_company, parse_money, save_keys,
                           save_settings, set_key, split_list)  # noqa: F401 (set_key re-exported)
 from settings import CONFIG_PATH, ROOT, env, load_env
 
@@ -72,9 +72,7 @@ def ask_level(cfg: dict) -> tuple[dict, list[str], str]:
                   "search_terms": FIELD_CHOICES[field - 1][2]}
     say()
     n = ask_choice("Which level?", [c[0] for c in LEVEL_CHOICES], level_choice(cfg))
-    default = (CONFIG_PATH.exists() and cfg.get("your_role")) or role_default(n, field)
-    role = ask("In a few words, how should drafts describe you?", default)
-    return titles, LEVEL_CHOICES[n - 1][1], role
+    return titles, LEVEL_CHOICES[n - 1][1], drafts_role(cfg.get("your_role"), n, field)
 
 
 def ask_location(cfg: dict) -> tuple[list[str], str]:

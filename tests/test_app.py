@@ -67,18 +67,16 @@ def test_page_settings_round_trip(tmp_config):
     assert page["companies"] == [{"key": "lever_companies", "slug": "acme"}]
 
 
-def test_typed_role_is_kept_but_default_role_follows_level():
+def test_drafts_title_follows_level_unless_written_in_config(tmp_config):
     base = {"cities": [], "remote": True, "min_salary": 0}
-    assert app_server.settings_from_page({**base, "level": 2, "role": "senior product designer"}
-                                         )["your_role"] == "design leader"
-    assert app_server.settings_from_page({**base, "level": 1, "role": "product designer"}
-                                         )["your_role"] == "senior product designer"
-    assert app_server.settings_from_page({**base, "level": 1, "role": "illustrator"}
-                                         )["your_role"] == "illustrator"
-    assert app_server.settings_from_page({**base, "field": 2, "level": 1, "role": "product designer"}
+    config_store.save_settings({"your_role": "senior product designer"})
+    assert app_server.settings_from_page({**base, "level": 2})["your_role"] == "design leader"
+    assert app_server.settings_from_page({**base, "field": 2, "level": 1}
                                          )["your_role"] == "senior brand designer"
-    assert app_server.settings_from_page({**base, "field": 3, "level": 2}
-                                         )["your_role"] == "design leader"
+    config_store.save_settings({"your_role": "product designer"})  # an old default
+    assert app_server.settings_from_page({**base, "level": 1})["your_role"] == "senior product designer"
+    config_store.save_settings({"your_role": "illustrator"})  # written by hand: kept
+    assert app_server.settings_from_page({**base, "level": 2})["your_role"] == "illustrator"
 
 
 @pytest.mark.parametrize("field", [1, 2, 3])
@@ -109,13 +107,6 @@ def test_no_cities_and_no_remote_is_refused():
     # Saving nothing would mean "anywhere", the opposite of what was picked.
     with pytest.raises(ValueError, match="remote"):
         app_server.settings_from_page({"level": 1, "cities": [" "], "remote": False})
-
-
-def test_default_role_is_sent_empty(tmp_config):
-    config_store.save_settings({"your_role": "senior product designer"})
-    assert app_server.settings_for_page()["role"] == ""
-    config_store.save_settings({"your_role": "illustrator"})
-    assert app_server.settings_for_page()["role"] == "illustrator"
 
 
 def test_bad_pay_is_explained():
