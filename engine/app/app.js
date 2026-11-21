@@ -266,7 +266,7 @@ const titleCase = (s) => s.replace(/\b\w/g, (c) => c.toUpperCase());
 // 150000 shows as "150k"; an amount that isn't whole thousands shows in full
 // ("152,500"), so saving it again doesn't round it.
 const money = (n) => (!n ? "0" : n % 1000 ? n.toLocaleString("en-US") : `${n / 1000}k`);
-const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const plural = (n, word, many = `${word}s`) => `${n} ${n === 1 ? word : many}`;
 
 // ── Companies (setup's list and the Companies page) ────────────────
 
@@ -334,7 +334,7 @@ function renderCompanies(where) {
   $("co-count").hidden = !list.length;
   const found = list.filter((c) => c.status === "found").length;
   $("co-title").textContent = !list.length ? "No companies yet"
-    : found === list.length ? plural(list.length, "company") : `${found} of ${list.length} companies found`;
+    : found === list.length ? plural(list.length, "company", "companies") : `${found} of ${list.length} companies found`;
   $("co-wrap").hidden = !list.length;
   $("co-empty").hidden = !!list.length;
   const sites = jobSites();
