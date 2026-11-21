@@ -22,7 +22,7 @@ LEVEL_CHOICES = [
     ("Senior (Senior, Staff, Principal, Lead)", IC_LEVELS),
     ("Leadership (Manager, Director, Head of Design, VP)", LEAD_LEVELS),
     ("Both (Senior and leadership)", IC_LEVELS + LEAD_LEVELS),
-    ("Mid-level and up (Leaves out junior and intern roles)", []),
+    ("Any level (Everything but junior and intern roles)", []),
 ]
 LEAD_TITLES = ["design manager", "manager, design", "head of design", "director of design",
                "director, design", "design director", "design lead", "vp of design",
