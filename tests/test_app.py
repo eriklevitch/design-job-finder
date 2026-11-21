@@ -69,9 +69,11 @@ def test_page_settings_round_trip(tmp_config):
 
 def test_typed_role_is_kept_but_default_role_follows_level():
     base = {"cities": [], "remote": True, "min_salary": 0}
-    assert app_server.settings_from_page({**base, "level": 4, "role": "senior product designer"}
-                                         )["your_role"] == "product designer"
-    assert app_server.settings_from_page({**base, "level": 4, "role": "illustrator"}
+    assert app_server.settings_from_page({**base, "level": 2, "role": "senior product designer"}
+                                         )["your_role"] == "design leader"
+    assert app_server.settings_from_page({**base, "level": 1, "role": "product designer"}
+                                         )["your_role"] == "senior product designer"
+    assert app_server.settings_from_page({**base, "level": 1, "role": "illustrator"}
                                          )["your_role"] == "illustrator"
     assert app_server.settings_from_page({**base, "field": 2, "level": 1, "role": "product designer"}
                                          )["your_role"] == "senior brand designer"
@@ -176,7 +178,7 @@ def test_server_needs_the_token(server):
     status, body = call(server, "/api/state")
     assert status == 200
     state = json.loads(body)
-    assert state["set_up"] is False and len(state["levels"]) == 4
+    assert state["set_up"] is False and len(state["levels"]) == 3
 
 
 def test_server_blocks_other_hosts(server):
@@ -778,3 +780,10 @@ def test_other_draft_errors_dont_stop_drafting(monkeypatch):
     finish = main_module.add_jobs(main_module.Report(None, False), _ListTracker(), _jobs(3), {})
     assert len(calls) == 3
     assert finish.fields["draft_problem"] == "3 of 3 drafts couldn't be written. The jobs were still added."
+
+
+def test_old_any_level_setting_shows_as_both():
+    # "Any level" ([]) was removed; people who picked it land on Both.
+    assert config_store.level_choice({"seniority_keywords": []}) == 3
+    with pytest.raises(ValueError):
+        app_server.settings_from_page({"level": 4, "cities": [], "remote": True})

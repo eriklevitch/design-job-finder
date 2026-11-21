@@ -22,7 +22,6 @@ LEVEL_CHOICES = [
     ("Senior (Senior, Staff, Principal, Lead)", IC_LEVELS),
     ("Leadership (Manager, Director, Head of Design, VP)", LEAD_LEVELS),
     ("Both (Senior and leadership)", IC_LEVELS + LEAD_LEVELS),
-    ("Any level (Everything but junior and intern roles)", []),
 ]
 LEAD_TITLES = ["design manager", "manager, design", "head of design", "director of design",
                "director, design", "design director", "design lead", "vp of design",
@@ -47,12 +46,12 @@ def role_default(level: int, field: int | None) -> str:
     """How drafts describe you unless you type your own title."""
     if level == 2:
         return "design leader"
-    noun = FIELD_CHOICES[(field or 1) - 1][3]
-    return noun if level == 4 else f"senior {noun}"
+    return f"senior {FIELD_CHOICES[(field or 1) - 1][3]}"
 
 
-ROLE_DEFAULTS = {role_default(level, field) for level in range(1, 5)
-                 for field in range(1, len(FIELD_CHOICES) + 1)}
+# Plain nouns too: the default of a level choice that's gone ("Any level").
+ROLE_DEFAULTS = {role_default(level, field) for level in range(1, len(LEVEL_CHOICES) + 1)
+                 for field in range(1, len(FIELD_CHOICES) + 1)} | {c[3] for c in FIELD_CHOICES}
 COMPANY_KEYS = {"greenhouse": "greenhouse_companies", "lever": "lever_companies",
                 "ashby": "ashby_companies"}
 
@@ -102,7 +101,7 @@ def current_settings() -> dict:
 
 
 def level_choice(cfg: dict) -> int:
-    """Which LEVEL_CHOICES entry (1-4) matches the current settings."""
+    """Which LEVEL_CHOICES entry (1-3) matches the current settings."""
     current = cfg.get("seniority_keywords")
     for i, (_, levels) in enumerate(LEVEL_CHOICES, 1):
         if current is not None and sorted(current) == sorted(levels):

@@ -510,7 +510,6 @@ const LOOK_LEVELS = [                      // one list per level choice
   ["Senior", "Staff", "Senior", "Principal", "Lead", "Senior", "Staff"],
   ["Manager", "Director", "Head of", "Manager", "VP", "Director", "Manager"],
   ["Senior", "Manager", "Staff", "Director", "Lead", "Head of", "Senior"],
-  ["", "Senior", "", "Staff", "", "Senior", ""],
 ];
 // Each row's pay in $k, [low, high], on a $100k–$250k scale; null rows
 // don't list pay (LOOK_NO_PAY).
