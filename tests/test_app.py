@@ -870,3 +870,28 @@ def test_page_script_loads_after_everything_it_uses():
     page = (ENGINE / "app" / "index.html").read_text()
     after = page.split('<script src="/static/app.js"></script>')[1]
     assert after.strip() == "</body>\n</html>".strip()
+
+
+def test_save_file_keeps_old_file_if_writing_fails(tmp_path, monkeypatch):
+    from settings import save_file
+    target = tmp_path / "config.yaml"
+    target.write_text("min_salary: 150000\n", encoding="utf-8")
+
+    def broken(*a, **k):
+        raise OSError("disk full")
+    monkeypatch.setattr("os.replace", broken)
+    with pytest.raises(OSError):
+        save_file(target, "half")
+    assert target.read_text(encoding="utf-8") == "min_salary: 150000\n"
+    assert list(tmp_path.iterdir()) == [target]  # no leftover temporary copy
+
+
+def test_save_file_writes_utf8_and_private_files(tmp_path, monkeypatch):
+    monkeypatch.setenv("NOTION_TOKEN", "")  # restored after the test
+    from settings import save_env, save_file
+    notes = tmp_path / "notes.md"
+    save_file(notes, "Café — “quotes” ✨")
+    assert notes.read_bytes().decode("utf-8") == "Café — “quotes” ✨"
+    env_file = tmp_path / ".env"
+    save_env({"NOTION_TOKEN": "x"}, path=env_file)
+    assert env_file.stat().st_mode & 0o777 == 0o600

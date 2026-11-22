@@ -10,7 +10,7 @@ import shutil
 
 import yaml
 
-from settings import CONFIG_PATH, DATA, ROOT, SANDBOX, env, save_env
+from settings import CONFIG_PATH, DATA, ROOT, SANDBOX, env, save_env, save_file
 
 EXAMPLE_CONFIG = ROOT / "config.example.yaml"
 NOTES = DATA / "portfolio_notes.md"
@@ -102,8 +102,8 @@ def set_key(text: str, key: str, value) -> str:
 
 def current_settings() -> dict:
     if CONFIG_PATH.exists():
-        return yaml.safe_load(CONFIG_PATH.read_text()) or {}
-    return yaml.safe_load(EXAMPLE_CONFIG.read_text()) or {}
+        return yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8")) or {}
+    return yaml.safe_load(EXAMPLE_CONFIG.read_text(encoding="utf-8")) or {}
 
 
 def level_choice(cfg: dict) -> int:
@@ -128,13 +128,13 @@ def field_choice(cfg: dict) -> int | None:
 def save_settings(updates: dict) -> None:
     """Writes the given settings into config.yaml (creating it from the
     example the first time) and makes a starter portfolio_notes.md."""
-    text = CONFIG_PATH.read_text() if CONFIG_PATH.exists() else EXAMPLE_CONFIG.read_text()
+    text = CONFIG_PATH.read_text(encoding="utf-8") if CONFIG_PATH.exists() else EXAMPLE_CONFIG.read_text(encoding="utf-8")
     for key, value in updates.items():
         if key not in EDITABLE:
             raise ValueError(f"{key} can't be changed here")
         text = set_key(text, key, value)
     yaml.safe_load(text)  # never write a file that can't be read back
-    CONFIG_PATH.write_text(text)
+    save_file(CONFIG_PATH, text)
     if not NOTES.exists():
         shutil.copy(NOTES_EXAMPLE, NOTES)
 
@@ -142,12 +142,12 @@ def save_settings(updates: dict) -> None:
 def read_notes() -> str:
     """Your notes, without the how-to comment at the top of the starter
     file (the app shows that advice next to the box instead)."""
-    text = NOTES.read_text() if NOTES.exists() else NOTES_EXAMPLE.read_text()
+    text = NOTES.read_text(encoding="utf-8") if NOTES.exists() else NOTES_EXAMPLE.read_text(encoding="utf-8")
     return re.sub(r"\A\s*<!--.*?-->\s*", "", text, flags=re.S)
 
 
 def save_notes(text: str) -> None:
-    NOTES.write_text(text)
+    save_file(NOTES, text)
 
 
 def slug_for(name: str) -> str:

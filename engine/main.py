@@ -27,7 +27,7 @@ import history
 import sources
 import requests
 
-from settings import CRASH_MESSAGE, DATA, SANDBOX, load_config, load_env, resolve_path, scrub
+from settings import CRASH_MESSAGE, DATA, SANDBOX, load_config, load_env, resolve_path, save_file, scrub
 from sources import fetch_adzuna, fetch_greenhouse, fetch_lever, fetch_ashby, fetch_jobspy, filter_jobs
 from tracker_csv import CsvTracker
 from draft import drafting_key, load_portfolio_notes, generate_draft
@@ -55,9 +55,7 @@ class Report:
     def update(self, **fields) -> None:
         self.data.update(fields)
         if self.path:
-            tmp = self.path.with_suffix(".tmp")
-            tmp.write_text(json.dumps(self.data, ensure_ascii=False))
-            tmp.replace(self.path)
+            save_file(self.path, json.dumps(self.data, ensure_ascii=False))
 
     def finish(self, message: str, **fields) -> None:
         self.update(state="done", message=message,

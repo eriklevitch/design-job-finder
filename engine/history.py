@@ -7,7 +7,7 @@ import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from settings import DATA
+from settings import DATA, save_file
 
 PATH = DATA / "history.json"
 WEEKS_KEPT = 8
@@ -25,7 +25,7 @@ def _when(run: dict) -> datetime | None:
 def load(path: Path | None = None) -> list[dict]:
     """Every saved search, oldest first. A missing or damaged file is empty."""
     try:
-        data = json.loads((path or PATH).read_text())
+        data = json.loads((path or PATH).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return []
     if not isinstance(data, list):
@@ -44,9 +44,7 @@ def add(summary: dict, path: Path | None = None, now: datetime | None = None) ->
     cutoff = now - timedelta(weeks=WEEKS_KEPT)
     runs = [r for r in load(path) if _when(r) >= cutoff] + [record]
     try:
-        tmp = path.with_suffix(".tmp")
-        tmp.write_text(json.dumps(runs, ensure_ascii=False, indent=1))
-        tmp.replace(path)
+        save_file(path, json.dumps(runs, ensure_ascii=False, indent=1))
     except OSError:
         pass  # the jobs are already in the tracker; only the app's list misses them
 

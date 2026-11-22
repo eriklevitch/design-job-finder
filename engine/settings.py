@@ -31,13 +31,34 @@ if SANDBOX:
         os.environ.pop(_name, None)
 
 
+def save_file(path: Path, text: str, private: bool = False) -> None:
+    """Saves text as UTF-8 without ever leaving a half-written file: it
+    writes a temporary copy next to it, then swaps that in. If anything
+    goes wrong, the old file is still there, untouched. private=True
+    makes it readable by you only, from the first byte."""
+    path = Path(path)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    mode = 0o600 if private else 0o644
+    try:
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.chmod(tmp, mode)  # in case an old leftover copy had other permissions
+        os.replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
 def load_env(path: Path = ENV_PATH) -> None:
     """Reads KEY=value lines from .env into the environment. Values that
     are already set (for example in your shell profile) win, so older
     setups that export keys in ~/.zshrc keep working."""
     if not path.exists():
         return
-    for line in path.read_text().splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -50,7 +71,7 @@ def load_env(path: Path = ENV_PATH) -> None:
 
 def save_env(updates: dict, path: Path = ENV_PATH) -> None:
     """Adds or replaces KEY=value lines in .env, keeping everything else."""
-    lines = path.read_text().splitlines() if path.exists() else []
+    lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
     remaining = dict(updates)
     out = []
     for line in lines:
@@ -60,11 +81,7 @@ def save_env(updates: dict, path: Path = ENV_PATH) -> None:
         else:
             out.append(line)
     out += [f"{k}={v}" for k, v in remaining.items()]
-    path.write_text("\n".join(out) + "\n")
-    try:
-        path.chmod(0o600)  # keys: readable by you only
-    except OSError:
-        pass
+    save_file(path, "\n".join(out) + "\n", private=True)  # keys: readable by you only
     for k, v in updates.items():
         os.environ[k] = v
 
@@ -83,7 +100,7 @@ def load_config() -> dict:
         print("No settings found yet.")
         print("Open the Design Job Finder app to create them.")
         sys.exit(1)
-    with open(CONFIG_PATH) as f:
+    with open(CONFIG_PATH, encoding="utf-8") as f:
         config = yaml.safe_load(f) or {}
     return config
 
