@@ -567,3 +567,18 @@ tr:hover .paybar-min { box-shadow: 0 0 0 1px var(--surface); }
   *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
   .icon.spin, .spinner { animation-duration: 2.4s !important; }
 }
+
+/* ── Test copy menu (engine/sandbox.py only) ────────────────────── */
+.testbar {
+  position: fixed; top: var(--space-2); left: 50%; z-index: 50; transform: translateX(-50%);
+  display: flex; align-items: center; gap: var(--space-2); height: 28px; padding: 0 4px 0 10px;
+  border: 1px dashed var(--warn); border-radius: 999px; background: var(--bg-side);
+  color: var(--text-2); font-size: var(--text-xs); white-space: nowrap;
+}
+.testbar[hidden] { display: none; }
+.testbar .icon { color: var(--warn); }
+.testbar select {
+  height: 22px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 999px;
+  background: var(--surface); color: var(--text); font: inherit; cursor: pointer;
+}
+.testbar select:hover:not(:disabled) { background: var(--surface-2); }

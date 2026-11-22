@@ -4,6 +4,9 @@ Uses macOS's own scheduler (launchd): a small file in
 ~/Library/LaunchAgents tells the Mac to run scheduled_run.py every
 Monday at 9:00. If the Mac is asleep or off then, it runs the next time
 it wakes. Turning the checkbox off removes the file.
+
+In the test copy of the app (engine/sandbox.py) the switch only flips a
+note in the test folder, so it never replaces your real Monday check.
 """
 import os
 import plistlib
@@ -12,7 +15,7 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from settings import ROOT
+from settings import DATA, ROOT, SANDBOX
 
 LABEL = "com.productdesignjobfinder.weekly"
 WEEKDAY, HOUR, MINUTE = 1, 9, 0  # Monday, 9:00
@@ -49,11 +52,19 @@ def _launchctl(*args: str) -> None:
     subprocess.run(["launchctl", *args], check=False, capture_output=True)
 
 
+PRETEND_PATH = DATA / ".schedule_on"  # the test copy's switch
+
+
 def is_on() -> bool:
+    if SANDBOX:
+        return PRETEND_PATH.exists()
     return plist_path().exists()
 
 
 def turn_on() -> None:
+    if SANDBOX:
+        PRETEND_PATH.touch()
+        return
     path = plist_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     (ROOT / "logs").mkdir(exist_ok=True)
@@ -65,5 +76,8 @@ def turn_on() -> None:
 
 
 def turn_off() -> None:
+    if SANDBOX:
+        PRETEND_PATH.unlink(missing_ok=True)
+        return
     _launchctl("bootout", f"gui/{os.getuid()}/{LABEL}")
     plist_path().unlink(missing_ok=True)

@@ -4,7 +4,7 @@ import subprocess
 import sys
 import webbrowser
 
-from settings import env, load_config, load_env, resolve_path
+from settings import SANDBOX, env, load_config, load_env, resolve_path
 
 
 def open_file(path) -> None:
@@ -21,7 +21,7 @@ def open_tracker() -> tuple[bool, str]:
     """Opens the tracker. Returns (opened, message)."""
     load_env()
     config = load_config()
-    if (config.get("tracker") or "spreadsheet").lower() == "notion":
+    if (config.get("tracker") or "spreadsheet").lower() == "notion" and not SANDBOX:
         db = env((config.get("notion") or {}).get("database_id_env", "NOTION_DATABASE_ID"))
         if db:
             webbrowser.open(f"https://www.notion.so/{db.replace('-', '')}")

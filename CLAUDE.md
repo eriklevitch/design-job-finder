@@ -14,6 +14,11 @@ explanations plain and avoid jargon.
   `JOBSEARCH_SOURCE_DIR=.` set to install from this folder.
 - **Run:** `venv/bin/python engine/main.py --dry-run` previews and changes
   nothing; without `--dry-run` it adds new jobs to the tracker.
+- **Test copy:** `venv/bin/python engine/sandbox.py [fresh|set-up|with-jobs|problems]`
+  opens the same app with made-up files in `sandbox/` (via
+  `JOBSEARCH_DATA_DIR`), so the whole flow can be tried without touching
+  real files, keys or the Monday check. A menu at the top of its window
+  starts over from any starting point. Use it to check UI changes.
 - **Personal files** (`config.yaml`, `portfolio_notes.md`, `.env`,
   `applications.csv`, `drafts/`, `logs/`, `last_run.json`, `history.json`) are gitignored. Never commit them or paste
   their contents anywhere outside this computer.

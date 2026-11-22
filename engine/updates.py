@@ -15,12 +15,12 @@ import time
 import urllib.request
 from pathlib import Path
 
-from settings import ROOT, scrub
+from settings import DATA, ROOT, scrub
 
 REPO = os.environ.get("JOBSEARCH_REPO") or "eriklevitch/design-job-finder"
 VERSION_PATH = ROOT / "VERSION"
-CHECK_PATH = ROOT / ".update_check.json"  # the newest version GitHub had, and when we asked
-LOG_PATH = ROOT / "logs" / "update.log"
+CHECK_PATH = DATA / ".update_check.json"  # the newest version GitHub had, and when we asked
+LOG_PATH = DATA / "logs" / "update.log"
 CHECK_EVERY = 24 * 60 * 60
 
 

@@ -1299,6 +1299,35 @@ $("save-all").onclick = async () => {
 
 $("discard").onclick = () => openSettings();
 
+// ── Test copy (engine/sandbox.py) ──────────────────────────────────
+
+function renderTestbar() {
+  const t = state.sandbox;
+  if (!t) return;
+  const now = t.scenarios.find((s) => s.name === t.scenario);
+  $("test-current").textContent = now ? `Test copy: ${now.label}` : "Test copy";
+  const pick = $("test-scenario");
+  pick.replaceChildren(new Option("Start over from…", "", true, true),
+    ...t.scenarios.map((s) => new Option(s.label, s.name)));
+  pick.options[0].disabled = true;
+  $("testbar").hidden = false;
+}
+
+$("test-scenario").onchange = async (e) => {
+  const scenario = e.target.value;
+  e.target.disabled = true;
+  try {
+    await api("/api/sandbox", { scenario });
+    // Forget what this window remembered (sort order, closed notices) so it starts over too.
+    try { localStorage.clear(); } catch (_) {}
+    location.reload();
+  } catch (err) {
+    banner(err.message);
+    e.target.disabled = false;
+    e.target.selectedIndex = 0;
+  }
+};
+
 // ── Start ──────────────────────────────────────────────────────────
 
 (async () => {
@@ -1308,6 +1337,7 @@ $("discard").onclick = () => openSettings();
     banner(token ? e.message : "Click Design Job Finder in your Dock to open it.");
     return;
   }
+  renderTestbar();
   if (!state.set_up) return startSetup();
   renderJobs();
   show("jobs");

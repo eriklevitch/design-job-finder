@@ -27,3 +27,6 @@ __pycache__/
 # System and editor files
 .DS_Store
 .claude/settings.local.json
+
+# The test copy of the app (engine/sandbox.py)
+sandbox/

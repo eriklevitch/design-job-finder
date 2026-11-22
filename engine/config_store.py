@@ -10,10 +10,10 @@ import shutil
 
 import yaml
 
-from settings import CONFIG_PATH, ROOT, env, save_env
+from settings import CONFIG_PATH, DATA, ROOT, SANDBOX, env, save_env
 
 EXAMPLE_CONFIG = ROOT / "config.example.yaml"
-NOTES = ROOT / "portfolio_notes.md"
+NOTES = DATA / "portfolio_notes.md"
 NOTES_EXAMPLE = ROOT / "portfolio_notes.example.md"
 
 IC_LEVELS = ["senior", "sr.", "sr ", "staff", "principal", "lead", "founding"]
@@ -202,6 +202,10 @@ def connect_notion(token: str, link: str) -> tuple[bool, str]:
     token, page_id = token.strip(), page_id_from_link(link or "")
     if not token or not page_id:
         return False, "Paste both the secret (step 1) and the page link (step 3)."
+    if SANDBOX:
+        # The test copy never contacts Notion. Any secret and page link work.
+        save_env({"NOTION_TOKEN": "sandbox", "NOTION_DATABASE_ID": "sandbox"})
+        return True, "https://www.notion.so"
     try:
         db = create_database(token, page_id)
     except Exception as e:

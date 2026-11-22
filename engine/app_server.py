@@ -34,18 +34,18 @@ import config_store as store
 import history
 import schedule
 import updates
-from settings import CONFIG_PATH, CRASH_MESSAGE, ROOT, load_env, scrub
+from settings import CONFIG_PATH, CRASH_MESSAGE, DATA, ROOT, SANDBOX, load_env, scrub
 
 STATIC = Path(__file__).resolve().parent / "app"
-STATE_PATH = ROOT / ".app_state.json"
-WINDOW_PATH = ROOT / ".window.json"  # where the window was and how big, for next time
-LOGS = ROOT / "logs"
+STATE_PATH = DATA / ".app_state.json"
+WINDOW_PATH = DATA / ".window.json"  # where the window was and how big, for next time
+LOGS = DATA / "logs"
 RUN_SUMMARY = LOGS / "app_run.json"
 RUN_LOG = LOGS / "app_run.log"
-LAST_RUN = ROOT / "last_run.json"  # older versions; only read when there's no history yet
-LOCK_PATH = ROOT / ".run.lock"                  # held by whichever search is running
+LAST_RUN = DATA / "last_run.json"  # older versions; only read when there's no history yet
+LOCK_PATH = DATA / ".run.lock"                  # held by whichever search is running
 SCHEDULED_SUMMARY = LOGS / "scheduled_summary.json"  # the Monday check's progress
-FIRST_PORT = 8765
+FIRST_PORT = 8785 if SANDBOX else 8765  # its own port, so the two never share saved page settings
 IDLE_SECONDS = 15 * 60
 CONTENT_TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
                  ".js": "text/javascript; charset=utf-8", ".svg": "image/svg+xml",
@@ -108,6 +108,12 @@ def settings_from_page(form: dict) -> dict:
         "tracker": tracker,
         **lists,
     }
+
+
+def test_copy():
+    """engine/sandbox.py, only ever loaded in the test copy."""
+    import sandbox
+    return sandbox
 
 
 def next_check() -> str | None:
@@ -232,6 +238,7 @@ class App:
             "notes": store.read_notes(),
             "update": updates.newer_version(),
             "updating": self.updater.status(),
+            "sandbox": test_copy().for_page() if SANDBOX else None,
         }
 
     def handle(self, path: str, body: dict) -> tuple[int, dict]:
@@ -279,6 +286,11 @@ class App:
             return 200, {"updating": self.updater.start(in_window=bool(body.get("window")))}
         if path == "/api/update/status":
             return 200, {"updating": self.updater.status()}
+        if path == "/api/sandbox" and SANDBOX:
+            if self.runner.busy() or search_running(LOCK_PATH):
+                raise ValueError("Wait for the search to finish, then switch.")
+            test_copy().load(str(body.get("scenario", "")))
+            return 200, self.state()
         if path == "/api/ping":
             return 200, {"ok": True}
         return 404, {"error": "Not found"}
@@ -371,7 +383,8 @@ def serve() -> None:
         server.shutdown()
 
     threading.Thread(target=watch_idle, daemon=True).start()
-    updates.check_in_background()
+    if not SANDBOX:
+        updates.check_in_background()
     try:
         server.serve_forever()
     finally:
@@ -439,7 +452,8 @@ def open_window(url: str) -> bool:
     # Links to other sites (like console.anthropic.com) open in your browser.
     webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
     place = window_place(WINDOW_PATH, [(s.x, s.y, s.width, s.height) for s in webview.screens])
-    window = webview.create_window("Design Job Finder", url, **place, min_size=MIN_WINDOW,
+    title = "Design Job Finder (test copy)" if SANDBOX else "Design Job Finder"
+    window = webview.create_window(title, url, **place, min_size=MIN_WINDOW,
                                    background_color="#111214")
 
     # Saved every time it changes (a tiny file), so it's kept however the

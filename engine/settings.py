@@ -2,6 +2,11 @@
 
 Everything is resolved from the project folder, so the scripts work no
 matter which folder you run them from (or when double-clicked).
+
+Your personal files (settings, keys, tracker, history…) live in DATA,
+which is the project folder too, unless JOBSEARCH_DATA_DIR points
+somewhere else. The test copy of the app (engine/sandbox.py) uses that
+to keep its made-up files apart from your real ones.
 """
 import os
 import re
@@ -11,8 +16,19 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-CONFIG_PATH = ROOT / "config.yaml"
-ENV_PATH = ROOT / ".env"
+SANDBOX = bool(os.environ.get("JOBSEARCH_DATA_DIR", "").strip())
+DATA = Path(os.environ["JOBSEARCH_DATA_DIR"]).expanduser().resolve() if SANDBOX else ROOT
+CONFIG_PATH = DATA / "config.yaml"
+ENV_PATH = DATA / ".env"
+
+# Keys the app reads. In the test copy, ones exported in your shell
+# profile are ignored, so only the test copy's own .env counts.
+KEY_NAMES = ("ANTHROPIC_API_KEY", "ANTHROPIC_WORKSPACE_ID", "ADZUNA_APP_ID", "ADZUNA_APP_KEY",
+             "NOTION_TOKEN", "NOTION_DATABASE_ID")
+if SANDBOX:
+    DATA.mkdir(parents=True, exist_ok=True)
+    for _name in KEY_NAMES:
+        os.environ.pop(_name, None)
 
 
 def load_env(path: Path = ENV_PATH) -> None:
@@ -73,9 +89,9 @@ def load_config() -> dict:
 
 
 def resolve_path(p: str) -> Path:
-    """Relative paths in config.yaml are relative to the project folder."""
+    """Relative paths in config.yaml are relative to the folder holding it."""
     path = Path(p).expanduser()
-    return path if path.is_absolute() else ROOT / path
+    return path if path.is_absolute() else DATA / path
 
 
 # ── Problems shown on the page ──────────────────────────────────────

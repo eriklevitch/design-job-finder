@@ -27,12 +27,12 @@ import history
 import sources
 import requests
 
-from settings import CRASH_MESSAGE, ROOT, load_config, load_env, resolve_path, scrub
+from settings import CRASH_MESSAGE, DATA, SANDBOX, load_config, load_env, resolve_path, scrub
 from sources import fetch_adzuna, fetch_greenhouse, fetch_lever, fetch_ashby, fetch_jobspy, filter_jobs
 from tracker_csv import CsvTracker
 from draft import drafting_key, load_portfolio_notes, generate_draft
 
-LOCK_PATH = ROOT / ".run.lock"
+LOCK_PATH = DATA / ".run.lock"
 
 DROP_LABELS = [
     ("no_title_match", "title isn't a match"),
@@ -79,7 +79,9 @@ def job_card(job: dict) -> dict:
 
 def get_tracker(config: dict):
     """The spreadsheet by default; Notion if chosen and set up."""
-    if (config.get("tracker") or "spreadsheet").lower() == "notion":
+    if (config.get("tracker") or "spreadsheet").lower() == "notion" and SANDBOX:
+        print("Note: the test copy never writes to Notion. Saving to its spreadsheet instead.\n")
+    elif (config.get("tracker") or "spreadsheet").lower() == "notion":
         from notion_client import NotionTracker, NotionNotConfigured
         try:
             return NotionTracker(config)

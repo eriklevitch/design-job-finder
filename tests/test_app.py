@@ -778,3 +778,95 @@ def test_old_any_level_setting_shows_as_both():
     assert config_store.level_choice({"seniority_keywords": []}) == 3
     with pytest.raises(ValueError):
         app_server.settings_from_page({"level": 4, "cities": [], "remote": True})
+
+
+# ── The test copy (engine/sandbox.py) ───────────────────────────────
+# It only loads when JOBSEARCH_DATA_DIR is set, so these run in their own
+# Python, pointed at a temporary folder.
+
+import os
+import subprocess
+from pathlib import Path
+
+ENGINE = Path(__file__).resolve().parent.parent / "engine"
+
+
+def in_test_copy(folder, code: str, **env) -> str:
+    result = subprocess.run(
+        [sys.executable, "-c", code], cwd=ENGINE, capture_output=True, text=True,
+        env={**os.environ, "JOBSEARCH_DATA_DIR": str(folder), "PYTHONPATH": str(ENGINE), **env})
+    assert result.returncode == 0, result.stderr
+    return result.stdout.strip()
+
+
+def test_test_copy_uses_its_own_folder_and_ignores_shell_keys(tmp_path):
+    out = in_test_copy(tmp_path, "import settings, history, app_server, config_store as s;"
+                       "print(settings.CONFIG_PATH, history.PATH, app_server.STATE_PATH);"
+                       "print(s.connected()['anthropic'])", ANTHROPIC_API_KEY="sk-ant-real")
+    paths, anthropic = out.splitlines()
+    assert all(p.startswith(str(tmp_path.resolve())) for p in paths.split())
+    assert anthropic == "False"
+
+
+def test_real_copy_is_unchanged():
+    import settings
+    assert settings.DATA == settings.ROOT and not settings.SANDBOX
+
+
+@pytest.mark.parametrize("name, set_up, has_jobs", [
+    ("fresh", False, False), ("set-up", True, False),
+    ("with-jobs", True, True), ("problems", True, True)])
+def test_starting_points(tmp_path, name, set_up, has_jobs):
+    out = in_test_copy(tmp_path, f"""
+import json, sandbox, app_server
+sandbox.load({name!r})
+s = app_server.App(0, "t").state()
+print(json.dumps([s["set_up"], any(w["jobs"] for w in s["weeks"]), s["sandbox"]["scenario"]]))""")
+    assert json.loads(out) == [set_up, has_jobs, name]
+
+
+def test_starting_over_keeps_the_running_app_and_clears_the_rest(tmp_path):
+    in_test_copy(tmp_path, "import sandbox; sandbox.load('with-jobs')")
+    (tmp_path / ".app_state.json").write_text("{}")
+    in_test_copy(tmp_path, "import sandbox; sandbox.load('fresh')")
+    left = {p.name for p in tmp_path.iterdir()}
+    assert ".app_state.json" in left
+    assert not left & {"config.yaml", "history.json", "applications.csv", ".schedule_on"}
+
+
+def test_starting_over_refuses_a_folder_that_isnt_a_test_copy(tmp_path):
+    (tmp_path / "config.yaml").write_text("mine")
+    with pytest.raises(AssertionError, match="isn't a test folder"):
+        in_test_copy(tmp_path, "import sandbox; sandbox.load('fresh')")
+    assert (tmp_path / "config.yaml").read_text() == "mine"
+
+
+def test_test_copy_schedule_and_notion_are_pretend(tmp_path):
+    out = in_test_copy(tmp_path, """
+import schedule, config_store as s
+schedule._launchctl = lambda *a: (_ for _ in ()).throw(SystemExit("launchctl was called"))
+schedule.turn_on(); on = schedule.is_on(); schedule.turn_off()
+print(on, schedule.is_on(), s.connect_notion("anything", "https://www.notion.so/Page-" + "a" * 32)[0])""")
+    assert out == "True False True"
+
+
+def test_switching_starting_point_from_the_page(tmp_path):
+    out = in_test_copy(tmp_path, """
+import app_server
+code, s = app_server.App(0, "t").handle("/api/sandbox", {"scenario": "set-up"})
+print(code, s["set_up"], s["sandbox"]["scenario"])""")
+    assert out == "200 True set-up"
+
+
+def test_real_copy_has_no_switch(tmp_config):
+    app = app_server.App(0, "t")
+    assert app.handle("/api/sandbox", {"scenario": "fresh"})[0] == 404
+    assert app.state()["sandbox"] is None
+
+
+def test_page_script_loads_after_everything_it_uses():
+    """app.js looks up elements as soon as it runs, so any element after
+    its <script> tag would stop it and leave a blank window."""
+    page = (ENGINE / "app" / "index.html").read_text()
+    after = page.split('<script src="/static/app.js"></script>')[1]
+    assert after.strip() == "</body>\n</html>".strip()

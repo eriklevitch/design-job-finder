@@ -7,9 +7,9 @@ import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from settings import ROOT
+from settings import DATA
 
-PATH = ROOT / "history.json"
+PATH = DATA / "history.json"
 WEEKS_KEPT = 8
 FIELDS = ("finished_at", "state", "message", "scanned", "matches", "already",
           "skipped", "source_problem", "draft_problem", "details", "fix")
