@@ -18,7 +18,7 @@ search_terms: ["product designer"]
 
 # A title also has to include one of these level words.
 # [] means any level.
-seniority_keywords: ["senior", "sr.", "sr ", "staff", "principal", "lead", "founding", "manager", "director", "head of", "vp"]
+seniority_keywords: ["senior", "sr.", "sr ", "staff", "principal", "lead", "founding"]
 
 # Places that count, matched against the job's location text.
 # Add "remote" to include remote jobs in the US. [] means anywhere.

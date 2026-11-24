@@ -525,7 +525,7 @@ function parseMoney(text) {
 }
 
 function drawLook() {
-  const levels = LOOK_LEVELS[(Number(chosen("setup-level")) || 3) - 1] || LOOK_LEVELS[2];
+  const levels = LOOK_LEVELS[(Number(chosen("setup-level")) || 1) - 1] || LOOK_LEVELS[0];
   const places = [...splitCities($("setup-cities").value).map(titleCase), ...($("setup-remote").checked ? ["Remote"] : [])];
   $("setup-look-rows").replaceChildren(...LOOK_BARS.map((width, i) => {
     // Two chips at most, so they fit: the level, then the place, or

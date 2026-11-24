@@ -145,6 +145,8 @@ a:hover { text-decoration-color: var(--text-2); }
 .badge[hidden] { display: none; }
 .badge.pill { border-radius: 999px; }
 .setup-body h1 .badge { margin-left: var(--space-2); white-space: nowrap; }
+.setup-body h1.with-badge { display: flex; align-items: center; gap: var(--space-3); }
+.setup-body h1.with-badge .badge { margin-left: 0; top: 0; flex: none; }
 .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--text-3); }
 .dot.ok { background: var(--ok); }
 .dot.warn { background: var(--warn); }

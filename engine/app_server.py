@@ -75,7 +75,7 @@ def settings_for_page() -> dict:
 
 
 def settings_from_page(form: dict) -> dict:
-    level = int(form.get("level") or 3)
+    level = int(form.get("level") or 1)
     if level not in range(1, len(store.LEVEL_CHOICES) + 1):
         raise ValueError("Pick a level.")
     field = int(form.get("field") or 0) or None
